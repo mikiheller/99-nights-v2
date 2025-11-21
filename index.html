@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>99 Nights Math Forest – 3D Voxel Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #02040a;
+      --bg-panel: #0c1420;
+      --bg-panel-soft: #151d2b;
+      --accent-fire: #ff7b00;
+      --accent-fire-soft: #ffb347;
+      --accent-ok: #7cd992;
+      --accent-bad: #ff5e5e;
+      --text-main: #f6f3ea;
+      --text-muted: #c4c4c4;
+      --border-soft: rgba(255, 255, 255, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #101529 0%, #02040a 60%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: pan-y pinch-zoom;
+    }
+    
+    html {
+      overscroll-behavior: none;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .app {
+      width: 1200px;
+      max-width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      background: radial-gradient(circle at top, #18243b 0%, #050814 50%, #02040a 100%);
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.02);
+      padding: 20px;
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Left side - Game view (3D Canvas) */
+    
+    .game-container {
+      flex: 0 0 auto;
+      width: 700px;
+      height: 700px;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Right side - Info panel */
+    
+    .info-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .info-section {
+      background: linear-gradient(180deg, #0c1420 0%, #060a16 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .info-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* Day and Time combined */
+    .day-time-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .pause-button {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--bg-panel-soft) 0%, var(--bg-panel) 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 18px;
+    }
+    
+    .pause-button:hover {
+      background: rgba(255, 123, 0, 0.1);
+      border-color: var(--accent-fire);
+      transform: scale(1.1);
+    }
+
+    .day-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+    
+    .day-counter {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+    
+    .day-diamonds {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+    
+    .cycle-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .cycle-icon {
+      font-size: 32px;
+      margin-bottom: 4px;
+    }
+
+    .cycle-countdown {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Inventory Grid */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .inv-item {
+      background: var(--bg-panel-soft);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .inv-item[style*="cursor: pointer"]:hover {
+      background: rgba(255, 123, 0, 0.1);
+      border-color: var(--accent-fire);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 123, 0, 0.2);
+    }
+
+    .inv-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .inv-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .inv-count {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Stats bars */
+    .stat-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stat-bar-container:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .stat-bar-wrapper {
+      flex: 1;
+    }
+
+    .stat-bar-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-bar {
+      height: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-soft);
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+      border-radius: 10px;
+    }
+
+    .stat-bar-fill.health {
+      background: linear-gradient(90deg, #9b59b6 0%, #bb8fce 100%);
+      transition: background 0.3s ease;
+    }
+    
+    .stat-bar-fill.health.medium {
+      background: linear-gradient(90deg, #e67e22 0%, #f39c12 100%);
+    }
+    
+    .stat-bar-fill.health.low {
+      background: linear-gradient(90deg, #e74c3c 0%, #ec7063 100%);
+    }
+    
+    .stat-bar-fill.health.critical {
+      background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
+    }
+    
+    .stat-bar-fill.hunger {
+      background: linear-gradient(90deg, #27ae60 0%, #52be80 100%);
+    }
+    
+    .stat-bar-fill.hunger.low {
+      background: linear-gradient(90deg, #ff4444 0%, #ff6666 100%);
+    }
+    
+    .stat-bar-fill.hunger.critical {
+      background: linear-gradient(90deg, #ff0000 0%, #ff3333 100%);
+      animation: hungerFlash 1.5s ease-in-out infinite;
+    }
+    
+    .stat-bar.hunger-starving {
+      border: 2px solid #ff0000;
+      animation: hungerBarGlow 1s ease-in-out infinite;
+    }
+    
+    @keyframes hungerFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    
+    @keyframes hungerBarGlow {
+      0%, 100% { 
+        border-color: #ff0000;
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.8), 0 0 20px rgba(255, 0, 0, 0.4);
+      }
+      50% { 
+        border-color: #ff6666;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 1), 0 0 30px rgba(255, 0, 0, 0.6);
+      }
+    }
+
+    .stat-bar-fill.fire {
+      background: linear-gradient(90deg, #ff7b00 0%, #ffb347 100%);
+    }
+
+    /* Minimap */
+    .minimap-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
+      border: 2px solid var(--border-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+
+    #minimapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Math Dialog Bubble */
+    .math-bubble {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #1a2332 0%, #0f1621 100%);
+      border: 3px solid var(--accent-fire);
+      border-radius: 20px;
+      padding: 30px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+      z-index: 100;
+      min-width: 400px;
+      text-align: center;
+    }
+
+    .math-bubble.active {
+      display: block;
+    }
+
+    .math-bubble-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-fire-soft);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .math-question-counter {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .math-timer-bar {
+      height: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-soft);
+    }
+
+    .math-timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7cd992 0%, #5fb377 100%);
+      transition: width 0.1s linear;
+      border-radius: 4px;
+    }
+
+    .math-timer-fill.danger {
+      background: linear-gradient(90deg, #ff5e5e 0%, #ff3030 100%);
+    }
+
+    .math-question {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 20px;
+    }
+
+    .math-input-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .math-input {
+      width: 100%;
+      max-width: 200px;
+    }
+
+    .math-input input {
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 24px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--border-soft);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .math-input input:focus {
+      outline: none;
+      border-color: var(--accent-fire);
+      box-shadow: 0 0 0 3px rgba(255, 123, 0, 0.2);
+    }
+
+    .math-submit {
+      padding: 12px 40px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent-fire) 0%, #ff5e00 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .math-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 123, 0, 0.4);
+    }
+
+    .math-submit:active {
+      transform: translateY(0);
+    }
+
+    .math-bubble-feedback {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+
+    .math-bubble-feedback.good {
+      color: var(--accent-ok);
+    }
+
+    .math-bubble-feedback.bad {
+      color: var(--accent-bad);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .pulse {
+      animation: pulse 0.3s ease;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    .hunger-warning {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: #ff0000;
+      text-shadow: 
+        0 0 10px rgba(255, 0, 0, 0.8),
+        0 0 20px rgba(255, 0, 0, 0.6),
+        0 0 30px rgba(255, 0, 0, 0.4);
+      z-index: 999;
+      pointer-events: none;
+      animation: fadeOut 1s ease-out;
+    }
+    
+    .pause-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .pause-overlay.active {
+      display: flex;
+    }
+    
+    .play-button {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, var(--accent-fire) 0%, #ff5e00 100%);
+      border: 4px solid var(--accent-fire-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 60px;
+      color: white;
+      box-shadow: 0 10px 40px rgba(255, 123, 0, 0.6);
+    }
+    
+    .play-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 15px 50px rgba(255, 123, 0, 0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Left: 3D Game View -->
+    <div class="game-container">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Right: Info Panel -->
+    <div class="info-panel">
+      <!-- Day & Time -->
+      <div class="info-section day-time-row">
+        <div class="day-section">
+          <div class="day-counter">Day <span id="dayCounter">1</span></div>
+          <div class="day-diamonds" id="dayDiamonds">0 💎</div>
+        </div>
+        <div class="cycle-section">
+          <div class="cycle-icon" id="cycleIcon">☀️</div>
+          <div class="cycle-countdown" id="cycleCountdown">3:00</div>
+        </div>
+        <div class="pause-button" id="pauseButton" title="Pause Game">⏸️</div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="info-section">
+        <div class="info-section-title">Inventory</div>
+        <div class="inventory-grid">
+          <div class="inv-item" id="woodItem" style="cursor: pointer;" title="Click to add to fire">
+            <div class="inv-icon">🪵</div>
+            <div class="inv-label">Wood</div>
+            <div class="inv-count" id="woodCount">0</div>
+          </div>
+          <div class="inv-item" id="meatItem" style="cursor: pointer;" title="Click to eat">
+            <div class="inv-icon">🥩</div>
+            <div class="inv-label">Meat</div>
+            <div class="inv-count" id="meatCount">0</div>
+          </div>
+          <div class="inv-item" id="fuelItem" style="cursor: pointer;" title="Click to add to fire">
+            <div class="inv-icon">⛽</div>
+            <div class="inv-label">Fuel</div>
+            <div class="inv-count" id="coalCount">0</div>
+          </div>
+          <div class="inv-item">
+            <div class="inv-icon">🔧</div>
+            <div class="inv-label">Metal</div>
+            <div class="inv-count" id="scrapCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="info-section">
+        <div class="info-section-title">Status</div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Health</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill health" id="healthBar" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">🍖</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Hunger</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill hunger" id="hungerBar" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Fire (Level <span id="fireLevel">1</span>)</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill fire" id="fireBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minimap -->
+      <div class="info-section">
+        <div class="info-section-title">Map</div>
+        <div class="minimap-container">
+          <canvas id="minimapCanvas" width="150" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Math Dialog -->
+  <div class="math-bubble" id="mathBubble">
+    <div class="math-bubble-label" id="mathBubbleLabel">Solve to Continue</div>
+    <div class="math-question-counter" id="mathQuestionCounter"></div>
+    <div class="math-timer-bar" id="mathTimerBar" style="display: none;">
+      <div class="math-timer-fill" id="mathTimerFill"></div>
+    </div>
+    <div class="math-question" id="mathQuestion">2 + 3 = ?</div>
+    <div class="math-input-row">
+      <div class="math-input">
+        <input type="text" id="mathAnswerInput" placeholder="?" autofocus />
+      </div>
+      <button class="math-submit" id="mathSubmitButton">Submit</button>
+    </div>
+    <div class="math-bubble-feedback" id="mathBubbleFeedback"></div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div class="pause-overlay" id="pauseOverlay">
+    <div class="play-button" id="playButton" title="Resume Game">▶️</div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    // ============================================
+    // THREE.JS SETUP
+    // ============================================
+    
+    const canvas = document.getElementById('gameCanvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb); // Sky blue
+    
+    // Camera - top-down isometric view
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+    camera.position.set(0, 30, 30);
+    camera.lookAt(0, 0, 0);
+    
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(700, 700);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(50, 100, 50);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.left = -100;
+    directionalLight.shadow.camera.right = 100;
+    directionalLight.shadow.camera.top = 100;
+    directionalLight.shadow.camera.bottom = -100;
+    scene.add(directionalLight);
+    
+    // ============================================
+    // VOXEL MODEL BUILDERS
+    // ============================================
+    
+    function createTree(x, z) {
+      const group = new THREE.Group();
+      
+      // Trunk (2 cubes)
+      const trunkGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      
+      const trunk1 = new THREE.Mesh(trunkGeometry, trunkMaterial);
+      trunk1.position.y = 0.5;
+      trunk1.castShadow = true;
+      trunk1.receiveShadow = true;
+      group.add(trunk1);
+      
+      const trunk2 = new THREE.Mesh(trunkGeometry, trunkMaterial);
+      trunk2.position.y = 1.5;
+      trunk2.castShadow = true;
+      trunk2.receiveShadow = true;
+      group.add(trunk2);
+      
+      // Leaves (3x3x3 cube cluster)
+      const leavesGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+      
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = 0; dy <= 2; dy++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            // Skip some blocks to make it look more tree-like
+            if (dy === 0 && Math.abs(dx) + Math.abs(dz) > 1) continue;
+            if (dy === 2 && (Math.abs(dx) === 1 || Math.abs(dz) === 1)) continue;
+            
+            const leaf = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaf.position.set(dx, 2.5 + dy, dz);
+            leaf.castShadow = true;
+            leaf.receiveShadow = true;
+            group.add(leaf);
+          }
+        }
+      }
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'tree', action: 'chop', worldX: x, worldZ: z };
+      return group;
+    }
+    
+    function createWolf(x, z) {
+      const group = new THREE.Group();
+      const wolfMaterial = new THREE.MeshLambertMaterial({ color: 0x606060 });
+      const darkWolfMaterial = new THREE.MeshLambertMaterial({ color: 0x404040 });
+      
+      // Body (longer and lower)
+      const bodyGeometry = new THREE.BoxGeometry(1.5, 1, 1.2);
+      const body = new THREE.Mesh(bodyGeometry, wolfMaterial);
+      body.position.y = 0.8;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      
+      // Neck
+      const neckGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.8);
+      const neck = new THREE.Mesh(neckGeometry, wolfMaterial);
+      neck.position.set(1.0, 1.1, 0);
+      neck.castShadow = true;
+      neck.receiveShadow = true;
+      group.add(neck);
+      
+      // Head (main part)
+      const headGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+      const head = new THREE.Mesh(headGeometry, wolfMaterial);
+      head.position.set(1.6, 1.4, 0);
+      head.castShadow = true;
+      head.receiveShadow = true;
+      group.add(head);
+      
+      // Snout (elongated)
+      const snoutGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.6);
+      const snout = new THREE.Mesh(snoutGeometry, darkWolfMaterial);
+      snout.position.set(2.1, 1.3, 0);
+      snout.castShadow = true;
+      snout.receiveShadow = true;
+      group.add(snout);
+      
+      // Ears (2 triangular-ish)
+      const earGeometry = new THREE.BoxGeometry(0.3, 0.5, 0.3);
+      const leftEar = new THREE.Mesh(earGeometry, darkWolfMaterial);
+      leftEar.position.set(1.6, 1.9, 0.35);
+      leftEar.castShadow = true;
+      leftEar.receiveShadow = true;
+      group.add(leftEar);
+      
+      const rightEar = new THREE.Mesh(earGeometry, darkWolfMaterial);
+      rightEar.position.set(1.6, 1.9, -0.35);
+      rightEar.castShadow = true;
+      rightEar.receiveShadow = true;
+      group.add(rightEar);
+      
+      // Tail (curved upward)
+      const tailBase = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+      const tail1 = new THREE.Mesh(tailBase, wolfMaterial);
+      tail1.position.set(-0.9, 0.9, 0);
+      tail1.castShadow = true;
+      tail1.receiveShadow = true;
+      group.add(tail1);
+      
+      const tail2 = new THREE.Mesh(tailBase, wolfMaterial);
+      tail2.position.set(-1.2, 1.2, 0);
+      tail2.castShadow = true;
+      tail2.receiveShadow = true;
+      group.add(tail2);
+      
+      const tail3 = new THREE.Mesh(tailBase, darkWolfMaterial);
+      tail3.position.set(-1.4, 1.5, 0);
+      tail3.castShadow = true;
+      tail3.receiveShadow = true;
+      group.add(tail3);
+      
+      // Legs (4) - thinner and positioned better
+      const legGeometry = new THREE.BoxGeometry(0.35, 1, 0.35);
+      const legPositions = [
+        [1, 0, 0.4],    // Front left
+        [1, 0, -0.4],   // Front right
+        [-0.8, 0, 0.4], // Back left
+        [-0.8, 0, -0.4] // Back right
+      ];
+      
+      legPositions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeometry, wolfMaterial);
+        leg.position.set(pos[0], 0.5, pos[2]);
+        leg.castShadow = true;
+        leg.receiveShadow = true;
+        group.add(leg);
+      });
+      
+      // Paws (darker)
+      const pawGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.4);
+      legPositions.forEach(pos => {
+        const paw = new THREE.Mesh(pawGeometry, darkWolfMaterial);
+        paw.position.set(pos[0], 0.1, pos[2]);
+        paw.castShadow = true;
+        paw.receiveShadow = true;
+        group.add(paw);
+      });
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'wolf', action: 'fightWolf', worldX: x, worldZ: z };
+      return group;
+    }
+    
+    function createFuelCanister(x, z) {
+      const group = new THREE.Group();
+      
+      // Main body - red rectangular canister (wider)
+      const bodyGeometry = new THREE.BoxGeometry(1.1, 1.5, 0.6);
+      const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 }); // Bright red
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 0.75;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      
+      // Black screw cap on one side (top-left corner)
+      const capGeometry = new THREE.BoxGeometry(0.35, 0.3, 0.35);
+      const capMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 }); // Black
+      const cap = new THREE.Mesh(capGeometry, capMaterial);
+      cap.position.set(-0.3, 1.65, 0); // Positioned on the left side
+      cap.castShadow = true;
+      cap.receiveShadow = true;
+      group.add(cap);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'fuel', action: 'collectFuel', worldX: x, worldZ: z };
+      return group;
+    }
+    
+    function createBrokenFan(x, z) {
+      const group = new THREE.Group();
+      
+      // Base/stand - teal like in the image
+      const baseGeometry = new THREE.BoxGeometry(0.6, 0.3, 0.6);
+      const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x63a66c }); // Exact teal from image
+      const base = new THREE.Mesh(baseGeometry, baseMaterial);
+      base.position.y = 0.15;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      group.add(base);
+      
+      // Pole/stand - teal
+      const poleGeometry = new THREE.BoxGeometry(0.2, 1, 0.2);
+      const poleMaterial = new THREE.MeshLambertMaterial({ color: 0x63a66c }); // Exact teal from image
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+      pole.position.y = 0.8;
+      pole.castShadow = true;
+      pole.receiveShadow = true;
+      group.add(pole);
+      
+      // Fan center/motor - darker gray
+      const centerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.3);
+      const centerMaterial = new THREE.MeshLambertMaterial({ color: 0x505050 });
+      const center = new THREE.Mesh(centerGeometry, centerMaterial);
+      center.position.y = 1.4;
+      center.castShadow = true;
+      center.receiveShadow = true;
+      group.add(center);
+      
+      // Fan blades (3 blades) - rusty/broken looking
+      const bladeGeometry = new THREE.BoxGeometry(0.15, 0.8, 0.05);
+      const bladeMaterial = new THREE.MeshLambertMaterial({ color: 0xA0826D }); // Rusty beige
+      
+      // Blade 1 (top)
+      const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade1.position.set(0, 1.8, 0.2);
+      blade1.castShadow = true;
+      blade1.receiveShadow = true;
+      group.add(blade1);
+      
+      // Blade 2 (bottom left)
+      const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade2.position.set(-0.35, 1.1, 0.2);
+      blade2.rotation.z = Math.PI * 2 / 3;
+      blade2.castShadow = true;
+      blade2.receiveShadow = true;
+      group.add(blade2);
+      
+      // Blade 3 (bottom right)
+      const blade3 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade3.position.set(0.35, 1.1, 0.2);
+      blade3.rotation.z = -Math.PI * 2 / 3;
+      blade3.castShadow = true;
+      blade3.receiveShadow = true;
+      group.add(blade3);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'fan', action: 'salvageFan', worldX: x, worldZ: z };
+      return group;
+    }
+    
+    function createCultist(x, z) {
+      const group = new THREE.Group();
+      
+      // Body (red/maroon coat)
+      const bodyGeometry = new THREE.BoxGeometry(1.2, 1.5, 0.8);
+      const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B2020 }); // Dark red
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 1.0;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      
+      // Legs (brown pants)
+      const legGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.4);
+      const legMaterial = new THREE.MeshLambertMaterial({ color: 0x6B5D3F }); // Brown
+      
+      const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.3, 0.4, 0);
+      leftLeg.castShadow = true;
+      leftLeg.receiveShadow = true;
+      group.add(leftLeg);
+      
+      const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.3, 0.4, 0);
+      rightLeg.castShadow = true;
+      rightLeg.receiveShadow = true;
+      group.add(rightLeg);
+      
+      // Head (yellow/green mask)
+      const headGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+      const headMaterial = new THREE.MeshLambertMaterial({ color: 0xB8B84D }); // Yellow-green
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 2.1;
+      head.castShadow = true;
+      head.receiveShadow = true;
+      group.add(head);
+      
+      // Eyes (dark)
+      const eyeGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+      const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x2C2C1C });
+      
+      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      leftEye.position.set(-0.15, 2.15, 0.36);
+      group.add(leftEye);
+      
+      const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      rightEye.position.set(0.15, 2.15, 0.36);
+      group.add(rightEye);
+      
+      // Nose/beak (protruding)
+      const noseGeometry = new THREE.BoxGeometry(0.2, 0.3, 0.3);
+      const nose = new THREE.Mesh(noseGeometry, headMaterial);
+      nose.position.set(0, 2.0, 0.5);
+      nose.castShadow = true;
+      nose.receiveShadow = true;
+      group.add(nose);
+      
+      // Antlers (black, branching)
+      const antlerMaterial = new THREE.MeshLambertMaterial({ color: 0x1C1C1C }); // Very dark
+      
+      // Left antler main branch
+      const leftAntlerMain = new THREE.BoxGeometry(0.15, 1.2, 0.15);
+      const leftMain = new THREE.Mesh(leftAntlerMain, antlerMaterial);
+      leftMain.position.set(-0.3, 2.9, 0);
+      leftMain.rotation.z = -0.3;
+      leftMain.castShadow = true;
+      group.add(leftMain);
+      
+      // Left antler branches
+      const leftBranch1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 0.1), antlerMaterial);
+      leftBranch1.position.set(-0.5, 3.2, 0.15);
+      leftBranch1.rotation.z = -0.6;
+      leftBranch1.rotation.x = 0.4;
+      leftBranch1.castShadow = true;
+      group.add(leftBranch1);
+      
+      const leftBranch2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), antlerMaterial);
+      leftBranch2.position.set(-0.55, 3.0, -0.15);
+      leftBranch2.rotation.z = -0.5;
+      leftBranch2.rotation.x = -0.4;
+      leftBranch2.castShadow = true;
+      group.add(leftBranch2);
+      
+      // Right antler main branch
+      const rightAntlerMain = new THREE.BoxGeometry(0.15, 1.2, 0.15);
+      const rightMain = new THREE.Mesh(rightAntlerMain, antlerMaterial);
+      rightMain.position.set(0.3, 2.9, 0);
+      rightMain.rotation.z = 0.3;
+      rightMain.castShadow = true;
+      group.add(rightMain);
+      
+      // Right antler branches
+      const rightBranch1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 0.1), antlerMaterial);
+      rightBranch1.position.set(0.5, 3.2, 0.15);
+      rightBranch1.rotation.z = 0.6;
+      rightBranch1.rotation.x = 0.4;
+      rightBranch1.castShadow = true;
+      group.add(rightBranch1);
+      
+      const rightBranch2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), antlerMaterial);
+      rightBranch2.position.set(0.55, 3.0, -0.15);
+      rightBranch2.rotation.z = 0.5;
+      rightBranch2.rotation.x = -0.4;
+      rightBranch2.castShadow = true;
+      group.add(rightBranch2);
+      
+      // Weapon (axe-like) held in front
+      const handleGeometry = new THREE.BoxGeometry(0.1, 1.2, 0.1);
+      const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x4A3C28 }); // Dark brown
+      const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+      handle.position.set(0.5, 1.0, 0.6);
+      handle.rotation.z = 0.3;
+      handle.castShadow = true;
+      group.add(handle);
+      
+      const bladeGeometry = new THREE.BoxGeometry(0.5, 0.4, 0.1);
+      const bladeMaterial = new THREE.MeshLambertMaterial({ color: 0x505050 }); // Gray metal
+      const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade.position.set(0.7, 1.6, 0.6);
+      blade.rotation.z = 0.3;
+      blade.castShadow = true;
+      group.add(blade);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'cultist', action: 'fightCultist', worldX: x, worldZ: z, targetX: x, targetZ: z };
+      return group;
+    }
+    
+    function createPlayer(x, z) {
+      const group = new THREE.Group();
+      
+      // Body (simple rectangular body)
+      const bodyGeometry = new THREE.BoxGeometry(0.8, 1.2, 0.6);
+      const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4169E1 }); // Royal blue
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 0.6;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      
+      // Arms (two small rectangles on sides)
+      const armGeometry = new THREE.BoxGeometry(0.3, 0.8, 0.3);
+      const armMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 }); // Yellow like face
+      
+      const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-0.55, 0.8, 0);
+      leftArm.castShadow = true;
+      leftArm.receiveShadow = true;
+      group.add(leftArm);
+      
+      const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(0.55, 0.8, 0);
+      rightArm.castShadow = true;
+      rightArm.receiveShadow = true;
+      group.add(rightArm);
+      
+      // Legs (two small rectangles at bottom)
+      const legGeometry = new THREE.BoxGeometry(0.3, 0.6, 0.3);
+      const legMaterial = new THREE.MeshLambertMaterial({ color: 0x2F4F4F }); // Dark slate gray
+      
+      const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.2, 0.3, 0);
+      leftLeg.castShadow = true;
+      leftLeg.receiveShadow = true;
+      group.add(leftLeg);
+      
+      const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.2, 0.3, 0);
+      rightLeg.castShadow = true;
+      rightLeg.receiveShadow = true;
+      group.add(rightLeg);
+      
+      // Head/Face (yellow square on top)
+      const faceGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+      const faceMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+      const face = new THREE.Mesh(faceGeometry, faceMaterial);
+      face.position.y = 1.6;
+      face.castShadow = true;
+      face.receiveShadow = true;
+      group.add(face);
+      
+      // Eyes (two small black cubes)
+      const eyeGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+      const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+      
+      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      leftEye.position.set(-0.15, 1.7, 0.41);
+      group.add(leftEye);
+      
+      const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      rightEye.position.set(0.15, 1.7, 0.41);
+      group.add(rightEye);
+      
+      // Mouth (small black cube)
+      const mouthGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.08);
+      const mouth = new THREE.Mesh(mouthGeometry, eyeMaterial);
+      mouth.position.set(0, 1.45, 0.41);
+      group.add(mouth);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'player' };
+      return group;
+    }
+    
+    function createCampfire(x, z) {
+      const group = new THREE.Group();
+      
+      // Rocks arranged in a circle around the fire
+      const rockGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.4);
+      const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 }); // Gray rocks
+      
+      const rockPositions = [
+        [1.2, 0, 0],
+        [-1.2, 0, 0],
+        [0, 0, 1.2],
+        [0, 0, -1.2],
+        [0.85, 0, 0.85],
+        [-0.85, 0, 0.85],
+        [0.85, 0, -0.85],
+        [-0.85, 0, -0.85]
+      ];
+      
+      rockPositions.forEach(pos => {
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        rock.position.set(pos[0], 0.15, pos[2]);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        group.add(rock);
+      });
+      
+      // Logs arranged in a cross in the center
+      const logGeometry = new THREE.BoxGeometry(1.5, 0.25, 0.25);
+      const logMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown logs
+      
+      const log1 = new THREE.Mesh(logGeometry, logMaterial);
+      log1.position.y = 0.125;
+      log1.castShadow = true;
+      log1.receiveShadow = true;
+      group.add(log1);
+      
+      const log2 = new THREE.Mesh(logGeometry, logMaterial);
+      log2.position.y = 0.125;
+      log2.rotation.y = Math.PI / 2;
+      log2.castShadow = true;
+      log2.receiveShadow = true;
+      group.add(log2);
+      
+      // Three logs arranged in a triangle around the campfire (like seating)
+      const sittingLogGeometry = new THREE.BoxGeometry(2.5, 0.3, 0.3);
+      
+      // Log 1 - bottom (horizontal)
+      const sittingLog1 = new THREE.Mesh(sittingLogGeometry, logMaterial);
+      sittingLog1.position.set(0, 0.15, 4.5);
+      sittingLog1.castShadow = true;
+      sittingLog1.receiveShadow = true;
+      group.add(sittingLog1);
+      
+      // Log 2 - top left (angled)
+      const sittingLog2 = new THREE.Mesh(sittingLogGeometry, logMaterial);
+      sittingLog2.position.set(-3.9, 0.15, -2.25);
+      sittingLog2.rotation.y = Math.PI / 3; // 60 degrees
+      sittingLog2.castShadow = true;
+      sittingLog2.receiveShadow = true;
+      group.add(sittingLog2);
+      
+      // Log 3 - top right (angled)
+      const sittingLog3 = new THREE.Mesh(sittingLogGeometry, logMaterial);
+      sittingLog3.position.set(3.9, 0.15, -2.25);
+      sittingLog3.rotation.y = -Math.PI / 3; // -60 degrees
+      sittingLog3.castShadow = true;
+      sittingLog3.receiveShadow = true;
+      group.add(sittingLog3);
+      
+      // Fire (orange/yellow cubes with emissive glow)
+      const fireGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4);
+      const fireMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xFFAA00, 
+        emissive: 0xFF6600, 
+        emissiveIntensity: 0.8 
+      });
+      
+      const fire1 = new THREE.Mesh(fireGeometry, fireMaterial);
+      fire1.position.set(0, 0.8, 0);
+      group.add(fire1);
+      
+      const fire2 = new THREE.Mesh(fireGeometry, fireMaterial);
+      fire2.position.set(0.25, 1.1, 0.15);
+      fire2.scale.set(0.6, 0.8, 0.6);
+      group.add(fire2);
+      
+      const fire3 = new THREE.Mesh(fireGeometry, fireMaterial);
+      fire3.position.set(-0.25, 1.1, -0.15);
+      fire3.scale.set(0.6, 0.8, 0.6);
+      group.add(fire3);
+      
+      // Create dotted circle around fire using small cubes
+      const dotGeometry = new THREE.BoxGeometry(0.15, 0.05, 0.15);
+      const dotMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // White dots
+      const circleRadius = 7.5; // 3x bigger (was 2.5)
+      const numDots = 48; // More dots for larger circle
+      
+      for (let i = 0; i < numDots; i++) {
+        const angle = (i / numDots) * Math.PI * 2;
+        const dotX = Math.cos(angle) * circleRadius;
+        const dotZ = Math.sin(angle) * circleRadius;
+        
+        const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+        dot.position.set(dotX, 0.025, dotZ);
+        group.add(dot);
+      }
+      
+      // Point light for fire glow
+      const fireLight = new THREE.PointLight(0xFF6600, 1.5, 25);
+      fireLight.position.set(0, 1, 0);
+      group.add(fireLight);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'campfire' };
+      return group;
+    }
+    
+    // ============================================
+    // GROUND PLANE
+    // ============================================
+    
+    function createGround(radius) {
+      const size = radius * 2; // Diameter
+      const groundGeometry = new THREE.PlaneGeometry(size, size);
+      
+      // Create a simple grass texture using canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Base grass color
+      ctx.fillStyle = '#2d5016';
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add some variation
+      for (let i = 0; i < 1000; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const shade = Math.random() * 40 - 20;
+        const r = Math.min(255, Math.max(0, 45 + shade));
+        const g = Math.min(255, Math.max(0, 80 + shade));
+        const b = Math.min(255, Math.max(0, 22 + shade));
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(x, y, 2, 2);
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(size / 4, size / 4);
+      
+      const groundMaterial = new THREE.MeshLambertMaterial({ map: texture });
+      const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      ground.userData = { type: 'ground' };
+      
+      return ground;
+    }
+    
+    // ============================================
+    // GAME STATE
+    // ============================================
+    
+    // UI Elements
+    const mathBubble = document.getElementById('mathBubble');
+    const mathBubbleLabel = document.getElementById('mathBubbleLabel');
+    const mathQuestion = document.getElementById('mathQuestion');
+    const mathAnswerInput = document.getElementById('mathAnswerInput');
+    const mathSubmitButton = document.getElementById('mathSubmitButton');
+    const mathBubbleFeedback = document.getElementById('mathBubbleFeedback');
+    const mathTimerBar = document.getElementById('mathTimerBar');
+    const mathTimerFill = document.getElementById('mathTimerFill');
+    const mathQuestionCounter = document.getElementById('mathQuestionCounter');
+    
+    const woodCount = document.getElementById('woodCount');
+    const meatCount = document.getElementById('meatCount');
+    const coalCount = document.getElementById('coalCount');
+    const scrapCount = document.getElementById('scrapCount');
+    
+    const dayCounter = document.getElementById('dayCounter');
+    const dayDiamonds = document.getElementById('dayDiamonds');
+    const cycleIcon = document.getElementById('cycleIcon');
+    const cycleCountdown = document.getElementById('cycleCountdown');
+    const healthBar = document.getElementById('healthBar');
+    const hungerBar = document.getElementById('hungerBar');
+    const hungerBarContainer = hungerBar.parentElement;
+    const fireBar = document.getElementById('fireBar');
+    const fireLevel = document.getElementById('fireLevel');
+    
+    const minimapCanvas = document.getElementById('minimapCanvas');
+    const minimapCtx = minimapCanvas.getContext('2d');
+    
+    const woodItem = document.getElementById('woodItem');
+    const meatItem = document.getElementById('meatItem');
+    const fuelItem = document.getElementById('fuelItem');
+    
+    const pauseButton = document.getElementById('pauseButton');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const playButton = document.getElementById('playButton');
+    
+    // Game state
+    let isDialogOpen = false;
+    let isPaused = false;
+    let currentInteractable = null;
+    let currentAction = '';
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let questionsCorrectFirstTry = []; // Track which questions were answered correctly on first try
+    let currentQuestionAttempts = 0; // Track attempts for current question
+    let timerInterval = null;
+    let timeRemaining = 0;
+    let currentQuestionTimedOut = false; // Track if current question timed out
+    
+    let playerHealth = 100;
+    let playerHunger = 100;
+    let fireStrength = 0;
+    let currentFireLevel = 1;
+    
+    let isStarving = false;
+    let starvationTimer = null;
+    
+    let isNight = false;
+    let currentDay = 1;
+    const DAY_DURATION = 180; // 3 minutes in seconds
+    const NIGHT_DURATION = 90; // 1.5 minutes in seconds
+    let cycleTimeRemaining = DAY_DURATION;
+    let nightWarningShown = false;
+    let cultistsSpawned = false;
+    let cultists = []; // Array to track active cultists
+    let cultistsDefeated = 0;
+    let cultistRewardGiven = false;
+    
+    // Diamond tracking
+    let diamondsEarned = 0;
+    let healthLostThisCycle = false; // Track if player lost health during current day/night cycle
+    
+    const FIRE_DECAY_RATES = {
+      1: 100 / 600,  // 10 minutes (50% slower)
+      2: 100 / 960,  // 16 minutes (50% slower)
+      3: 100 / 1440, // 24 minutes (50% slower)
+      4: 100 / 1800, // 30 minutes (50% slower)
+      5: 100 / 2400  // 40 minutes (50% slower)
+    };
+    
+    // Player state
+    let playerX = 0; // World coordinates
+    let playerZ = 0;
+    const playerSpeed = 0.15;
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    const interactionDistance = 1.5;
+    
+    const CAMPFIRE_CIRCLE_RADIUS = 7.5; // Dotted circle radius around campfire
+    let worldRadius = CAMPFIRE_CIRCLE_RADIUS * 3; // Start at 3R = 22.5
+    let worldSize = worldRadius * 2; // Diameter of the world
+    let playerMesh = null;
+    let campfireMesh = null;
+    let groundMesh = null;
+    
+    // Entity storage
+    const entities = [];
+    
+    // Minimap - store explored areas by world coordinates, not grid
+    const exploredMap = new Set();
+    const VISIBILITY_RADIUS = 5; // World units of visibility
+    
+    let isNearCampfire = false;
+    
+    // ============================================
+    // QUESTION GENERATION
+    // ============================================
+    
+    function generateWolfQuestion() {
+      const a = Math.floor(Math.random() * 6);
+      const b = Math.floor(Math.random() * 6);
+      return {
+        equation: `${a} + ${b}`,
+        answer: a + b
+      };
+    }
+    
+    function generateCultistQuestion() {
+      // Same as wolf questions
+      const a = Math.floor(Math.random() * 6);
+      const b = Math.floor(Math.random() * 6);
+      return {
+        equation: `${a} + ${b}`,
+        answer: a + b
+      };
+    }
+    
+    function generateTreeQuestion() {
+      const a = Math.random() < 0.5 ? Math.floor(Math.random() * 4) : (Math.random() < 0.5 ? 9 : 10);
+      const b = 6 + Math.floor(Math.random() * 5);
+      return {
+        equation: `${a} + ${b}`,
+        answer: a + b
+      };
+    }
+    
+    function generateCoalOrMetalQuestion() {
+      const a = 5 + Math.floor(Math.random() * 6);
+      const b = 5 + Math.floor(Math.random() * 6);
+      return {
+        equation: `${a} + ${b}`,
+        answer: a + b
+      };
+    }
+    
+    function generateUniqueQuestions(generator, count) {
+      const questions = [];
+      let lastEquation = null;
+      let attempts = 0;
+      
+      while (questions.length < count && attempts < count * 10) {
+        const q = generator();
+        if (q.equation !== lastEquation) {
+          questions.push(q);
+          lastEquation = q.equation;
+        }
+        attempts++;
+      }
+      
+      return questions;
+    }
+    
+    // ============================================
+    // ENTITY GENERATION
+    // ============================================
+    
+    function generateEntities() {
+      const minDistance = 10; // Spacing between entities
+      const minCampfireDistance = 15; // Clear area around campfire
+      
+      function isTooClose(x, z) {
+        // Check distance from campfire
+        const distFromCampfire = Math.sqrt(x * x + z * z);
+        if (distFromCampfire < minCampfireDistance) return true;
+        
+        // Check distance from other entities
+        for (const entity of entities) {
+          const dx = x - entity.x;
+          const dz = z - entity.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < minDistance) return true;
+        }
+        
+        return false;
+      }
+      
+      function placeEntity(type, action, count) {
+        let placed = 0;
+        let attempts = 0;
+        
+        while (placed < count && attempts < count * 50) {
+          const x = (Math.random() - 0.5) * worldSize * 0.9;
+          const z = (Math.random() - 0.5) * worldSize * 0.9;
+          
+          if (!isTooClose(x, z)) {
+            entities.push({ type, action, x, z });
+            placed++;
+          }
+          attempts++;
+        }
+      }
+      
+      // Total entities for Level 1
+      placeEntity('tree', 'chop', 6);
+      placeEntity('wolf', 'fightWolf', 3);
+      placeEntity('fuel', 'collectFuel', 1);
+      placeEntity('fan', 'salvageFan', 1);
+      
+      // Create 3D meshes for each entity
+      entities.forEach(entity => {
+        let mesh;
+        if (entity.type === 'tree') {
+          mesh = createTree(entity.x, entity.z);
+        } else if (entity.type === 'wolf') {
+          mesh = createWolf(entity.x, entity.z);
+        } else if (entity.type === 'fuel') {
+          mesh = createFuelCanister(entity.x, entity.z);
+        } else if (entity.type === 'fan') {
+          mesh = createBrokenFan(entity.x, entity.z);
+        }
+        
+        if (mesh) {
+          entity.mesh = mesh;
+          scene.add(mesh);
+        }
+      });
+    }
+    
+    // ============================================
+    // MATH DIALOG
+    // ============================================
+    
+    function showWelcomeMessage() {
+      // Wait for font to load before rendering
+      document.fonts.ready.then(() => {
+        // Create a canvas for the text
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 2048;
+        canvas.height = 512;
+        
+        // Draw text on canvas
+        context.fillStyle = 'rgba(0, 0, 0, 0)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.font = '700 96px "Kalam", "Comic Sans MS", cursive';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Draw text (two lines)
+        const line1 = 'SURVIVE THE NIGHTS';
+        const line2 = 'EARN DIAMONDS';
+        const lineHeight = 120;
+        
+        context.fillText(line1, canvas.width / 2, canvas.height / 2 - lineHeight / 2);
+        context.fillText(line2, canvas.width / 2, canvas.height / 2 + lineHeight / 2);
+        
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        
+        // Create sprite material
+        const spriteMaterial = new THREE.SpriteMaterial({ 
+          map: texture,
+          transparent: true,
+          opacity: 1
+        });
+        
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.set(0, 5, 0); // Above the campfire
+        sprite.scale.set(40, 10, 1);
+        scene.add(sprite);
+        
+        // Fade out animation after 3 seconds
+        setTimeout(() => {
+          let opacity = 1;
+          const fadeInterval = setInterval(() => {
+            opacity -= 0.02;
+            if (opacity <= 0) {
+              opacity = 0;
+              clearInterval(fadeInterval);
+              scene.remove(sprite);
+              texture.dispose();
+              spriteMaterial.dispose();
+            }
+            spriteMaterial.opacity = opacity;
+          }, 50);
+        }, 3000);
+      });
+    }
+    
+    function showAction(actionKey, entity) {
+      currentAction = actionKey;
+      currentInteractable = entity;
+      isDialogOpen = true;
+      currentQuestionIndex = 0;
+      questionsCorrectFirstTry = []; // Reset first-try tracking
+      currentQuestionAttempts = 0; // Reset attempt counter
+      currentQuestionTimedOut = false;
+      
+      if (actionKey === 'fightWolf') {
+        currentQuestions = generateUniqueQuestions(generateWolfQuestion, 3);
+        mathBubbleLabel.textContent = "Fight Wolf!";
+        mathTimerBar.style.display = 'block';
+        mathQuestionCounter.style.display = 'block';
+      } else if (actionKey === 'fightCultist') {
+        currentQuestions = generateUniqueQuestions(generateCultistQuestion, 3);
+        mathBubbleLabel.textContent = "Fight Cultist!";
+        mathTimerBar.style.display = 'block';
+        mathQuestionCounter.style.display = 'block';
+      } else if (actionKey === 'chop') {
+        currentQuestions = generateUniqueQuestions(generateTreeQuestion, 3);
+        mathBubbleLabel.textContent = "Chop Tree";
+        mathTimerBar.style.display = 'none';
+        mathQuestionCounter.style.display = 'block';
+      } else if (actionKey === 'collectFuel') {
+        currentQuestions = [generateCoalOrMetalQuestion()];
+        mathBubbleLabel.textContent = "Collect Fuel";
+        mathTimerBar.style.display = 'none';
+        mathQuestionCounter.style.display = 'none';
+      } else if (actionKey === 'salvageFan') {
+        currentQuestions = [generateCoalOrMetalQuestion()];
+        mathBubbleLabel.textContent = "Salvage Fan";
+        mathTimerBar.style.display = 'none';
+        mathQuestionCounter.style.display = 'none';
+      }
+      
+      // Stop player movement
+      for (let key in keys) keys[key] = false;
+      
+      mathBubble.classList.add('active');
+      mathAnswerInput.value = '';
+      mathBubbleFeedback.textContent = '';
+      mathBubbleFeedback.classList.remove('good', 'bad');
+      
+      showCurrentQuestion();
+    }
+    
+    function showCurrentQuestion() {
+      const q = currentQuestions[currentQuestionIndex];
+      mathQuestion.textContent = `${q.equation} = ?`;
+      
+      if (currentQuestions.length > 1) {
+        mathQuestionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+      }
+      
+      mathAnswerInput.focus();
+      
+      // Reset flags and counter for new question
+      currentQuestionTimedOut = false;
+      currentQuestionAttempts = 0;
+      
+      // Start timer for wolf and cultist encounters
+      if (currentAction === 'fightWolf' || currentAction === 'fightCultist') {
+        startTimer();
+      }
+    }
+    
+    function startTimer(resume = false) {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      if (!resume) {
+        timeRemaining = 7000; // 7 seconds in ms
+        mathTimerFill.style.width = "100%";
+        mathTimerFill.classList.remove("danger");
+      }
+      
+      timerInterval = setInterval(() => {
+        timeRemaining -= 100;
+        const percentage = (timeRemaining / 7000) * 100;
+        mathTimerFill.style.width = `${percentage}%`;
+        
+        if (percentage < 30) {
+          mathTimerFill.classList.add("danger");
+        }
+        
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          
+          // Mark that this question timed out (counts as not first try)
+          currentQuestionTimedOut = true;
+          currentQuestionAttempts++; // Count timeout as an attempt
+          
+          // Time's up! Damage player health
+          damagePlayer(20);
+          
+          // Flash red screen for timeout
+          flashRedScreen();
+          
+          mathBubbleFeedback.textContent = "⏱ Time's up! -20% health";
+          mathBubbleFeedback.classList.add("bad");
+          
+          // Check if player died
+          if (playerHealth <= 0) {
+            setTimeout(() => {
+              // If died fighting cultist, remove all cultists and reset counter
+              if (currentAction === 'fightCultist') {
+                cultists.forEach(cultist => {
+                  if (cultist.mesh) {
+                    scene.remove(cultist.mesh);
+                  }
+                });
+                cultists = [];
+                cultistsDefeated = 0;
+                cultistRewardGiven = false;
+                alert("You died to cultists! All inventory lost and -2 diamonds.");
+              } else {
+                alert("You died! All inventory lost and -2 diamonds.");
+              }
+              
+              woodCount.textContent = "0";
+              meatCount.textContent = "0";
+              coalCount.textContent = "0";
+              scrapCount.textContent = "0";
+              
+              // Lose 2 diamonds on death (can't go below 0)
+              diamondsEarned = Math.max(0, diamondsEarned - 2);
+              dayDiamonds.textContent = `${diamondsEarned} 💎`;
+              
+              playerHealth = 100;
+              updateHealthBar();
+              hideBubble();
+            }, 1000);
+            return;
+          }
+          
+          // Stop the timer - no more damage, but player needs to solve it
+          setTimeout(() => {
+            mathBubbleFeedback.textContent = "";
+            mathAnswerInput.value = ""; // Clear the input
+            mathAnswerInput.focus(); // Refocus
+            // Don't restart timer - let them solve it without time pressure
+          }, 1000);
+        }
+      }, 100);
+    }
+    
+    function hideBubble() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      mathBubble.classList.remove('active');
+      isDialogOpen = false;
+      currentInteractable = null;
+      currentAction = '';
+      currentQuestions = [];
+      currentQuestionIndex = 0;
+      questionsCorrect = 0;
+    }
+    
+    function flashRedScreen() {
+      // Create red overlay
+      const flash = document.createElement('div');
+      flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(255, 0, 0, 0.4);
+        z-index: 9999;
+        pointer-events: none;
+        animation: fadeOut 0.5s ease-out;
+      `;
+      document.body.appendChild(flash);
+      
+      // Remove after animation
+      setTimeout(() => {
+        flash.remove();
+      }, 500);
+    }
+    
+    function handleSubmit() {
+      const userAnswer = parseInt(mathAnswerInput.value, 10);
+      const correctAnswer = currentQuestions[currentQuestionIndex].answer;
+      
+      // Stop timer immediately on any answer (correct or wrong)
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      if (userAnswer === correctAnswer) {
+        // Check if this was first try (no previous attempts and not timed out)
+        const isFirstTry = (currentQuestionAttempts === 0 && !currentQuestionTimedOut);
+        
+        // Record whether this question was answered correctly on first try
+        questionsCorrectFirstTry[currentQuestionIndex] = isFirstTry;
+        
+        // Provide appropriate feedback
+        if (isFirstTry) {
+          if (currentAction === 'fightWolf') {
+            mathBubbleFeedback.textContent = "✓ Correct! +1 meat";
+          } else if (currentAction === 'chop') {
+            mathBubbleFeedback.textContent = "✓ Correct! +1 wood";
+          } else {
+            mathBubbleFeedback.textContent = "✓ Correct!";
+          }
+        } else {
+          // Got it right but not on first try - no reward
+          if (currentAction === 'fightWolf') {
+            mathBubbleFeedback.textContent = "✓ Correct, but too late. No meat.";
+          } else if (currentAction === 'chop') {
+            mathBubbleFeedback.textContent = "✓ Correct, but too late. No wood.";
+          } else if (currentAction === 'collectFuel') {
+            mathBubbleFeedback.textContent = "✓ Correct, but too late. No fuel.";
+          } else if (currentAction === 'salvageFan') {
+            mathBubbleFeedback.textContent = "✓ Correct, but too late. No metal.";
+          }
+        }
+        
+        mathBubbleFeedback.classList.remove('bad');
+        mathBubbleFeedback.classList.add('good');
+      } else {
+        // Wrong answer - increment attempts and let them retry
+        currentQuestionAttempts++;
+        
+        // Damage health for wrong answers in wolf/cultist encounters
+        if (currentAction === 'fightWolf' || currentAction === 'fightCultist') {
+          damagePlayer(20);
+          
+          mathBubbleFeedback.textContent = `✗ Wrong! -20% health. Try again.`;
+          
+          // Check if player died
+          if (playerHealth <= 0) {
+            setTimeout(() => {
+              // If died fighting cultist, remove all cultists and reset counter
+              if (currentAction === 'fightCultist') {
+                cultists.forEach(cultist => {
+                  if (cultist.mesh) {
+                    scene.remove(cultist.mesh);
+                  }
+                });
+                cultists = [];
+                cultistsDefeated = 0;
+                cultistRewardGiven = false;
+                alert("You died to cultists! All inventory lost and -2 diamonds.");
+              } else {
+                alert("You died! All inventory lost and -2 diamonds.");
+              }
+              
+              woodCount.textContent = "0";
+              meatCount.textContent = "0";
+              coalCount.textContent = "0";
+              scrapCount.textContent = "0";
+              
+              // Lose 2 diamonds on death (can't go below 0)
+              diamondsEarned = Math.max(0, diamondsEarned - 2);
+              dayDiamonds.textContent = `${diamondsEarned} 💎`;
+              
+              playerHealth = 100;
+              updateHealthBar();
+              hideBubble();
+            }, 1000);
+            return;
+          }
+        } else {
+          mathBubbleFeedback.textContent = `✗ Wrong! Try again.`;
+        }
+        
+        // Flash red screen for wrong answer
+        flashRedScreen();
+        
+        mathBubbleFeedback.classList.remove('good');
+        mathBubbleFeedback.classList.add('bad');
+        mathAnswerInput.value = "";
+        mathAnswerInput.focus();
+        
+        // Don't advance to next question - let them retry
+        return;
+      }
+      
+      currentQuestionIndex++;
+      
+      if (currentQuestionIndex < currentQuestions.length) {
+        // More questions to go
+        setTimeout(() => {
+          mathBubbleFeedback.textContent = "";
+          mathAnswerInput.value = "";
+          showCurrentQuestion();
+        }, 800);
+      } else {
+        // All questions done
+        setTimeout(() => {
+          completeEncounter();
+          hideBubble();
+        }, 1000);
+      }
+    }
+    
+    function completeEncounter() {
+      const actionKey = currentAction;
+      
+      if (actionKey === 'chop') {
+        // Tree: get wood ONLY for questions answered correctly on first try
+        const wood = questionsCorrectFirstTry.filter(x => x === true).length;
+        const allThreeFirstTry = (questionsCorrectFirstTry.length === 3 && 
+                                   questionsCorrectFirstTry.every(x => x === true));
+        
+        if (wood > 0) {
+          woodCount.textContent = parseInt(woodCount.textContent, 10) + wood;
+        }
+        
+        if (allThreeFirstTry) {
+          // Bonus sapling (represented as extra wood) - only if ALL 3 were first try
+          woodCount.textContent = parseInt(woodCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = `✓ Perfect! +${wood} wood +1 sapling!`;
+        } else if (wood > 0) {
+          mathBubbleFeedback.textContent = `+${wood} wood`;
+        } else {
+          mathBubbleFeedback.textContent = "No wood - you needed to answer correctly on first try!";
+        }
+        
+        if (currentInteractable && currentInteractable.mesh) {
+          scene.remove(currentInteractable.mesh);
+          const index = entities.indexOf(currentInteractable);
+          if (index > -1) entities.splice(index, 1);
+        }
+      } else if (actionKey === 'fightCultist') {
+        // Cultist defeated - remove from scene
+        if (currentInteractable && currentInteractable.mesh) {
+          scene.remove(currentInteractable.mesh);
+          const index = cultists.indexOf(currentInteractable);
+          if (index > -1) cultists.splice(index, 1);
+        }
+        
+        cultistsDefeated++;
+        mathBubbleFeedback.textContent = `✓ Cultist defeated! (${cultistsDefeated}/3)`;
+        
+        // Check if all 3 cultists defeated (and reward not yet given)
+        if (cultistsDefeated === 3 && !cultistRewardGiven) {
+          cultistRewardGiven = true;
+          setTimeout(() => {
+            scrapCount.textContent = parseInt(scrapCount.textContent, 10) + 3;
+            showCultistVictoryNotification();
+          }, 1000);
+        }
+      } else if (actionKey === 'fightWolf') {
+        // Wolf: get meat ONLY for questions answered correctly on first try AND on time
+        const meat = questionsCorrectFirstTry.filter(x => x === true).length;
+        
+        if (meat > 0) {
+          meatCount.textContent = parseInt(meatCount.textContent, 10) + meat;
+        }
+        
+        if (meat === 3) {
+          mathBubbleFeedback.textContent = `✓ Wolf defeated! +${meat} meat`;
+        } else if (meat > 0) {
+          mathBubbleFeedback.textContent = `+${meat} meat`;
+        } else {
+          mathBubbleFeedback.textContent = "No meat - too slow or wrong answers!";
+        }
+        
+        if (currentInteractable && currentInteractable.mesh) {
+          scene.remove(currentInteractable.mesh);
+          const index = entities.indexOf(currentInteractable);
+          if (index > -1) entities.splice(index, 1);
+        }
+      } else if (actionKey === 'collectFuel') {
+        // Fuel: only get reward if correct on first try
+        const gotReward = questionsCorrectFirstTry[0] === true;
+        
+        if (gotReward) {
+          coalCount.textContent = parseInt(coalCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = "✓ Collected! +1 fuel";
+        } else {
+          mathBubbleFeedback.textContent = "No fuel - you needed to answer correctly on first try!";
+        }
+        
+        if (currentInteractable && currentInteractable.mesh) {
+          scene.remove(currentInteractable.mesh);
+          const index = entities.indexOf(currentInteractable);
+          if (index > -1) entities.splice(index, 1);
+        }
+      } else if (actionKey === 'salvageFan') {
+        // Fan: only get reward if correct on first try
+        const gotReward = questionsCorrectFirstTry[0] === true;
+        
+        if (gotReward) {
+          scrapCount.textContent = parseInt(scrapCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = "✓ Salvaged! +1 metal";
+        } else {
+          mathBubbleFeedback.textContent = "No metal - you needed to answer correctly on first try!";
+        }
+        
+        if (currentInteractable && currentInteractable.mesh) {
+          scene.remove(currentInteractable.mesh);
+          const index = entities.indexOf(currentInteractable);
+          if (index > -1) entities.splice(index, 1);
+        }
+      }
+    }
+    
+    // ============================================
+    // PROXIMITY DETECTION
+    // ============================================
+    
+    function checkProximity() {
+      if (isDialogOpen) return;
+      
+      // Check regular entities
+      for (const entity of entities) {
+        const dx = playerX - entity.x;
+        const dz = playerZ - entity.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        if (distance < interactionDistance) {
+          showAction(entity.action, entity);
+          return;
+        }
+      }
+      
+      // Check cultists
+      for (const cultist of cultists) {
+        const dx = playerX - cultist.x;
+        const dz = playerZ - cultist.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        if (distance < interactionDistance) {
+          showAction(cultist.action, cultist);
+          return;
+        }
+      }
+    }
+    
+    // ============================================
+    // CAMPFIRE HEALING
+    // ============================================
+    
+    function updateHealthBar() {
+      healthBar.style.width = `${playerHealth}%`;
+      
+      // Update health bar color based on percentage
+      healthBar.classList.remove('medium', 'low', 'critical');
+      if (playerHealth <= 25) {
+        healthBar.classList.add('critical');
+      } else if (playerHealth <= 50) {
+        healthBar.classList.add('low');
+      } else if (playerHealth <= 75) {
+        healthBar.classList.add('medium');
+      }
+    }
+    
+    function damagePlayer(amount) {
+      playerHealth = Math.max(0, playerHealth - amount);
+      updateHealthBar();
+    }
+    
+    function checkCampfireHealing() {
+      if (isPaused) return; // Don't heal when paused
+      
+      const dx = playerX - 0;
+      const dz = playerZ - 0;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      
+      if (distance < 3) {
+        isNearCampfire = true;
+        // Don't heal during cultist encounters
+        if (cultists.length === 0) {
+          playerHealth = Math.min(100, playerHealth + 0.25); // 50% slower (was 0.5)
+          updateHealthBar();
+        }
+      } else {
+        isNearCampfire = false;
+      }
+    }
+    
+    // ============================================
+    // FIRE SYSTEM
+    // ============================================
+    
+    function updateFire() {
+      const decayRate = FIRE_DECAY_RATES[currentFireLevel] || FIRE_DECAY_RATES[1];
+      fireStrength = Math.max(0, fireStrength - decayRate);
+      fireBar.style.width = `${fireStrength}%`;
+    }
+    
+    function checkFireLevelUp() {
+      if (fireStrength >= 100 && currentFireLevel < 4) {
+        levelUpFire();
+      }
+    }
+    
+    function levelUpFire() {
+      currentFireLevel++;
+      fireLevel.textContent = currentFireLevel;
+      // Level 1→2 starts at 50%, subsequent levels start at 25%
+      fireStrength = currentFireLevel === 2 ? 50 : 25;
+      fireBar.style.width = `${fireStrength}%`;
+      
+      // Expand the world size based on campfire circle radius (R = 7.5)
+      // Level 1: 3R = 22.5, Level 2: 6R = 45, Level 3: 8R = 60, Level 4: 10R = 75
+      const radiusMultipliers = [3, 6, 8, 10]; // For levels 1-4
+      const multiplier = radiusMultipliers[currentFireLevel - 1] || 10; // Default to 10R for level 5+
+      worldRadius = CAMPFIRE_CIRCLE_RADIUS * multiplier;
+      worldSize = worldRadius * 2;
+      
+      // Remove old ground
+      if (groundMesh) {
+        scene.remove(groundMesh);
+      }
+      
+      // Create new larger ground
+      groundMesh = createGround(worldRadius);
+      scene.add(groundMesh);
+      
+      // Expand the map with new entities
+      expandMap();
+      
+      // Show notification
+      showMapExpansionNotification();
+    }
+    
+    function expandMap() {
+      // Generate more entities with better spacing
+      const minDistance = 10; // Same spacing as initial generation
+      
+      function isTooClose(x, z) {
+        const campfireX = 0;
+        const campfireZ = 0;
+        
+        // Check distance from campfire
+        const distFromCampfire = Math.sqrt(x * x + z * z);
+        if (distFromCampfire < 15) return true;
+        
+        // Check distance from other entities
+        for (const entity of entities) {
+          const dx = x - entity.x;
+          const dz = z - entity.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < minDistance) return true;
+        }
+        
+        return false;
+      }
+      
+      function placeNewEntities(type, action, count) {
+        let placed = 0;
+        let attempts = 0;
+        
+        while (placed < count && attempts < count * 30) {
+          // Place entities anywhere in the expanded world (5-95%)
+          const x = (Math.random() - 0.5) * worldSize * 0.9;
+          const z = (Math.random() - 0.5) * worldSize * 0.9;
+          if (!isTooClose(x, z)) {
+            const entity = { type, action, x, z };
+            entities.push(entity);
+            
+            let mesh;
+            if (type === 'tree') {
+              mesh = createTree(x, z);
+            } else if (type === 'wolf') {
+              mesh = createWolf(x, z);
+            } else if (type === 'fuel') {
+              mesh = createFuelCanister(x, z);
+            } else if (type === 'fan') {
+              mesh = createBrokenFan(x, z);
+            }
+            
+            if (mesh) {
+              entity.mesh = mesh;
+              scene.add(mesh);
+            }
+            
+            placed++;
+          }
+          attempts++;
+        }
+      }
+      
+      // Add entities to maintain density
+      // Base counts per expansion (matching Level 1 ratios)
+      const baseTreeCount = 6;
+      const baseWolfCount = 3;
+      const baseFuelCount = 1;
+      const baseFanCount = 1;
+      
+      // Scale based on current fire level
+      const scaleFactor = currentFireLevel;
+      
+      placeNewEntities('tree', 'chop', baseTreeCount * scaleFactor);
+      placeNewEntities('wolf', 'fightWolf', baseWolfCount * scaleFactor);
+      placeNewEntities('fuel', 'collectFuel', baseFuelCount * scaleFactor);
+      placeNewEntities('fan', 'salvageFan', baseFanCount * scaleFactor);
+    }
+    
+    function showMapExpansionNotification() {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #ff7b00 0%, #ff5e00 100%);
+        color: white;
+        padding: 30px 50px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        border: 3px solid #fff;
+        text-align: center;
+      `;
+      notification.textContent = `🗺️ Map expanded to Fire Level ${currentFireLevel}! 🔥`;
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    // ============================================
+    // DAY/NIGHT CYCLE
+    // ============================================
+    
+    function setNightMode(night) {
+      isNight = night;
+      if (night) {
+        cycleIcon.textContent = "🌙";
+        scene.background = new THREE.Color(0x0a0a2e);
+        ambientLight.intensity = 0.2;
+        directionalLight.intensity = 0.3;
+      } else {
+        cycleIcon.textContent = "☀️";
+        scene.background = new THREE.Color(0x87ceeb);
+        ambientLight.intensity = 0.6;
+        directionalLight.intensity = 0.8;
+      }
+    }
+    
+    function updateDayNightCycle() {
+      cycleTimeRemaining--;
+      
+      const minutes = Math.floor(cycleTimeRemaining / 60);
+      const seconds = cycleTimeRemaining % 60;
+      cycleCountdown.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Show warning 20 seconds before night
+      if (!isNight && cycleTimeRemaining === 20 && !nightWarningShown) {
+        nightWarningShown = true;
+        showNightWarning();
+      }
+      
+      // Spawn cultists 10 seconds after night begins
+      if (isNight && cycleTimeRemaining === NIGHT_DURATION - 10 && !cultistsSpawned) {
+        cultistsSpawned = true;
+        spawnCultists();
+      }
+      
+      if (cycleTimeRemaining <= 0) {
+        if (isNight) {
+          // Night ended, new day
+          
+          // Award one diamond at the end of each night
+          diamondsEarned++;
+          console.log('Night ended. Diamond awarded! New total:', diamondsEarned);
+          
+          currentDay++;
+          dayCounter.textContent = currentDay;
+          dayDiamonds.textContent = `${diamondsEarned} 💎`;
+          cycleTimeRemaining = DAY_DURATION;
+          setNightMode(false);
+          nightWarningShown = false;
+          cultistsSpawned = false;
+        } else {
+          // Day ended, night begins
+          cycleTimeRemaining = NIGHT_DURATION;
+          setNightMode(true);
+        }
+      }
+    }
+    
+    function showNightWarning() {
+      // Create overlay div (same style as welcome message)
+      const warning = document.createElement('div');
+      warning.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 0;
+        width: 700px;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 48px;
+        font-weight: 700;
+        font-family: "Kalam", "Comic Sans MS", cursive;
+        z-index: 1000;
+        text-align: center;
+        pointer-events: none;
+        opacity: 1;
+        line-height: 1.4;
+      `;
+      warning.innerHTML = 'YOU WILL BE<br>ATTACKED TONIGHT';
+      document.body.appendChild(warning);
+      
+      // Fade out after 2 seconds
+      setTimeout(() => {
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+          opacity -= 0.02;
+          if (opacity <= 0) {
+            opacity = 0;
+            clearInterval(fadeInterval);
+            warning.remove();
+          }
+          warning.style.opacity = opacity;
+        }, 50);
+      }, 2000);
+    }
+    
+    function spawnCultists() {
+      // Spawn 3 cultists around the campfire at different positions
+      const spawnRadius = 20; // Spawn them at a distance from campfire
+      const angles = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]; // Evenly spaced
+      
+      angles.forEach(angle => {
+        const x = Math.cos(angle) * spawnRadius;
+        const z = Math.sin(angle) * spawnRadius;
+        
+        const cultist = {
+          type: 'cultist',
+          action: 'fightCultist',
+          x: x,
+          z: z,
+          targetX: x,
+          targetZ: z,
+          mesh: createCultist(x, z)
+        };
+        
+        cultists.push(cultist);
+        scene.add(cultist.mesh);
+      });
+    }
+    
+    function showCultistVictoryNotification() {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #7cd992 0%, #5fb377 100%);
+        color: white;
+        padding: 30px 50px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        border: 3px solid #fff;
+        text-align: center;
+      `;
+      notification.textContent = '🎉 All cultists defeated! +3 metal 🎉';
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    function updateCultists() {
+      if (isPaused || isDialogOpen) return;
+      
+      const cultistSpeed = 0.03; // Slow movement speed
+      
+      cultists.forEach(cultist => {
+        // Move towards player
+        const dx = playerX - cultist.x;
+        const dz = playerZ - cultist.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        if (distance > 0.5) { // Don't get too close, let proximity detection handle combat
+          const moveX = (dx / distance) * cultistSpeed;
+          const moveZ = (dz / distance) * cultistSpeed;
+          
+          cultist.x += moveX;
+          cultist.z += moveZ;
+          
+          // Update mesh position
+          if (cultist.mesh) {
+            cultist.mesh.position.x = cultist.x;
+            cultist.mesh.position.z = cultist.z;
+            
+            // Rotate to face player
+            const angle = Math.atan2(dx, dz);
+            cultist.mesh.rotation.y = angle;
+          }
+        }
+      });
+      
+      // Check if any cultist is close enough to trigger combat
+      checkProximity();
+    }
+    
+    function updateHunger() {
+      playerHunger = Math.max(0, playerHunger - (100 / 430)); // ~7 minutes to empty (50% slower)
+      hungerBar.style.width = `${playerHunger}%`;
+      
+      // Update hunger bar appearance based on level
+      hungerBar.classList.remove('low', 'critical');
+      if (playerHunger <= 0) {
+        hungerBar.classList.add('critical'); // Flashing red when starving
+        hungerBarContainer.classList.add('hunger-starving'); // Add glowing border
+      } else {
+        hungerBarContainer.classList.remove('hunger-starving'); // Remove glowing border
+        if (playerHunger < 25) {
+          hungerBar.classList.add('low'); // Red when below 25%
+        }
+      }
+      
+      // Check if player is starving
+      if (playerHunger <= 0 && !isStarving) {
+        // Just became starving
+        isStarving = true;
+        startStarvation();
+      } else if (playerHunger > 0 && isStarving) {
+        // No longer starving
+        isStarving = false;
+        hungerBarContainer.classList.remove('hunger-starving'); // Make sure border is removed
+        if (starvationTimer) {
+          clearInterval(starvationTimer);
+          starvationTimer = null;
+        }
+      }
+    }
+    
+    function startStarvation() {
+      // Immediate damage
+      damageFromStarvation();
+      
+      // Continue damaging every 15 seconds
+      starvationTimer = setInterval(() => {
+        damageFromStarvation();
+      }, 15000); // 15 seconds
+    }
+    
+    function damageFromStarvation() {
+      // Flash red
+      flashRedScreen();
+      
+      // Show "You're Hungry!" message
+      showHungerWarning();
+      
+      // Damage health
+      damagePlayer(20);
+      
+      // Check if player died
+      if (playerHealth <= 0) {
+        if (starvationTimer) {
+          clearInterval(starvationTimer);
+          starvationTimer = null;
+        }
+        isStarving = false;
+        
+        // Clear inventory
+        setTimeout(() => {
+          alert("You starved to death! All inventory lost and -2 diamonds.");
+          woodCount.textContent = "0";
+          meatCount.textContent = "0";
+          coalCount.textContent = "0";
+          scrapCount.textContent = "0";
+          
+          // Lose 2 diamonds on death (can't go below 0)
+          diamondsEarned = Math.max(0, diamondsEarned - 2);
+          dayDiamonds.textContent = `${diamondsEarned} 💎`;
+          
+          playerHealth = 100;
+          updateHealthBar();
+          playerHunger = 100;
+          hungerBar.style.width = "100%";
+          hungerBarContainer.classList.remove('hunger-starving');
+        }, 500);
+      }
+    }
+    
+    function showHungerWarning() {
+      // Create warning message
+      const warning = document.createElement('div');
+      warning.className = 'hunger-warning';
+      warning.textContent = "You're Hungry!";
+      document.body.appendChild(warning);
+      
+      // Remove after animation (1 second)
+      setTimeout(() => {
+        warning.remove();
+      }, 1000);
+    }
+    
+    // ============================================
+    // MINIMAP
+    // ============================================
+    
+    function updateMinimap() {
+      // Clear canvas
+      minimapCtx.fillStyle = '#333';
+      minimapCtx.fillRect(0, 0, 150, 150);
+      
+      // Mark explored areas based on world coordinates (in 2-unit chunks)
+      const chunkSize = 2; // World units per chunk
+      const chunkX = Math.floor(playerX / chunkSize);
+      const chunkZ = Math.floor(playerZ / chunkSize);
+      const visChunks = Math.ceil(VISIBILITY_RADIUS / chunkSize);
+      
+      for (let dx = -visChunks; dx <= visChunks; dx++) {
+        for (let dz = -visChunks; dz <= visChunks; dz++) {
+          const cx = chunkX + dx;
+          const cz = chunkZ + dz;
+          const key = `${cx},${cz}`;
+          if (!exploredMap.has(key)) {
+            exploredMap.add(key);
+          }
+        }
+      }
+      
+      // Draw explored areas - scale them to current world size
+      minimapCtx.fillStyle = '#2d5016';
+      exploredMap.forEach(key => {
+        const [cx, cz] = key.split(',').map(Number);
+        // Convert chunk coordinates to world coordinates
+        const worldX = cx * chunkSize;
+        const worldZ = cz * chunkSize;
+        
+        // Convert world coordinates to minimap pixels (relative to current world size)
+        const minimapX = ((worldX / worldSize) + 0.5) * 150;
+        const minimapZ = ((worldZ / worldSize) + 0.5) * 150;
+        const chunkPixelSize = (chunkSize / worldSize) * 150;
+        
+        // Only draw if within current minimap bounds
+        if (minimapX >= 0 && minimapX < 150 && minimapZ >= 0 && minimapZ < 150) {
+          minimapCtx.fillRect(minimapX, minimapZ, Math.max(1, chunkPixelSize), Math.max(1, chunkPixelSize));
+        }
+      });
+      
+      // Draw campfire (fixed at center)
+      const campfireX = 75;
+      const campfireY = 75;
+      minimapCtx.fillStyle = '#ff4500';
+      minimapCtx.beginPath();
+      minimapCtx.arc(campfireX, campfireY, 3, 0, Math.PI * 2);
+      minimapCtx.fill();
+      
+      // Draw player
+      const playerMinimapX = ((playerX / worldSize) + 0.5) * 150;
+      const playerMinimapY = ((playerZ / worldSize) + 0.5) * 150;
+      
+      // Yellow square face
+      minimapCtx.fillStyle = '#FFD700';
+      minimapCtx.fillRect(playerMinimapX - 4, playerMinimapY - 4, 8, 8);
+      
+      // Eyes
+      minimapCtx.fillStyle = '#000';
+      minimapCtx.fillRect(playerMinimapX - 2, playerMinimapY - 2, 1, 1);
+      minimapCtx.fillRect(playerMinimapX + 1, playerMinimapY - 2, 1, 1);
+      
+      // Mouth
+      minimapCtx.fillRect(playerMinimapX - 1, playerMinimapY + 1, 2, 1);
+    }
+    
+    // ============================================
+    // INVENTORY ACTIONS
+    // ============================================
+    
+    woodItem.addEventListener('click', () => {
+      const currentWood = parseInt(woodCount.textContent, 10);
+      if (currentWood > 0 && isNearCampfire) {
+        woodCount.textContent = currentWood - 1;
+        // Level 1: 8.5% per wood, Level 2+: 3% per wood (about 65% less effective)
+        const woodValue = currentFireLevel === 1 ? 8.5 : 3;
+        fireStrength = Math.min(100, fireStrength + woodValue);
+        fireBar.style.width = `${fireStrength}%`;
+        checkFireLevelUp();
+        woodItem.classList.add('pulse');
+        setTimeout(() => woodItem.classList.remove('pulse'), 300);
+      } else if (currentWood > 0 && !isNearCampfire) {
+        alert("You must be near the campfire to add wood!");
+      }
+    });
+    
+    meatItem.addEventListener('click', () => {
+      const currentMeat = parseInt(meatCount.textContent, 10);
+      if (currentMeat > 0) {
+        meatCount.textContent = currentMeat - 1;
+        playerHunger = Math.min(100, playerHunger + 10);
+        hungerBar.style.width = `${playerHunger}%`;
+        
+        // Update hunger bar appearance
+        hungerBar.classList.remove('low', 'critical');
+        if (playerHunger <= 0) {
+          hungerBar.classList.add('critical');
+        } else if (playerHunger < 25) {
+          hungerBar.classList.add('low');
+        }
+        
+        meatItem.classList.add('pulse');
+        setTimeout(() => meatItem.classList.remove('pulse'), 300);
+      }
+    });
+    
+    fuelItem.addEventListener('click', () => {
+      const currentFuel = parseInt(coalCount.textContent, 10);
+      if (currentFuel > 0 && isNearCampfire) {
+        coalCount.textContent = currentFuel - 1;
+        // Level 1: 25.5% per fuel (3x wood), Level 2+: 9% per fuel (3x the level 2+ wood, ~65% less effective)
+        const fuelValue = currentFireLevel === 1 ? 25.5 : 9;
+        fireStrength = Math.min(100, fireStrength + fuelValue);
+        fireBar.style.width = `${fireStrength}%`;
+        checkFireLevelUp();
+        fuelItem.classList.add('pulse');
+        setTimeout(() => fuelItem.classList.remove('pulse'), 300);
+      } else if (currentFuel > 0 && !isNearCampfire) {
+        alert("You must be near the campfire to add fuel!");
+      }
+    });
+    
+    // ============================================
+    // INPUT HANDLERS
+    // ============================================
+    
+    // Prevent swipe-to-go-back navigation (more aggressive)
+    let touchStartX = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+      const touchCurrentX = e.touches[0].clientX;
+      const deltaX = touchCurrentX - touchStartX;
+      
+      // Prevent swipe from left edge (back gesture)
+      if (touchStartX < 50 && deltaX > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      
+      // Prevent any horizontal swipe
+      if (Math.abs(deltaX) > 10) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, { passive: false });
+    
+    // Prevent touchend from triggering navigation
+    document.addEventListener('touchend', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+    
+    // Also prevent browser back navigation
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', () => {
+      history.pushState(null, null, location.href);
+    });
+    
+    window.addEventListener('keydown', (e) => {
+      if (isPaused) return; // Ignore all key presses when paused
+      
+      if (isDialogOpen) {
+        // Redirect keypresses to input if not focused
+        if (document.activeElement !== mathAnswerInput) {
+          if (/^[0-9]$/.test(e.key) || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
+            mathAnswerInput.focus();
+          }
+        }
+        if (e.key === 'Enter') {
+          handleSubmit();
+        }
+        return;
+      }
+      
+      if (e.key in keys) {
+        keys[e.key] = true;
+      }
+    });
+    
+    window.addEventListener('keyup', (e) => {
+      if (isPaused) return; // Ignore key releases when paused
+      
+      if (e.key in keys) {
+        keys[e.key] = false;
+      }
+    });
+    
+    mathSubmitButton.addEventListener('click', handleSubmit);
+    
+    mathAnswerInput.addEventListener('blur', () => {
+      if (isDialogOpen) {
+        setTimeout(() => mathAnswerInput.focus(), 10);
+      }
+    });
+    
+    // Pause/Play functionality
+    pauseButton.addEventListener('click', () => {
+      isPaused = true;
+      pauseOverlay.classList.add('active');
+      
+      // Pause wolf timer if active
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    });
+    
+    playButton.addEventListener('click', () => {
+      isPaused = false;
+      pauseOverlay.classList.remove('active');
+      
+      // Resume wolf/cultist timer if in a timed encounter and not already timed out
+      if (isDialogOpen && (currentAction === 'fightWolf' || currentAction === 'fightCultist') && !currentQuestionTimedOut && timeRemaining > 0) {
+        startTimer(true); // Pass true to resume with current time
+      }
+    });
+    
+    // ============================================
+    // GAME LOOP
+    // ============================================
+    
+    function updatePlayer() {
+      if (isPaused) return; // Don't update if paused
+      
+      if (!isDialogOpen) {
+        let moved = false;
+        
+        if (keys.w || keys.ArrowUp) {
+          playerZ -= playerSpeed;
+          moved = true;
+        }
+        if (keys.s || keys.ArrowDown) {
+          playerZ += playerSpeed;
+          moved = true;
+        }
+        if (keys.a || keys.ArrowLeft) {
+          playerX -= playerSpeed;
+          moved = true;
+        }
+        if (keys.d || keys.ArrowRight) {
+          playerX += playerSpeed;
+          moved = true;
+        }
+        
+        // Clamp player to world boundaries
+        const maxCoord = worldSize / 2 - 2;
+        playerX = Math.max(-maxCoord, Math.min(maxCoord, playerX));
+        playerZ = Math.max(-maxCoord, Math.min(maxCoord, playerZ));
+        
+        if (moved) {
+          checkProximity();
+        }
+      }
+      
+      // Update player mesh position
+      if (playerMesh) {
+        playerMesh.position.x = playerX;
+        playerMesh.position.z = playerZ;
+      }
+      
+      // Update camera to follow player
+      camera.position.x = playerX;
+      camera.position.z = playerZ + 30;
+      camera.position.y = 30;
+      camera.lookAt(playerX, 0, playerZ);
+      
+      checkCampfireHealing();
+      updateCultists(); // Update cultist AI
+      updateMinimap();
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePlayer();
+      renderer.render(scene, camera);
+    }
+    
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
+    function init() {
+      // Create ground
+      groundMesh = createGround(worldRadius);
+      scene.add(groundMesh);
+      
+      // Create campfire at origin
+      campfireMesh = createCampfire(0, 0);
+      scene.add(campfireMesh);
+      
+      // Create player
+      playerMesh = createPlayer(playerX, playerZ);
+      scene.add(playerMesh);
+      
+      // Generate entities
+      generateEntities();
+      
+      // Show welcome message
+      showWelcomeMessage();
+      
+      // Start day/night cycle
+      setNightMode(false);
+      setInterval(() => {
+        if (!isPaused) { // Only update timers if not paused
+          updateDayNightCycle();
+          updateHunger();
+          updateFire();
+        }
+      }, 1000);
+      
+      // Initial minimap
+      updateMinimap();
+      
+      // Start animation loop
+      animate();
+    }
+    
+    init();
+  </script>
+
+</body>
+</html>

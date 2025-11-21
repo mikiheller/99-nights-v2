@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>99 Nights Math Forest – Mock</title>
+  <style>
+    :root {
+      --bg-deep: #02040a;
+      --bg-panel: #0c1420;
+      --bg-panel-soft: #151d2b;
+      --accent-fire: #ff7b00;
+      --accent-fire-soft: #ffb347;
+      --accent-ok: #7cd992;
+      --accent-bad: #ff5e5e;
+      --text-main: #f6f3ea;
+      --text-muted: #c4c4c4;
+      --border-soft: rgba(255, 255, 255, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #101529 0%, #02040a 60%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+    }
+
+    .app {
+      width: 1200px;
+      max-width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      background: radial-gradient(circle at top, #18243b 0%, #050814 50%, #02040a 100%);
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.02);
+      padding: 20px;
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Left side - Game view */
+    
+    .game-container {
+      flex: 0 0 auto;
+      width: 700px;
+      height: 700px;
+    }
+
+    /* Right side - Info panel */
+    
+    .info-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .info-section {
+      background: linear-gradient(180deg, #0c1420 0%, #060a16 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .info-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* Day and Time combined */
+    .day-time-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .day-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .day-counter {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text-main);
+    }
+
+    /* Day/Night cycle */
+    .cycle-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cycle-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cycle-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      background: radial-gradient(circle at 30% 20%, #ffe9a3 0%, #ffb347 45%, #ff7b00 100%);
+      box-shadow: 0 0 20px rgba(255, 153, 0, 0.7);
+    }
+
+    .cycle-icon.night {
+      background: radial-gradient(circle at 30% 20%, #eef4ff 0%, #b3c2ff 45%, #7f8bd6 100%);
+      box-shadow: 0 0 20px rgba(180, 199, 255, 0.7);
+    }
+
+    .cycle-countdown {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Inventory grid */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .inv-item {
+      background: radial-gradient(circle at top, #1b2436 0%, #050814 80%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .inv-item[style*="cursor: pointer"]:hover {
+      background: radial-gradient(circle at top, #2a3548 0%, #0a1020 80%);
+      border-color: var(--accent-fire);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 123, 0, 0.3);
+    }
+
+    .inv-item-icon {
+      font-size: 24px;
+    }
+
+    .inv-item-count {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Health and Hunger bars */
+    .stat-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat-bar-container:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+    }
+
+    .stat-bar-wrapper {
+      flex: 1;
+    }
+
+    .stat-bar-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stat-bar-fill {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #ff5e5e, #b91c1c);
+      transition: width 0.3s ease;
+    }
+
+    .stat-bar-fill.health {
+      background: linear-gradient(90deg, #ff5e5e, #b91c1c);
+    }
+
+    .stat-bar-fill.hunger {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .stat-bar-fill.fire {
+      background: linear-gradient(90deg, #ff7b00, #ff5e00, #ff3d00);
+    }
+
+    /* Mini-map */
+    .minimap-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #505050;
+    }
+
+    .minimap-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .minimap-player {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #ff7b00;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 0 4px rgba(255, 123, 0, 1);
+      z-index: 10;
+    }
+
+    /* Game area */
+
+    .game-shell {
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      padding: 10px;
+      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.7) 60%);
+      border: 1px solid var(--border-soft);
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #163425 0%, #071414 45%, #02040a 100%);
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    #gameArea.day {
+      background: radial-gradient(circle at center, #335c3f 0%, #204031 45%, #0c1620 100%);
+    }
+
+    #gameWorld {
+      position: absolute;
+      width: 500%;
+      height: 500%;
+      transition: transform 0.1s ease-out;
+    }
+
+    /* Ground texture */
+
+    .ground-noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 0),
+        radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+      background-size: 40px 40px, 22px 22px;
+      background-position: 0 0, 20px 18px;
+    }
+
+    /* Light overlay */
+
+    .light-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+      background:
+        radial-gradient(circle at 50% 55%, rgba(255, 179, 71, 0.75) 0%, rgba(255, 179, 71, 0.3) 12%, transparent 40%),
+        radial-gradient(circle at 53% 60%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.1) 6%, transparent 18%);
+    }
+
+    #gameArea.day .light-overlay {
+      opacity: 0.4;
+    }
+
+    .dark-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 0%, rgba(1, 3, 10, 0.75) 60%, rgba(0, 0, 0, 0.98) 100%);
+      pointer-events: none;
+      opacity: 0.95;
+      transition: opacity 0.25s ease;
+    }
+
+    #gameArea.day .dark-overlay {
+      opacity: 0;
+    }
+
+    /* Entities */
+
+    .entity {
+      position: absolute;
+      transform: translate(-50%, -50%);
+    }
+
+    .player {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .player-face {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffd93d 0%, #f9c116 100%);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 217, 61, 0.6);
+      position: relative;
+      border: 3px solid #000000;
+    }
+
+    .player-eye {
+      position: absolute;
+      top: 28%;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: #2c2c2c;
+    }
+
+    .player-eye.left {
+      left: 26%;
+    }
+
+    .player-eye.right {
+      right: 26%;
+    }
+    
+    .player-face::after {
+      content: '';
+      position: absolute;
+      bottom: 28%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 7px;
+      border: 2px solid #2c2c2c;
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+    }
+
+    .player-body {
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #1b2942, #0c1620);
+    }
+
+    .player-light {
+      position: absolute;
+      inset: -44%;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 181, 101, 0.45) 0%, transparent 70%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .campfire {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 50% 70%, #5b3b23 0%, #2e2015 60%, #100b08 100%);
+      box-shadow:
+        0 0 18px rgba(0, 0, 0, 0.7),
+        0 0 30px rgba(255, 140, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(0, 0, 0, 0.8);
+    }
+
+    .campfire-flame {
+      width: 22px;
+      height: 32px;
+      background:
+        radial-gradient(circle at 30% 10%, #fff6d1 0%, #ffe9a3 25%, transparent 46%),
+        radial-gradient(circle at 60% 30%, rgba(255, 255, 255, 0.7) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, #ff7b00 0%, #b91c1c 75%, transparent 80%);
+      border-radius: 40% 60% 50% 50%;
+      box-shadow:
+        0 0 12px rgba(255, 179, 71, 0.9),
+        0 0 24px rgba(255, 153, 0, 0.8);
+      animation: flicker 0.6s infinite alternate ease-in-out;
+    }
+
+    .campfire-log {
+      position: absolute;
+      width: 28px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4a301b, #2d190e);
+      bottom: 6px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .campfire-log:nth-child(2) {
+      transform: rotate(25deg);
+    }
+
+    .campfire-log:nth-child(3) {
+      transform: rotate(-25deg);
+    }
+
+    .tree {
+      width: 64px;
+      height: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      cursor: pointer;
+    }
+
+    .tree-top {
+      width: 60px;
+      height: 52px;
+      border-radius: 60% 60% 70% 70%;
+      background: radial-gradient(circle at 30% 20%, #4caf50 0%, #255b2f 70%);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.7);
+    }
+
+    #gameArea.night .tree-top {
+      background: radial-gradient(circle at 30% 20%, #2f5c33 0%, #123121 70%);
+    }
+
+    .tree-trunk {
+      width: 16px;
+      height: 26px;
+      border-radius: 999px 999px 4px 4px;
+      background: linear-gradient(180deg, #6b3f26, #3d2213);
+      margin-top: -6px;
+      box-shadow: 0 6px 6px rgba(0, 0, 0, 0.7);
+    }
+
+
+    .wolf {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: radial-gradient(circle at 30% 20%, #d1d5db 0%, #4b5563 50%, #111827 100%);
+      box-shadow: 0 0 16px rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .wolf-face {
+      width: 30px;
+      height: 26px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #9ca3af, #4b5563);
+      position: relative;
+    }
+
+    .wolf-eye {
+      position: absolute;
+      top: 30%;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #f9fafb;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    }
+
+    .wolf-eye.left {
+      left: 20%;
+    }
+
+    .wolf-eye.right {
+      right: 20%;
+    }
+
+    .wolf-nose {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 6px;
+      border-radius: 999px;
+      background: #111827;
+    }
+
+    .deer {
+      width: 64px;
+      height: 90px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      opacity: 0.9;
+    }
+
+    .deer-body {
+      width: 32px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #b8865f 0%, #8b6847 50%, #5c4633 100%);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .deer-head {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50% 50% 40% 40%;
+      background: linear-gradient(180deg, #c9976d, #9b7456);
+    }
+
+    .deer-eye {
+      position: absolute;
+      top: 35%;
+      width: 7px;
+      height: 8px;
+      border-radius: 999px;
+      background: #2a1810;
+      box-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .deer-eye.left {
+      left: 4px;
+    }
+
+    .deer-eye.right {
+      right: 4px;
+    }
+
+    .deer-snout {
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4a352a;
+    }
+
+    .deer-antlers {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      width: 44px;
+      height: 28px;
+      transform: translateX(-50%);
+    }
+
+    .deer-antler {
+      position: absolute;
+      width: 3px;
+      height: 18px;
+      background: #8b7355;
+      border-radius: 2px;
+    }
+
+    .deer-antler.left {
+      left: 8px;
+      transform: rotate(-20deg);
+    }
+
+    .deer-antler.right {
+      right: 8px;
+      transform: rotate(20deg);
+    }
+
+    .deer-antler::before,
+    .deer-antler::after {
+      content: "";
+      position: absolute;
+      width: 2px;
+      height: 8px;
+      background: #8b7355;
+      border-radius: 2px;
+    }
+
+    .deer-antler::before {
+      top: 4px;
+      left: -3px;
+      transform: rotate(-35deg);
+    }
+
+    .deer-antler::after {
+      top: 8px;
+      right: -3px;
+      transform: rotate(35deg);
+    }
+
+    .deer-legs {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      padding: 0 4px;
+    }
+
+    .deer-leg {
+      width: 6px;
+      height: 16px;
+      background: linear-gradient(180deg, #8b6847, #5c4633);
+      border-radius: 999px;
+    }
+
+    #gameArea.day .deer {
+      opacity: 0.6;
+    }
+
+    #gameArea.night .deer {
+      opacity: 0.95;
+    }
+
+    .coal {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .fuel-canister {
+      width: 44px;
+      height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .fuel-body {
+      width: 36px;
+      height: 44px;
+      background: linear-gradient(135deg, #e63946 0%, #a4161a 50%, #660708 100%);
+      border-radius: 6px;
+      position: relative;
+      border: 2px solid #3d0000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .fuel-handle {
+      width: 28px;
+      height: 8px;
+      background: #2a2a2a;
+      border-radius: 4px 4px 0 0;
+      margin-bottom: -2px;
+      border: 1px solid #1a1a1a;
+    }
+
+    .fuel-grip {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: #1a1a1a;
+      border-radius: 2px;
+    }
+
+    .fuel-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      font-weight: bold;
+      color: #000;
+      opacity: 0.3;
+    }
+
+
+    .microwave {
+      width: 58px;
+      height: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .microwave-box {
+      width: 52px;
+      height: 48px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #8b9197 0%, #4a5158 50%, #2a2f35 100%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+      position: relative;
+      border: 2px solid #1a1d20;
+    }
+
+    .microwave-door {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 30px;
+      height: 28px;
+      border-radius: 3px;
+      background: radial-gradient(circle at center, #3a4147 0%, #1a1d20 80%);
+      border: 1px solid #0a0c0e;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.7);
+    }
+
+    .microwave-buttons {
+      position: absolute;
+      top: 8px;
+      right: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .microwave-button {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #5a6268;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+    }
+
+    .microwave-crack {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, #ff5e5e 30%, #8b0000 50%, #ff5e5e 70%, transparent 100%);
+      top: 50%;
+      transform: translateY(-50%) rotate(-15deg);
+      opacity: 0.7;
+    }
+
+
+    /* Math bubble - popup dialog */
+
+    .math-bubble {
+      position: absolute;
+      min-width: 280px;
+      max-width: 320px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #1a2538, #101727);
+      border: 2px solid rgba(255, 179, 71, 0.3);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(0, 0, 0, 0.6);
+      font-size: 12px;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+    }
+
+    .math-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .math-equation {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .math-equation span {
+      color: #ffe9a3;
+    }
+
+    .math-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .math-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .math-input input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 18px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .math-submit {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      background: radial-gradient(circle at 30% 10%, #ffe9a3 0%, #ffb347 40%, #ff7b00 100%);
+      color: #261308;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      box-shadow:
+        0 0 10px rgba(255, 179, 71, 0.9),
+        0 6px 12px rgba(0, 0, 0, 0.7);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+    }
+
+    .math-submit:hover {
+      filter: brightness(1.05);
+      box-shadow:
+        0 0 12px rgba(255, 179, 71, 1),
+        0 8px 16px rgba(0, 0, 0, 0.8);
+    }
+
+    .math-submit:active {
+      transform: translateY(1px);
+      box-shadow:
+        0 0 8px rgba(255, 179, 71, 0.7),
+        0 4px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .math-feedback {
+      font-size: 11px;
+      color: var(--accent-ok);
+      text-align: center;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    .math-feedback.bad {
+      color: var(--accent-bad);
+    }
+
+    .math-timer-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .math-timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-ok), var(--accent-fire));
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .math-timer-fill.danger {
+      background: linear-gradient(90deg, var(--accent-bad), #ff0000);
+    }
+
+    .math-question-counter {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    @keyframes flicker {
+      from {
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+      }
+      to {
+        transform: translateY(-1px) scale(1.05);
+        filter: brightness(1.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Left side: Game view -->
+    <div class="game-container">
+      <main class="game-shell">
+      <div id="gameArea" class="night">
+        <!-- Game World Container (3x larger than viewport) -->
+        <div id="gameWorld">
+          <!-- Ground texture -->
+          <div class="ground-noise"></div>
+
+          <!-- Entities -->
+          <div class="entity campfire" id="campfire" style="left:50%; top:50%;">
+            <div class="campfire-log"></div>
+            <div class="campfire-log"></div>
+            <div class="campfire-log"></div>
+            <div class="campfire-flame"></div>
+          </div>
+
+          <div class="entity player" style="left:50%; top:50%;">
+            <div class="player-face">
+              <div class="player-eye left"></div>
+              <div class="player-eye right"></div>
+            </div>
+          </div>
+
+          <!-- Entities will be generated dynamically by JavaScript -->
+
+          <!-- Lighting -->
+          <div class="light-overlay"></div>
+          <div class="dark-overlay"></div>
+        </div>
+
+        <!-- Math bubble (popup dialog - outside world so it doesn't scroll) -->
+        <div class="math-bubble" id="mathBubble" style="left:50%; top:50%; display:none;">
+          <div class="math-label" id="mathBubbleLabel">Chop Tree</div>
+          <div class="math-timer-bar" id="mathTimerBar" style="display:none;">
+            <div class="math-timer-fill" id="mathTimerFill"></div>
+          </div>
+          <div class="math-equation" id="mathBubbleEquation">
+            <span>9 × 4</span> = ?
+          </div>
+          <div class="math-question-counter" id="mathQuestionCounter" style="display:none;"></div>
+          <div class="math-input-row">
+            <div class="math-input">
+              <input id="mathAnswerInput" type="text" placeholder="Type your answer..." autofocus />
+            </div>
+            <button class="math-submit" id="mathSubmitButton">Submit</button>
+          </div>
+          <div class="math-feedback" id="mathBubbleFeedback"></div>
+        </div>
+      </div>
+      </main>
+    </div>
+
+    <!-- Right side: Info panel -->
+    <div class="info-panel">
+      <!-- Day Counter & Time -->
+      <div class="info-section">
+        <div class="day-time-row">
+          <div class="day-section">
+            <div class="info-section-title">Day</div>
+            <div class="day-counter" id="dayCounter">Day 1</div>
+          </div>
+          <div class="cycle-section">
+            <div class="info-section-title">Time</div>
+            <div class="cycle-display">
+              <div class="cycle-icon" id="cycleIcon">☀️</div>
+              <div class="cycle-countdown" id="cycleCountdown">3:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="info-section">
+        <div class="info-section-title">Inventory</div>
+        <div class="inventory-grid">
+          <div class="inv-item" id="woodItem" style="cursor: pointer;" title="Click to add to fire (+3%)">
+            <div class="inv-item-icon">🪵</div>
+            <div class="inv-item-count" id="woodCount">0</div>
+          </div>
+          <div class="inv-item" id="meatItem" style="cursor: pointer;" title="Click to eat">
+            <div class="inv-item-icon">🍖</div>
+            <div class="inv-item-count" id="meatCount">0</div>
+          </div>
+          <div class="inv-item" id="fuelItem" style="cursor: pointer;" title="Click to add to fire (+8%)">
+            <div class="inv-item-icon">⛽</div>
+            <div class="inv-item-count" id="coalCount">0</div>
+          </div>
+          <div class="inv-item">
+            <div class="inv-item-icon">🔩</div>
+            <div class="inv-item-count" id="scrapCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health & Hunger -->
+      <div class="info-section">
+        <div class="info-section-title">Status</div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Health</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill health" id="healthBar" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">🍖</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Hunger</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill hunger" id="hungerBar" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-bar-container">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar-label">Fire (Level <span id="fireLevel">1</span>)</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill fire" id="fireBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini-map -->
+      <div class="info-section">
+        <div class="info-section-title">Map</div>
+        <div class="minimap-container">
+          <canvas id="minimapCanvas" class="minimap-canvas" width="150" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const gameWorld = document.getElementById("gameWorld");
+    const campfire = document.getElementById("campfire");
+
+    const mathBubble = document.getElementById("mathBubble");
+    const mathBubbleLabel = document.getElementById("mathBubbleLabel");
+    const mathBubbleEquation = document.getElementById("mathBubbleEquation");
+    const mathBubbleFeedback = document.getElementById("mathBubbleFeedback");
+    const mathAnswerInput = document.getElementById("mathAnswerInput");
+    const mathSubmitButton = document.getElementById("mathSubmitButton");
+    const mathTimerBar = document.getElementById("mathTimerBar");
+    const mathTimerFill = document.getElementById("mathTimerFill");
+    const mathQuestionCounter = document.getElementById("mathQuestionCounter");
+
+    const dayCounter = document.getElementById("dayCounter");
+    const cycleIcon = document.getElementById("cycleIcon");
+    const cycleCountdown = document.getElementById("cycleCountdown");
+    const woodCount = document.getElementById("woodCount");
+    const woodItem = document.getElementById("woodItem");
+    const meatCount = document.getElementById("meatCount");
+    const meatItem = document.getElementById("meatItem");
+    const coalCount = document.getElementById("coalCount");
+    const fuelItem = document.getElementById("fuelItem");
+    const scrapCount = document.getElementById("scrapCount");
+    const healthBar = document.getElementById("healthBar");
+    const hungerBar = document.getElementById("hungerBar");
+    const fireBar = document.getElementById("fireBar");
+    const fireLevel = document.getElementById("fireLevel");
+    const minimapCanvas = document.getElementById("minimapCanvas");
+    const minimapCtx = minimapCanvas.getContext("2d");
+
+    let isNight = false;
+    let currentAction = null;
+    let currentInteractable = null;
+    let isDialogOpen = false;
+    
+    // Multi-question system
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let questionsCorrect = 0;
+    let timerInterval = null;
+    let timeRemaining = 0;
+    
+    // Player health and hunger
+    let playerHealth = 100;
+    let playerHunger = 100;
+    
+    // Fire system
+    let fireStrength = 0; // 0-100%
+    let currentFireLevel = 1;
+    let isNearCampfire = false;
+    const FIRE_DECAY_RATES = {
+      1: 100 / 300,   // Level 1: 5 minutes (300 seconds)
+      2: 100 / 480,   // Level 2: 8 minutes
+      3: 100 / 720,   // Level 3: 12 minutes
+      4: 100 / 900,   // Level 4: 15 minutes
+      5: 100 / 1200   // Level 5: 20 minutes
+    };
+
+    // Day/Night cycle
+    let currentDay = 1;
+    const DAY_DURATION = 180; // 3 minutes in seconds
+    const NIGHT_DURATION = 90; // 1.5 minutes in seconds
+    let cycleTimeRemaining = DAY_DURATION;
+
+    // Player position (as percentage of the WORLD, not viewport)
+    // Starting near the center of the 5x world
+    let playerX = 50;
+    let playerY = 50;
+    const playerSpeed = 0.25; // percentage per frame (adjusted for 5x world)
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    const interactionDistance = 1.5; // percentage distance to trigger interaction
+    
+    // Camera/viewport tracking
+    let worldScale = 5; // World is 5x larger than viewport (grows with fire level)
+    const viewportSize = 100 / worldScale; // 20% of world is visible at once
+
+    // Minimap tracking
+    const exploredMap = new Set();
+    const MINIMAP_SIZE = 100; // Grid size for tracking exploration
+    const VISIBILITY_RADIUS = 15; // Percentage of world player can see around them
+
+    // Question generation functions
+    function generateWolfQuestion() {
+      // Wolf: both numbers 0-5
+      const a = Math.floor(Math.random() * 6);
+      const b = Math.floor(Math.random() * 6);
+      return {
+        equation: `${a} + ${b}`,
+        answer: String(a + b)
+      };
+    }
+
+    function generateTreeQuestion() {
+      // Tree: one number is 0-3,9,10; other is 6-10
+      const first = Math.random() < 0.75 ? Math.floor(Math.random() * 4) : (Math.random() < 0.5 ? 9 : 10);
+      const second = 6 + Math.floor(Math.random() * 5);
+      return {
+        equation: `${first} + ${second}`,
+        answer: String(first + second)
+      };
+    }
+
+    function generateCoalOrMetalQuestion() {
+      // Coal/Metal: both numbers 5-10
+      const a = 5 + Math.floor(Math.random() * 6);
+      const b = 5 + Math.floor(Math.random() * 6);
+      return {
+        equation: `${a} + ${b}`,
+        answer: String(a + b)
+      };
+    }
+
+    // Generate multiple unique questions (no consecutive duplicates)
+    function generateUniqueQuestions(generator, count) {
+      const questions = [];
+      let lastEquation = null;
+      
+      for (let i = 0; i < count; i++) {
+        let question;
+        let attempts = 0;
+        
+        // Keep generating until we get a different question (max 50 attempts to avoid infinite loop)
+        do {
+          question = generator();
+          attempts++;
+        } while (question.equation === lastEquation && attempts < 50);
+        
+        questions.push(question);
+        lastEquation = question.equation;
+      }
+      
+      return questions;
+    }
+
+    // Entity generation with spacing rules
+    function generateEntities() {
+      const entities = [];
+      const minDistance = 5; // minimum distance between entities (percentage)
+      const campfireX = 50;
+      const campfireY = 50;
+      const minCampfireDistance = 8; // keep entities away from starting area
+      
+      function isTooClose(x, y) {
+        // Check distance from campfire
+        const distToCampfire = Math.sqrt(Math.pow(x - campfireX, 2) + Math.pow(y - campfireY, 2));
+        if (distToCampfire < minCampfireDistance) return true;
+        
+        // Check distance from other entities
+        for (const entity of entities) {
+          const dist = Math.sqrt(Math.pow(x - entity.x, 2) + Math.pow(y - entity.y, 2));
+          if (dist < minDistance) return true;
+        }
+        return false;
+      }
+      
+      function placeEntity(type, action, count) {
+        let placed = 0;
+        let attempts = 0;
+        while (placed < count && attempts < count * 20) {
+          const x = 10 + Math.random() * 80; // 10-90%
+          const y = 10 + Math.random() * 80;
+          if (!isTooClose(x, y)) {
+            entities.push({ type, action, x, y });
+            placed++;
+          }
+          attempts++;
+        }
+      }
+      
+      // Place entities: trees(30), wolves(15), fuel(12), microwaves(8)
+      placeEntity('tree', 'chop', 30);
+      placeEntity('wolf', 'fightWolf', 15);
+      placeEntity('fuel', 'collectFuel', 12);
+      placeEntity('microwave', 'salvageMicrowave', 8);
+      
+      // Create HTML elements for each entity
+      entities.forEach(entity => {
+        let html = '';
+        if (entity.type === 'tree') {
+          html = `<div class="entity tree" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+          </div>`;
+        } else if (entity.type === 'wolf') {
+          html = `<div class="entity wolf" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="wolf-face">
+              <div class="wolf-eye left"></div>
+              <div class="wolf-eye right"></div>
+              <div class="wolf-nose"></div>
+            </div>
+          </div>`;
+        } else if (entity.type === 'fuel') {
+          html = `<div class="entity fuel-canister" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="fuel-handle"></div>
+            <div class="fuel-body">
+              <div class="fuel-grip"></div>
+            </div>
+          </div>`;
+        } else if (entity.type === 'microwave') {
+          html = `<div class="entity microwave" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="microwave-box">
+              <div class="microwave-door"></div>
+              <div class="microwave-buttons">
+                <div class="microwave-button"></div>
+                <div class="microwave-button"></div>
+                <div class="microwave-button"></div>
+              </div>
+              <div class="microwave-crack"></div>
+            </div>
+          </div>`;
+        }
+        
+        // Insert before the lighting overlay
+        const lightingDiv = document.querySelector('.light-overlay');
+        lightingDiv.insertAdjacentHTML('beforebegin', html);
+      });
+    }
+
+    function setNightMode(night) {
+      isNight = night;
+      if (isNight) {
+        gameArea.classList.remove("day");
+        gameArea.classList.add("night");
+        cycleIcon.textContent = "🌙";
+        cycleIcon.classList.add("night");
+      } else {
+        gameArea.classList.remove("night");
+        gameArea.classList.add("day");
+        cycleIcon.textContent = "☀️";
+        cycleIcon.classList.remove("night");
+      }
+    }
+
+    function updateDayNightCycle() {
+      cycleTimeRemaining--;
+      
+      if (cycleTimeRemaining <= 0) {
+        if (isNight) {
+          // Night ended, new day begins
+          currentDay++;
+          dayCounter.textContent = `Day ${currentDay}`;
+          setNightMode(false);
+          cycleTimeRemaining = DAY_DURATION;
+        } else {
+          // Day ended, night begins
+          setNightMode(true);
+          cycleTimeRemaining = NIGHT_DURATION;
+        }
+      }
+      
+      // Update countdown display
+      const minutes = Math.floor(cycleTimeRemaining / 60);
+      const seconds = cycleTimeRemaining % 60;
+      cycleCountdown.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateHunger() {
+      // Lose all hunger after 5 minutes (300 seconds)
+      // That's 100 / 300 = 0.333...% per second
+      playerHunger = Math.max(0, playerHunger - (100 / 300));
+      hungerBar.style.width = `${playerHunger}%`;
+    }
+
+    function checkFireLevelUp() {
+      // Check if fire reached 100% - level up!
+      if (fireStrength >= 100 && currentFireLevel < 5) {
+        levelUpFire();
+      }
+    }
+
+    function updateFire() {
+      // Fire decays over time based on level
+      const decayRate = FIRE_DECAY_RATES[currentFireLevel] || FIRE_DECAY_RATES[1];
+      fireStrength = Math.max(0, fireStrength - decayRate);
+      fireBar.style.width = `${fireStrength}%`;
+    }
+
+    function levelUpFire() {
+      currentFireLevel++;
+      fireLevel.textContent = currentFireLevel;
+      fireStrength = 0; // Reset for next level
+      fireBar.style.width = "0%";
+      
+      // Expand the world size
+      worldScale = 5 + (currentFireLevel - 1) * 2; // Level 1=5x, Level 2=7x, Level 3=9x, Level 4=11x, Level 5=13x
+      const newSize = worldScale * 100;
+      gameWorld.style.width = `${newSize}%`;
+      gameWorld.style.height = `${newSize}%`;
+      
+      // Expand the map with new entities
+      expandMap();
+      
+      // Show notification
+      showMapExpansionNotification();
+    }
+
+    function expandMap() {
+      // Generate more entities
+      const entitiesToAdd = [];
+      const minDistance = 5;
+      
+      function isTooClose(x, y) {
+        const campfireX = 50;
+        const campfireY = 50;
+        const distToCampfire = Math.sqrt(Math.pow(x - campfireX, 2) + Math.pow(y - campfireY, 2));
+        if (distToCampfire < 8) return true;
+        
+        // Check against existing entities
+        const allEntities = [
+          ...document.querySelectorAll('.tree'),
+          ...document.querySelectorAll('.wolf'),
+          ...document.querySelectorAll('.fuel-canister'),
+          ...document.querySelectorAll('.microwave')
+        ];
+        
+        for (const entity of allEntities) {
+          const pos = getEntityPosition(entity);
+          const dist = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+          if (dist < minDistance) return true;
+        }
+        
+        return false;
+      }
+      
+      function placeNewEntities(type, action, count) {
+        let placed = 0;
+        let attempts = 0;
+        while (placed < count && attempts < count * 30) {
+          // Place entities anywhere in the expanded world (5-95%)
+          const x = 5 + Math.random() * 90;
+          const y = 5 + Math.random() * 90;
+          if (!isTooClose(x, y)) {
+            entitiesToAdd.push({ type, action, x, y });
+            placed++;
+          }
+          attempts++;
+        }
+      }
+      
+      // Add more entities based on level - scale with world size
+      const entityMultiplier = Math.floor(currentFireLevel / 2) + 1; // More entities at higher levels
+      placeNewEntities('tree', 'chop', 15 * entityMultiplier);
+      placeNewEntities('wolf', 'fightWolf', 5 * entityMultiplier);
+      placeNewEntities('fuel', 'collectFuel', 3 * entityMultiplier);
+      placeNewEntities('microwave', 'salvageMicrowave', 2 * entityMultiplier);
+      
+      // Create HTML for new entities
+      entitiesToAdd.forEach(entity => {
+        let html = '';
+        if (entity.type === 'tree') {
+          html = `<div class="entity tree" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+          </div>`;
+        } else if (entity.type === 'wolf') {
+          html = `<div class="entity wolf" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="wolf-face">
+              <div class="wolf-eye left"></div>
+              <div class="wolf-eye right"></div>
+              <div class="wolf-nose"></div>
+            </div>
+          </div>`;
+        } else if (entity.type === 'fuel') {
+          html = `<div class="entity fuel-canister" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="fuel-handle"></div>
+            <div class="fuel-body">
+              <div class="fuel-grip"></div>
+            </div>
+          </div>`;
+        } else if (entity.type === 'microwave') {
+          html = `<div class="entity microwave" style="left:${entity.x}%; top:${entity.y}%;" data-action="${entity.action}">
+            <div class="microwave-box">
+              <div class="microwave-door"></div>
+              <div class="microwave-buttons">
+                <div class="microwave-button"></div>
+                <div class="microwave-button"></div>
+                <div class="microwave-button"></div>
+              </div>
+              <div class="microwave-crack"></div>
+            </div>
+          </div>`;
+        }
+        
+        const lightingDiv = document.querySelector('.light-overlay');
+        lightingDiv.insertAdjacentHTML('beforebegin', html);
+      });
+    }
+
+    function showMapExpansionNotification() {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #ff7b00 0%, #ff5e00 100%);
+        color: white;
+        padding: 30px 50px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        border: 3px solid #fff;
+        text-align: center;
+      `;
+      const worldSizeText = worldScale === 7 ? '7x' : worldScale === 9 ? '9x' : worldScale === 11 ? '11x' : worldScale === 13 ? '13x' : `${worldScale}x`;
+      notification.textContent = `🗺️ MAP EXPANDED TO ${worldSizeText}! Fire Level ${currentFireLevel} 🔥`;
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Update day/night cycle, hunger, and fire every second
+    setInterval(() => {
+      updateDayNightCycle();
+      updateHunger();
+      updateFire();
+    }, 1000);
+
+    function updateMinimap() {
+      // Track all visible areas around player (not just where they walked)
+      const visibilityRadiusInGrid = (VISIBILITY_RADIUS / 100) * MINIMAP_SIZE;
+      const centerGridX = (playerX / 100) * MINIMAP_SIZE;
+      const centerGridY = (playerY / 100) * MINIMAP_SIZE;
+      
+      // Mark all tiles within visibility radius
+      for (let dx = -visibilityRadiusInGrid; dx <= visibilityRadiusInGrid; dx++) {
+        for (let dy = -visibilityRadiusInGrid; dy <= visibilityRadiusInGrid; dy++) {
+          // Check if within circular radius
+          if (dx * dx + dy * dy <= visibilityRadiusInGrid * visibilityRadiusInGrid) {
+            const gridX = Math.floor(centerGridX + dx);
+            const gridY = Math.floor(centerGridY + dy);
+            if (gridX >= 0 && gridX < MINIMAP_SIZE && gridY >= 0 && gridY < MINIMAP_SIZE) {
+              const key = `${gridX},${gridY}`;
+              exploredMap.add(key);
+            }
+          }
+        }
+      }
+      
+      // Clear canvas
+      minimapCtx.clearRect(0, 0, 150, 150);
+      
+      // Draw gray background (unexplored)
+      minimapCtx.fillStyle = "#808080";
+      minimapCtx.beginPath();
+      minimapCtx.arc(75, 75, 75, 0, Math.PI * 2);
+      minimapCtx.fill();
+      
+      // Draw explored areas (green)
+      minimapCtx.fillStyle = "#4ade80";
+      for (const coords of exploredMap) {
+        const [x, y] = coords.split(',').map(Number);
+        const pixelX = (x / MINIMAP_SIZE) * 150;
+        const pixelY = (y / MINIMAP_SIZE) * 150;
+        minimapCtx.fillRect(pixelX, pixelY, 150 / MINIMAP_SIZE + 1, 150 / MINIMAP_SIZE + 1);
+      }
+      
+      // Draw campfire location (fixed at center of world - 50%, 50%)
+      const campfirePixelX = (50 / 100) * 150; // 50% of world = 75px on minimap
+      const campfirePixelY = (50 / 100) * 150;
+      
+      // Campfire outer glow
+      minimapCtx.fillStyle = "rgba(255, 123, 0, 0.3)";
+      minimapCtx.beginPath();
+      minimapCtx.arc(campfirePixelX, campfirePixelY, 8, 0, Math.PI * 2);
+      minimapCtx.fill();
+      
+      // Campfire dot
+      minimapCtx.fillStyle = "#ff7b00";
+      minimapCtx.beginPath();
+      minimapCtx.arc(campfirePixelX, campfirePixelY, 5, 0, Math.PI * 2);
+      minimapCtx.fill();
+      
+      // Draw player location (moves with player)
+      const playerPixelX = (playerX / 100) * 150;
+      const playerPixelY = (playerY / 100) * 150;
+      
+      // Player face (yellow square with rounded corners)
+      const faceSize = 10;
+      minimapCtx.fillStyle = "#ffd93d";
+      minimapCtx.strokeStyle = "#2c2c2c";
+      minimapCtx.lineWidth = 1;
+      
+      // Draw rounded square
+      minimapCtx.beginPath();
+      minimapCtx.roundRect(playerPixelX - faceSize/2, playerPixelY - faceSize/2, faceSize, faceSize, 2);
+      minimapCtx.fill();
+      minimapCtx.stroke();
+      
+      // Draw eyes (two small dots)
+      minimapCtx.fillStyle = "#2c2c2c";
+      minimapCtx.beginPath();
+      minimapCtx.arc(playerPixelX - 2.5, playerPixelY - 1.5, 0.8, 0, Math.PI * 2);
+      minimapCtx.fill();
+      minimapCtx.beginPath();
+      minimapCtx.arc(playerPixelX + 2.5, playerPixelY - 1.5, 0.8, 0, Math.PI * 2);
+      minimapCtx.fill();
+      
+      // Draw smile (small arc)
+      minimapCtx.strokeStyle = "#2c2c2c";
+      minimapCtx.lineWidth = 0.8;
+      minimapCtx.beginPath();
+      minimapCtx.arc(playerPixelX, playerPixelY + 1, 2.5, 0.2, Math.PI - 0.2);
+      minimapCtx.stroke();
+    }
+
+    function showAction(actionKey, targetEl) {
+      if (isDialogOpen) return;
+      
+      currentAction = actionKey;
+      currentInteractable = targetEl;
+      isDialogOpen = true;
+      currentQuestionIndex = 0;
+      questionsCorrect = 0;
+
+      // Stop all character movement
+      keys.w = false;
+      keys.s = false;
+      keys.a = false;
+      keys.d = false;
+      keys.ArrowUp = false;
+      keys.ArrowDown = false;
+      keys.ArrowLeft = false;
+      keys.ArrowRight = false;
+
+      // Generate questions based on action type
+      if (actionKey === 'fightWolf') {
+        mathBubbleLabel.textContent = "Fight Wolf!";
+        currentQuestions = generateUniqueQuestions(generateWolfQuestion, 3);
+        mathTimerBar.style.display = "block";
+        mathQuestionCounter.style.display = "block";
+      } else if (actionKey === 'chop') {
+        mathBubbleLabel.textContent = "Chop Tree";
+        currentQuestions = generateUniqueQuestions(generateTreeQuestion, 3);
+        mathTimerBar.style.display = "none";
+        mathQuestionCounter.style.display = "block";
+      } else if (actionKey === 'collectFuel') {
+        mathBubbleLabel.textContent = "Collect Fuel";
+        currentQuestions = [generateCoalOrMetalQuestion()];
+        mathTimerBar.style.display = "none";
+        mathQuestionCounter.style.display = "none";
+      } else if (actionKey === 'salvageMicrowave') {
+        mathBubbleLabel.textContent = "Salvage Microwave";
+        currentQuestions = [generateCoalOrMetalQuestion()];
+        mathTimerBar.style.display = "none";
+        mathQuestionCounter.style.display = "none";
+      }
+
+      showCurrentQuestion();
+      mathBubble.style.display = "block";
+    }
+
+    function showCurrentQuestion() {
+      const question = currentQuestions[currentQuestionIndex];
+      mathBubbleEquation.innerHTML = `<span>${question.equation}</span> = ?`;
+      mathBubbleFeedback.textContent = "";
+      mathBubbleFeedback.classList.remove("bad");
+      mathAnswerInput.value = "";
+      
+      // Update counter if multiple questions
+      if (currentQuestions.length > 1) {
+        mathQuestionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+      }
+      
+      // Start timer for wolf encounters
+      if (currentAction === 'fightWolf') {
+        startTimer();
+      }
+      
+      setTimeout(() => mathAnswerInput.focus(), 50);
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timeRemaining = 3000; // 3 seconds in ms
+      mathTimerFill.style.width = "100%";
+      mathTimerFill.classList.remove("danger");
+      
+      timerInterval = setInterval(() => {
+        timeRemaining -= 100;
+        const percentage = (timeRemaining / 3000) * 100;
+        mathTimerFill.style.width = `${percentage}%`;
+        
+        if (percentage < 30) {
+          mathTimerFill.classList.add("danger");
+        }
+        
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          // Time's up! Damage player health
+          playerHealth = Math.max(0, playerHealth - 20);
+          healthBar.style.width = `${playerHealth}%`;
+          
+          mathBubbleFeedback.textContent = "⏱ Time's up! -20% health";
+          mathBubbleFeedback.classList.add("bad");
+          
+          // Check if player died
+          if (playerHealth <= 0) {
+            setTimeout(() => {
+              alert("You died! All inventory lost.");
+              woodCount.textContent = "0";
+              meatCount.textContent = "0";
+              coalCount.textContent = "0";
+              scrapCount.textContent = "0";
+              playerHealth = 100;
+              healthBar.style.width = "100%";
+              hideBubble();
+            }, 1000);
+            return;
+          }
+          
+          // Stop the timer - no more damage, but player needs to solve it
+          setTimeout(() => {
+            mathBubbleFeedback.textContent = "";
+            mathAnswerInput.value = ""; // Clear the input
+            mathAnswerInput.focus(); // Refocus
+            // Don't restart timer - let them solve it without time pressure
+          }, 1000);
+        }
+      }, 100);
+    }
+
+    function hideBubble() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      mathBubble.style.display = "none";
+      mathTimerBar.style.display = "none";
+      mathQuestionCounter.style.display = "none";
+      isDialogOpen = false;
+      currentAction = null;
+      currentInteractable = null;
+      currentQuestions = [];
+      currentQuestionIndex = 0;
+      questionsCorrect = 0;
+    }
+
+    function getDistance(x1, y1, x2, y2) {
+      return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    function getEntityPosition(el) {
+      const left = parseFloat(el.style.left);
+      const top = parseFloat(el.style.top);
+      return { x: left, y: top };
+    }
+
+    function checkProximity() {
+      if (isDialogOpen) return;
+
+      const interactables = [
+        ...document.querySelectorAll('.tree'),
+        ...document.querySelectorAll('.wolf'),
+        ...document.querySelectorAll('.fuel-canister'),
+        ...document.querySelectorAll('.microwave')
+      ];
+
+      for (const el of interactables) {
+        const pos = getEntityPosition(el);
+        const distance = getDistance(playerX, playerY, pos.x, pos.y);
+
+        if (distance < interactionDistance) {
+          const actionKey = el.dataset.action;
+          if (actionKey) {
+            showAction(actionKey, el);
+            return;
+          }
+        }
+      }
+    }
+
+    function checkCampfireHealing() {
+      // Heal player if near campfire and track proximity
+      const campfirePos = getEntityPosition(campfire);
+      const distance = getDistance(playerX, playerY, campfirePos.x, campfirePos.y);
+      
+      isNearCampfire = distance < interactionDistance * 1.5;
+      
+      if (isNearCampfire && playerHealth < 100) {
+        playerHealth = Math.min(100, playerHealth + 0.5); // Heal gradually
+        healthBar.style.width = `${playerHealth}%`;
+      }
+    }
+
+    function updateCamera() {
+      // Calculate the camera position to center on player
+      // The world is 5x size (500%), so we need to translate it
+      // Player is at playerX%, playerY% in world coordinates
+      // We want the player to be centered in the viewport
+      
+      // Calculate offset needed to center player
+      // We want to move the world so the player appears in the center of the viewport
+      const offsetX = -(playerX - (100 / worldScale) / 2);
+      const offsetY = -(playerY - (100 / worldScale) / 2);
+      
+      // Clamp the camera so we don't show beyond world edges
+      const minX = -(100 - 100 / worldScale);
+      const maxX = 0;
+      const minY = -(100 - 100 / worldScale);
+      const maxY = 0;
+      
+      const clampedX = Math.max(minX, Math.min(maxX, offsetX));
+      const clampedY = Math.max(minY, Math.min(maxY, offsetY));
+      
+      gameWorld.style.transform = `translate(${clampedX}%, ${clampedY}%)`;
+    }
+
+
+
+    function handleSubmit() {
+      if (!currentAction || currentQuestionIndex >= currentQuestions.length) return;
+      
+      const question = currentQuestions[currentQuestionIndex];
+      const value = mathAnswerInput.value.trim();
+      const correct = value === question.answer;
+
+      if (correct) {
+        // Stop timer if it's running
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        
+        mathBubbleFeedback.textContent = "✓ Correct!";
+        mathBubbleFeedback.classList.remove("bad");
+        questionsCorrect++;
+        
+        // Move to next question or complete
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex < currentQuestions.length) {
+          // More questions to go
+          setTimeout(() => {
+            showCurrentQuestion();
+          }, 500);
+        } else {
+          // All questions completed - give rewards
+          completeEncounter();
+        }
+      } else {
+        mathBubbleFeedback.textContent = "✗ Try again!";
+        mathBubbleFeedback.classList.add("bad");
+        mathAnswerInput.value = ""; // Clear wrong answer
+        mathAnswerInput.focus(); // Keep focus
+      }
+    }
+
+    function completeEncounter() {
+      const actionKey = currentAction;
+      
+      if (actionKey === 'chop') {
+        // Tree: get wood for correct answers + bonus sapling if all 3 correct
+        const wood = questionsCorrect;
+        woodCount.textContent = parseInt(woodCount.textContent, 10) + wood;
+        
+        if (questionsCorrect === 3) {
+          // Bonus sapling (represented as extra wood)
+          woodCount.textContent = parseInt(woodCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = `✓ Perfect! +${wood} wood +1 sapling!`;
+        } else {
+          mathBubbleFeedback.textContent = `+${wood} wood`;
+        }
+        
+        if (currentInteractable) {
+          currentInteractable.remove();
+        }
+      } else if (actionKey === 'fightWolf') {
+        // Wolf: get meat for correct answers (like trees, no bonus)
+        const meat = questionsCorrect;
+        meatCount.textContent = parseInt(meatCount.textContent, 10) + meat;
+        
+        if (questionsCorrect === 3) {
+          mathBubbleFeedback.textContent = `✓ Wolf defeated! +${meat} meat`;
+        } else {
+          mathBubbleFeedback.textContent = `+${meat} meat`;
+        }
+        
+        if (currentInteractable) {
+          currentInteractable.remove();
+        }
+      } else if (actionKey === 'collectFuel') {
+        // Fuel: only get reward if correct
+        if (questionsCorrect > 0) {
+          coalCount.textContent = parseInt(coalCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = "✓ Collected! +1 fuel";
+        } else {
+          mathBubbleFeedback.textContent = "✗ Wrong answer! No fuel.";
+        }
+        
+        if (currentInteractable) {
+          currentInteractable.remove();
+        }
+      } else if (actionKey === 'salvageMicrowave') {
+        // Microwave: only get reward if correct
+        if (questionsCorrect > 0) {
+          scrapCount.textContent = parseInt(scrapCount.textContent, 10) + 1;
+          mathBubbleFeedback.textContent = "✓ Salvaged! +1 metal";
+        } else {
+          mathBubbleFeedback.textContent = "✗ Wrong answer! No metal.";
+        }
+        
+        if (currentInteractable) {
+          currentInteractable.remove();
+        }
+      }
+      
+      setTimeout(hideBubble, 1200);
+    }
+
+    mathSubmitButton.addEventListener("click", handleSubmit);
+    mathAnswerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleSubmit();
+      }
+    });
+
+    // Keep focus locked on input while dialog is open
+    mathAnswerInput.addEventListener("blur", () => {
+      if (isDialogOpen) {
+        setTimeout(() => mathAnswerInput.focus(), 0);
+      }
+    });
+
+    // Capture all keypresses and redirect to input when dialog is open
+    window.addEventListener("keydown", (e) => {
+      if (isDialogOpen && e.target !== mathAnswerInput) {
+        // If it's a number, letter, or backspace, focus the input
+        if (e.key.length === 1 || e.key === "Backspace") {
+          mathAnswerInput.focus();
+          // Let the key naturally go to the input (don't prevent default)
+        }
+      }
+    });
+
+    // Add wood to fire
+    woodItem.addEventListener("click", () => {
+      const currentWood = parseInt(woodCount.textContent, 10);
+      if (currentWood > 0 && isNearCampfire) {
+        // Consume 1 wood
+        woodCount.textContent = currentWood - 1;
+        
+        // Add 3% to fire
+        fireStrength = Math.min(100, fireStrength + 3);
+        fireBar.style.width = `${fireStrength}%`;
+        
+        // Check if we should level up
+        checkFireLevelUp();
+        
+        // Visual feedback
+        woodItem.style.transform = "scale(1.2)";
+        setTimeout(() => {
+          woodItem.style.transform = "";
+        }, 200);
+      } else if (currentWood > 0 && !isNearCampfire) {
+        alert("You must be near the campfire to add wood!");
+      }
+    });
+
+    // Add fuel to fire
+    fuelItem.addEventListener("click", () => {
+      const currentFuel = parseInt(coalCount.textContent, 10);
+      if (currentFuel > 0 && isNearCampfire) {
+        // Consume 1 fuel
+        coalCount.textContent = currentFuel - 1;
+        
+        // Add 8% to fire
+        fireStrength = Math.min(100, fireStrength + 8);
+        fireBar.style.width = `${fireStrength}%`;
+        
+        // Check if we should level up
+        checkFireLevelUp();
+        
+        // Visual feedback
+        fuelItem.style.transform = "scale(1.2)";
+        setTimeout(() => {
+          fuelItem.style.transform = "";
+        }, 200);
+      } else if (currentFuel > 0 && !isNearCampfire) {
+        alert("You must be near the campfire to add fuel!");
+      }
+    });
+
+    // Eat meat to restore hunger
+    meatItem.addEventListener("click", () => {
+      const currentMeat = parseInt(meatCount.textContent, 10);
+      if (currentMeat > 0) {
+        // Consume 1 meat
+        meatCount.textContent = currentMeat - 1;
+        
+        // Restore 10% hunger
+        playerHunger = Math.min(100, playerHunger + 10);
+        hungerBar.style.width = `${playerHunger}%`;
+        
+        // Visual feedback
+        meatItem.style.transform = "scale(1.2)";
+        setTimeout(() => {
+          meatItem.style.transform = "";
+        }, 200);
+      }
+    });
+
+    // Keyboard controls for WASD and Arrow keys movement
+    window.addEventListener("keydown", (e) => {
+      // Don't capture keys if typing in input or dialog is open
+      if (e.target.tagName === 'INPUT' || isDialogOpen) return;
+      
+      const key = e.key.toLowerCase();
+      if (key === "w" || key === "a" || key === "s" || key === "d") {
+        keys[key] = true;
+        e.preventDefault();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        keys[e.key] = true;
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      // Always clear keys on keyup, even if dialog is open
+      const key = e.key.toLowerCase();
+      if (key === "w" || key === "a" || key === "s" || key === "d") {
+        keys[key] = false;
+        e.preventDefault();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        keys[e.key] = false;
+        e.preventDefault();
+      }
+    });
+
+    // Game loop for player movement
+    function updatePlayer() {
+      let moved = false;
+
+      // Only allow movement if dialog is not open
+      if (!isDialogOpen) {
+        // WASD controls
+        if (keys.w || keys.ArrowUp) {
+          playerY -= playerSpeed;
+          moved = true;
+        }
+        if (keys.s || keys.ArrowDown) {
+          playerY += playerSpeed;
+          moved = true;
+        }
+        if (keys.a || keys.ArrowLeft) {
+          playerX -= playerSpeed;
+          moved = true;
+        }
+        if (keys.d || keys.ArrowRight) {
+          playerX += playerSpeed;
+          moved = true;
+        }
+
+        // Keep player within world bounds (0-100% of the larger world)
+        playerX = Math.max(2, Math.min(98, playerX));
+        playerY = Math.max(2, Math.min(98, playerY));
+
+        if (moved) {
+          const playerEl = document.querySelector(".player");
+          playerEl.style.left = `${playerX}%`;
+          playerEl.style.top = `${playerY}%`;
+          
+          // Update camera to follow player
+          updateCamera();
+          
+          // Check for nearby interactables
+          checkProximity();
+        }
+        
+        // Check for campfire healing (always, not just when moving)
+        checkCampfireHealing();
+        
+        // Always update minimap (tracks visibility, not just movement)
+        updateMinimap();
+      }
+
+      requestAnimationFrame(updatePlayer);
+    }
+
+    // Generate entities randomly
+    generateEntities();
+
+    // Initialize camera position and minimap before starting game loop
+    updateCamera();
+    updateMinimap();
+
+    // Start the game loop
+    updatePlayer();
+
+    // Start in day mode
+    setNightMode(false);
+  </script>
+</body>
+</html>
