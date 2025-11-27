@@ -1073,7 +1073,7 @@
                   <span class="inv-dropdown-icon">⛽</span>
                   <span class="inv-dropdown-name">Fuel</span>
                 </div>
-                <span class="inv-dropdown-count" id="coalCount">30</span>
+                <span class="inv-dropdown-count" id="coalCount">0</span>
               </div>
             </div>
           </div>
@@ -1104,37 +1104,6 @@
             <div class="inv-category-icon">💎</div>
             <div class="inv-category-label">Rewards <span id="rewardsDiamondCount">0</span></div>
             <div class="inv-dropdown" id="rewardsDropdown">
-              <!-- Rare Items Section -->
-              <div class="inv-dropdown-section">Rare Items</div>
-              <div class="inv-dropdown-item reward-item" id="lanternbarkReward" data-reward="lanternbark">
-                <div class="inv-dropdown-left">
-                  <span class="inv-dropdown-icon">🌳</span>
-                  <span class="inv-dropdown-name">Lanternbark Tree</span>
-                </div>
-                <span class="inv-dropdown-count">+1💎</span>
-              </div>
-              <div class="inv-dropdown-item reward-item" id="silverWolfReward" data-reward="silverWolf">
-                <div class="inv-dropdown-left">
-                  <span class="inv-dropdown-icon">🐺</span>
-                  <span class="inv-dropdown-name">Silver-Gleam Wolf</span>
-                </div>
-                <span class="inv-dropdown-count">+1💎</span>
-              </div>
-              <div class="inv-dropdown-item reward-item" id="whisperingFanReward" data-reward="whisperingFan">
-                <div class="inv-dropdown-left">
-                  <span class="inv-dropdown-icon">🌀</span>
-                  <span class="inv-dropdown-name">Whispering Fan Blade</span>
-                </div>
-                <span class="inv-dropdown-count">+1💎</span>
-              </div>
-              <div class="inv-dropdown-item reward-item" id="frostCanisterReward" data-reward="frostCanister">
-                <div class="inv-dropdown-left">
-                  <span class="inv-dropdown-icon">🧊</span>
-                  <span class="inv-dropdown-name">Frost-Locked Canister</span>
-                </div>
-                <span class="inv-dropdown-count">+1💎</span>
-              </div>
-              
               <!-- Chests Section -->
               <div class="inv-dropdown-section">Chests</div>
               <div class="inv-dropdown-item reward-item" id="woodenChestReward" data-reward="woodenChest">
@@ -1171,6 +1140,37 @@
                   <span class="inv-dropdown-name">Obsidian Chest</span>
                 </div>
                 <span class="inv-dropdown-count chest-keys" id="obsidianChestKeys">🔑×0/7</span>
+              </div>
+              
+              <!-- Rare Items Section -->
+              <div class="inv-dropdown-section">Rare Items</div>
+              <div class="inv-dropdown-item reward-item" id="lanternbarkReward" data-reward="lanternbark">
+                <div class="inv-dropdown-left">
+                  <span class="inv-dropdown-icon">🌳</span>
+                  <span class="inv-dropdown-name">Lanternbark Tree</span>
+                </div>
+                <span class="inv-dropdown-count">+1💎</span>
+              </div>
+              <div class="inv-dropdown-item reward-item" id="silverWolfReward" data-reward="silverWolf">
+                <div class="inv-dropdown-left">
+                  <span class="inv-dropdown-icon">🐺</span>
+                  <span class="inv-dropdown-name">Silver-Gleam Wolf</span>
+                </div>
+                <span class="inv-dropdown-count">+1💎</span>
+              </div>
+              <div class="inv-dropdown-item reward-item" id="whisperingFanReward" data-reward="whisperingFan">
+                <div class="inv-dropdown-left">
+                  <span class="inv-dropdown-icon">🌀</span>
+                  <span class="inv-dropdown-name">Whispering Fan Blade</span>
+                </div>
+                <span class="inv-dropdown-count">+1💎</span>
+              </div>
+              <div class="inv-dropdown-item reward-item" id="frostCanisterReward" data-reward="frostCanister">
+                <div class="inv-dropdown-left">
+                  <span class="inv-dropdown-icon">🧊</span>
+                  <span class="inv-dropdown-name">Frost-Locked Canister</span>
+                </div>
+                <span class="inv-dropdown-count">+1💎</span>
               </div>
               
               <!-- Milestones Section -->
@@ -2276,6 +2276,10 @@
       sittingLog3.receiveShadow = true;
       group.add(sittingLog3);
       
+      // Fire flames group (will be hidden when fire is out)
+      const flamesGroup = new THREE.Group();
+      flamesGroup.name = 'flames';
+      
       // Fire (orange/yellow cubes with emissive glow)
       const fireGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4);
       const fireMaterial = new THREE.MeshLambertMaterial({ 
@@ -2286,41 +2290,46 @@
       
       const fire1 = new THREE.Mesh(fireGeometry, fireMaterial);
       fire1.position.set(0, 0.8, 0);
-      group.add(fire1);
+      flamesGroup.add(fire1);
       
       const fire2 = new THREE.Mesh(fireGeometry, fireMaterial);
       fire2.position.set(0.25, 1.1, 0.15);
       fire2.scale.set(0.6, 0.8, 0.6);
-      group.add(fire2);
+      flamesGroup.add(fire2);
       
       const fire3 = new THREE.Mesh(fireGeometry, fireMaterial);
       fire3.position.set(-0.25, 1.1, -0.15);
       fire3.scale.set(0.6, 0.8, 0.6);
-      group.add(fire3);
+      flamesGroup.add(fire3);
       
-      // Create dotted circle around fire using small cubes
+      // Point light for fire glow (inside flames group so it hides with flames)
+      const fireLight = new THREE.PointLight(0xFF6600, 1.5, 25);
+      fireLight.position.set(0, 1, 0);
+      flamesGroup.add(fireLight);
+      
+      group.add(flamesGroup);
+      
+      // Create dotted circle around fire using small cubes (will be updated as fire level grows)
       const dotGeometry = new THREE.BoxGeometry(0.15, 0.05, 0.15);
       const dotMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // White dots
-      const circleRadius = 7.5; // 3x bigger (was 2.5)
-      const numDots = 48; // More dots for larger circle
+      const numDots = 48; // Number of dots in the circle
       
+      // Create dots and store references for later resizing
       for (let i = 0; i < numDots; i++) {
         const angle = (i / numDots) * Math.PI * 2;
-        const dotX = Math.cos(angle) * circleRadius;
-        const dotZ = Math.sin(angle) * circleRadius;
+        const dotX = Math.cos(angle) * safeZoneRadius;
+        const dotZ = Math.sin(angle) * safeZoneRadius;
         
         const dot = new THREE.Mesh(dotGeometry, dotMaterial);
         dot.position.set(dotX, 0.025, dotZ);
+        dot.userData.dotIndex = i; // Store index for recalculating position
+        dot.userData.numDots = numDots;
         group.add(dot);
+        safeZoneDots.push(dot);
       }
       
-      // Point light for fire glow
-      const fireLight = new THREE.PointLight(0xFF6600, 1.5, 25);
-      fireLight.position.set(0, 1, 0);
-      group.add(fireLight);
-      
       group.position.set(x, 0, z);
-      group.userData = { type: 'campfire' };
+      group.userData = { type: 'campfire', flamesGroup: flamesGroup };
       return group;
     }
     
@@ -3458,12 +3467,16 @@
     const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false, e: false, E: false };
     const interactionDistance = 1.5;
     
-    const CAMPFIRE_CIRCLE_RADIUS = 7.5; // Dotted circle radius around campfire
-    let worldRadius = CAMPFIRE_CIRCLE_RADIUS * 3; // Start at 3R = 22.5
+    const BASE_CAMPFIRE_CIRCLE_RADIUS = 7.5; // Base dotted circle radius around campfire
+    // Safe zone radius grows with fire level: L1=7.5, L2=10, L3=13 (includes farm plot), L4=16
+    const SAFE_ZONE_RADII = [7.5, 10, 13, 16];
+    let safeZoneRadius = SAFE_ZONE_RADII[0]; // Current safe zone radius (grows with fire level)
+    let worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * 3; // Start at 3R = 22.5
     let worldSize = worldRadius * 2; // Diameter of the world
     let playerMesh = null;
     let campfireMesh = null;
     let groundMesh = null;
+    let safeZoneDots = []; // Store references to the dotted circle meshes
     
     // Camp structures
     let craftingBenchMesh = null;
@@ -4577,6 +4590,15 @@
       if (fireStrength > 10) {
         fireWarningShown = false;
       }
+      
+      // Show/hide flames based on fire strength
+      updateFlamesVisibility();
+    }
+    
+    function updateFlamesVisibility() {
+      if (campfireMesh && campfireMesh.userData.flamesGroup) {
+        campfireMesh.userData.flamesGroup.visible = fireStrength > 0;
+      }
     }
     
     function checkFireLevelUp() {
@@ -4596,8 +4618,11 @@
       // Level 1: 3R = 22.5, Level 2: 6R = 45, Level 3: 8R = 60, Level 4: 10R = 75
       const radiusMultipliers = [3, 6, 8, 10]; // For levels 1-4
       const multiplier = radiusMultipliers[currentFireLevel - 1] || 10; // Default to 10R for level 5+
-      worldRadius = CAMPFIRE_CIRCLE_RADIUS * multiplier;
+      worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * multiplier;
       worldSize = worldRadius * 2;
+      
+      // Expand the safe zone (dotted circle) - L1=7.5, L2=10, L3=13, L4=16
+      updateSafeZoneRadius();
       
       // Remove old ground
       if (groundMesh) {
@@ -4620,6 +4645,19 @@
       
       // Show notification
       showMapExpansionNotification();
+    }
+    
+    // Update the safe zone radius and reposition the dotted circle
+    function updateSafeZoneRadius() {
+      const levelIndex = Math.min(currentFireLevel - 1, SAFE_ZONE_RADII.length - 1);
+      safeZoneRadius = SAFE_ZONE_RADII[levelIndex];
+      
+      // Reposition all the dots to the new radius
+      safeZoneDots.forEach(dot => {
+        const angle = (dot.userData.dotIndex / dot.userData.numDots) * Math.PI * 2;
+        dot.position.x = Math.cos(angle) * safeZoneRadius;
+        dot.position.z = Math.sin(angle) * safeZoneRadius;
+      });
     }
     
     // Track how many keys have been spawned for current tier
@@ -4668,12 +4706,19 @@
     // Spawn a chest of a specific tier
     function spawnChest(tier) {
       const minDistance = 10;
+      const minPlayerDistance = 15; // Chest must spawn at least this far from player
       const fenceRadius = 14.5;
       const fencePadding = 3;
       
       function isTooClose(x, z) {
         const distFromCampfire = Math.sqrt(x * x + z * z);
         if (distFromCampfire < fenceRadius + fencePadding) return true;
+        
+        // Check distance from player - chest shouldn't spawn right on top of them!
+        const dxPlayer = x - playerX;
+        const dzPlayer = z - playerZ;
+        const distFromPlayer = Math.sqrt(dxPlayer * dxPlayer + dzPlayer * dzPlayer);
+        if (distFromPlayer < minPlayerDistance) return true;
         
         // Check distance from other entities, keys, and chests
         for (const entity of [...entities, ...keyEntities, ...chestEntities]) {
@@ -4986,10 +5031,6 @@
         if (isNight) {
           // Night ended, new day
           
-          // Award one diamond at the end of each night
-          diamondsEarned++;
-          console.log('Night ended. Diamond awarded! New total:', diamondsEarned);
-          
           // Day advances by 1 + number of beds owned
           const daysToAdd = 1 + bedsOwned;
           currentDay += daysToAdd;
@@ -5026,11 +5067,15 @@
     function showNightWarning() {
       // Create overlay div (same style as welcome message)
       const warning = document.createElement('div');
+      // Get the game container position to center the warning on the canvas
+      const gameContainer = document.querySelector('.game-container');
+      const rect = gameContainer.getBoundingClientRect();
+      
       warning.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 0;
-        width: 700px;
+        top: ${rect.top + rect.height / 2}px;
+        left: ${rect.left}px;
+        width: ${rect.width}px;
         transform: translateY(-50%);
         color: white;
         font-size: 48px;
@@ -5144,7 +5189,7 @@
       
       const deerSpeed = 0.12; // Slightly slower than player (0.15) so they can outrun
       const deerFleeSpeed = 0.18; // Faster when fleeing from fire
-      const safeZoneRadius = CAMPFIRE_CIRCLE_RADIUS; // The dotted circle - deer can't cross if fire is lit
+      // safeZoneRadius is a global variable that grows with fire level
       const damageDistance = 1.5; // How close deer needs to be to damage player
       const waitDistance = safeZoneRadius + 2; // Where deer waits when fire is lit
       
@@ -5164,28 +5209,65 @@
         deerMonster.z += dirZ * deerFleeSpeed;
         
       } else if (fireIsBurning) {
-        // Fire is lit, deer is outside - move toward the edge of safe zone and wait
+        // Fire is lit, deer is outside the safe zone
         const dx = playerX - deerMonster.x;
         const dz = playerZ - deerMonster.z;
         const distToPlayer = Math.sqrt(dx * dx + dz * dz);
         
-        // Calculate target position: edge of safe zone in direction of player
-        const angleToPlayer = Math.atan2(playerZ, playerX);
-        const targetX = Math.cos(angleToPlayer) * waitDistance;
-        const targetZ = Math.sin(angleToPlayer) * waitDistance;
+        // Check if player is inside or outside the safe zone
+        const playerDistFromCenter = Math.sqrt(playerX * playerX + playerZ * playerZ);
+        const playerIsInsideSafeZone = playerDistFromCenter < safeZoneRadius;
         
-        const dxTarget = targetX - deerMonster.x;
-        const dzTarget = targetZ - deerMonster.z;
-        const distToTarget = Math.sqrt(dxTarget * dxTarget + dzTarget * dzTarget);
-        
-        if (distToTarget > 0.5) {
-          // Move toward waiting position
-          const dirX = dxTarget / distToTarget;
-          const dirZ = dzTarget / distToTarget;
-          deerMonster.x += dirX * deerSpeed;
-          deerMonster.z += dirZ * deerSpeed;
+        if (playerIsInsideSafeZone) {
+          // Player is inside safe zone - deer waits at the edge closest to player
+          const angleToPlayer = Math.atan2(playerZ, playerX);
+          const targetX = Math.cos(angleToPlayer) * waitDistance;
+          const targetZ = Math.sin(angleToPlayer) * waitDistance;
+          
+          const dxTarget = targetX - deerMonster.x;
+          const dzTarget = targetZ - deerMonster.z;
+          const distToTarget = Math.sqrt(dxTarget * dxTarget + dzTarget * dzTarget);
+          
+          if (distToTarget > 0.5) {
+            const dirX = dxTarget / distToTarget;
+            const dirZ = dzTarget / distToTarget;
+            deerMonster.x += dirX * deerSpeed;
+            deerMonster.z += dirZ * deerSpeed;
+          }
+        } else {
+          // Player is OUTSIDE safe zone - deer chases player directly
+          if (distToPlayer > damageDistance) {
+            // Calculate direction toward player
+            const dirX = dx / distToPlayer;
+            const dirZ = dz / distToPlayer;
+            
+            // Move toward player
+            let nextX = deerMonster.x + dirX * deerSpeed;
+            let nextZ = deerMonster.z + dirZ * deerSpeed;
+            
+            // After moving, check if we ended up inside the safe zone and push out if so
+            const nextDistFromCenter = Math.sqrt(nextX * nextX + nextZ * nextZ);
+            if (nextDistFromCenter < safeZoneRadius) {
+              // Push deer back out to the edge of the safe zone
+              const pushAngle = Math.atan2(nextZ, nextX);
+              nextX = Math.cos(pushAngle) * (safeZoneRadius + 0.1);
+              nextZ = Math.sin(pushAngle) * (safeZoneRadius + 0.1);
+            }
+            
+            deerMonster.x = nextX;
+            deerMonster.z = nextZ;
+          }
+          
+          // Check for collision with player (outside safe zone)
+          if (distToPlayer < damageDistance) {
+            const now = Date.now();
+            if (now - lastDeerDamageTime >= DEER_DAMAGE_COOLDOWN) {
+              lastDeerDamageTime = now;
+              damagePlayer(20);
+              flashRedScreen();
+            }
+          }
         }
-        // Deer waits menacingly at the edge of the safe zone
         
       } else {
         // Fire is out - deer chases player freely!
@@ -6015,15 +6097,15 @@
       
       if (recipe.wood > 0 && recipe.metal > 0) {
         // Both resources needed - ask about wood
-        question = `You have ${currentWood} wood and need ${recipe.wood} to craft ${recipe.name}. How much wood will you have left?`;
+        question = `You have ${currentWood} wood and are about to spend ${recipe.wood}.<br><br>How much will you have left?`;
         answer = currentWood - recipe.wood;
       } else if (recipe.wood > 0) {
         // Only wood needed
-        question = `You have ${currentWood} wood and need ${recipe.wood} to craft ${recipe.name}. How much wood will you have left?`;
+        question = `You have ${currentWood} wood and are about to spend ${recipe.wood}.<br><br>How much will you have left?`;
         answer = currentWood - recipe.wood;
       } else if (recipe.metal > 0) {
         // Only metal needed
-        question = `You have ${currentMetal} metal and need ${recipe.metal} to craft ${recipe.name}. How much metal will you have left?`;
+        question = `You have ${currentMetal} metal and are about to spend ${recipe.metal}.<br><br>How much will you have left?`;
         answer = currentMetal - recipe.metal;
       } else {
         // No cost (shouldn't happen, but just in case)
@@ -6041,7 +6123,7 @@
       mathBubbleLabel.textContent = `⚒️ Craft ${recipe.name}`;
       mathQuestionCounter.textContent = '';
       mathTimerBar.style.display = 'none';
-      mathQuestion.textContent = question;
+      mathQuestion.innerHTML = question;
       mathBubbleFeedback.textContent = '';
       mathAnswerInput.value = '';
       mathBubble.classList.add('active');
@@ -6791,6 +6873,9 @@
       // Create campfire at origin
       campfireMesh = createCampfire(0, 0);
       scene.add(campfireMesh);
+      
+      // Hide flames initially since fire starts at 0
+      updateFlamesVisibility();
       
       // Create all camp structures
       createCampStructures();
