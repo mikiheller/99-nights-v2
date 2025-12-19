@@ -154,6 +154,65 @@
       border-color: var(--accent-fire);
     }
 
+    .fp-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .fp-crosshair.visible {
+      opacity: 0.8;
+    }
+    
+    .fp-crosshair::before,
+    .fp-crosshair::after {
+      content: '';
+      position: absolute;
+      background: white;
+      box-shadow: 0 0 3px rgba(0,0,0,0.5);
+    }
+    
+    .fp-crosshair::before {
+      width: 20px;
+      height: 2px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .fp-crosshair::after {
+      width: 2px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .fp-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .fp-hint.visible {
+      opacity: 1;
+    }
+
     .day-section {
       flex: 1;
       display: flex;
@@ -1026,6 +1085,8 @@
     <!-- Left: 3D Game View -->
     <div class="game-container">
       <canvas id="gameCanvas"></canvas>
+      <div class="fp-crosshair" id="fpCrosshair"></div>
+      <div class="fp-hint" id="fpHint">Click to enable mouse look • ESC to release • Press 👁️ button to exit</div>
     </div>
 
     <!-- Right: Info Panel -->
@@ -3101,6 +3162,8 @@
     const pauseOverlay = document.getElementById('pauseOverlay');
     const playButton = document.getElementById('playButton');
     const cameraToggleBtn = document.getElementById('cameraToggle');
+    const fpCrosshair = document.getElementById('fpCrosshair');
+    const fpHint = document.getElementById('fpHint');
 
     // Crafting menu elements
     const craftingMenu = document.getElementById('craftingMenu');
@@ -3636,6 +3699,11 @@
     // Camera state
     let cameraMode = 'third-person'; // 'third-person' or 'first-person'
     let playerFacingAngle = 0; // Angle in radians, 0 = looking toward negative Z (up on screen)
+    let fpYaw = 0; // First-person horizontal rotation (yaw)
+    let fpPitch = 0; // First-person vertical rotation (pitch)
+    let isPointerLocked = false;
+    const FP_FOV = 75; // First-person field of view (wider)
+    const TP_FOV = 50; // Third-person field of view (original)
     
     const BASE_CAMPFIRE_CIRCLE_RADIUS = 7.5; // Base dotted circle radius around campfire
     // Safe zone radius grows with fire level: L1=7.5, L2=10, L3=13 (includes farm plot), L4=16
@@ -6945,11 +7013,57 @@
         cameraToggleBtn.classList.add('first-person');
         cameraToggleBtn.innerHTML = '👤'; // First-person icon
         cameraToggleBtn.title = 'Switch to Third Person View';
+        camera.fov = FP_FOV;
+        camera.updateProjectionMatrix();
+        // Reset first-person angles to face current direction
+        fpYaw = playerFacingAngle;
+        fpPitch = 0;
+        // Show crosshair
+        fpCrosshair.classList.add('visible');
+        fpHint.classList.add('visible');
+        // Request pointer lock for mouse look
+        canvas.requestPointerLock();
       } else {
         cameraMode = 'third-person';
         cameraToggleBtn.classList.remove('first-person');
         cameraToggleBtn.innerHTML = '👁️'; // Third-person icon
         cameraToggleBtn.title = 'Switch to First Person View';
+        camera.fov = TP_FOV;
+        camera.updateProjectionMatrix();
+        // Hide crosshair
+        fpCrosshair.classList.remove('visible');
+        fpHint.classList.remove('visible');
+        // Exit pointer lock
+        if (document.pointerLockElement) {
+          document.exitPointerLock();
+        }
+      }
+    });
+    
+    // Pointer lock change handler
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = document.pointerLockElement === canvas;
+      // Update hint visibility based on lock state
+      if (cameraMode === 'first-person') {
+        fpHint.classList.toggle('visible', !isPointerLocked);
+      }
+    });
+    
+    // Mouse movement for first-person look
+    document.addEventListener('mousemove', (e) => {
+      if (cameraMode === 'first-person' && isPointerLocked) {
+        const sensitivity = 0.002;
+        fpYaw -= e.movementX * sensitivity;
+        fpPitch -= e.movementY * sensitivity;
+        // Clamp pitch to prevent flipping
+        fpPitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, fpPitch));
+      }
+    });
+    
+    // Click canvas to re-lock pointer in first-person mode
+    canvas.addEventListener('click', () => {
+      if (cameraMode === 'first-person' && !isPointerLocked) {
+        canvas.requestPointerLock();
       }
     });
     
@@ -7010,30 +7124,63 @@
         let moveX = 0;
         let moveZ = 0;
         
-        if (keys.w || keys.ArrowUp) {
-          playerZ -= playerSpeed;
-          moveZ -= 1;
-          moved = true;
-        }
-        if (keys.s || keys.ArrowDown) {
-          playerZ += playerSpeed;
-          moveZ += 1;
-          moved = true;
-        }
-        if (keys.a || keys.ArrowLeft) {
-          playerX -= playerSpeed;
-          moveX -= 1;
-          moved = true;
-        }
-        if (keys.d || keys.ArrowRight) {
-          playerX += playerSpeed;
-          moveX += 1;
-          moved = true;
-        }
-        
-        // Update player facing direction based on movement
-        if (moved && (moveX !== 0 || moveZ !== 0)) {
-          playerFacingAngle = Math.atan2(moveX, -moveZ);
+        if (cameraMode === 'first-person') {
+          // First-person: movement relative to camera direction
+          const forward = keys.w || keys.ArrowUp;
+          const backward = keys.s || keys.ArrowDown;
+          const left = keys.a || keys.ArrowLeft;
+          const right = keys.d || keys.ArrowRight;
+          
+          if (forward || backward || left || right) {
+            moved = true;
+            // Calculate movement direction based on camera yaw
+            const sinYaw = Math.sin(fpYaw);
+            const cosYaw = Math.cos(fpYaw);
+            
+            if (forward) {
+              playerX -= sinYaw * playerSpeed;
+              playerZ -= cosYaw * playerSpeed;
+            }
+            if (backward) {
+              playerX += sinYaw * playerSpeed;
+              playerZ += cosYaw * playerSpeed;
+            }
+            if (left) {
+              playerX -= cosYaw * playerSpeed;
+              playerZ += sinYaw * playerSpeed;
+            }
+            if (right) {
+              playerX += cosYaw * playerSpeed;
+              playerZ -= sinYaw * playerSpeed;
+            }
+          }
+        } else {
+          // Third-person: original world-relative movement
+          if (keys.w || keys.ArrowUp) {
+            playerZ -= playerSpeed;
+            moveZ -= 1;
+            moved = true;
+          }
+          if (keys.s || keys.ArrowDown) {
+            playerZ += playerSpeed;
+            moveZ += 1;
+            moved = true;
+          }
+          if (keys.a || keys.ArrowLeft) {
+            playerX -= playerSpeed;
+            moveX -= 1;
+            moved = true;
+          }
+          if (keys.d || keys.ArrowRight) {
+            playerX += playerSpeed;
+            moveX += 1;
+            moved = true;
+          }
+          
+          // Update player facing direction based on movement (third-person only)
+          if (moved && (moveX !== 0 || moveZ !== 0)) {
+            playerFacingAngle = Math.atan2(moveX, -moveZ);
+          }
         }
         
         // Check wall collision - revert if blocked
@@ -7060,7 +7207,8 @@
       if (playerMesh) {
         playerMesh.position.x = playerX;
         playerMesh.position.z = playerZ;
-        playerMesh.rotation.y = playerFacingAngle; // Rotate player to face movement direction
+        // In first-person, rotate player to match camera; in third-person, face movement direction
+        playerMesh.rotation.y = (cameraMode === 'first-person') ? fpYaw : playerFacingAngle;
         
         // Hide player mesh in first-person view
         playerMesh.visible = (cameraMode === 'third-person');
@@ -7074,18 +7222,18 @@
         camera.position.y = 30;
         camera.lookAt(playerX, 0, playerZ);
       } else {
-        // First person: camera at player eye level, looking in facing direction
-        const eyeHeight = 1.8; // Eye level height
-        const lookDistance = 10; // How far to look ahead
+        // First person: camera at player eye level with mouse-look
+        const eyeHeight = 1.8;
         
         camera.position.x = playerX;
         camera.position.y = eyeHeight;
         camera.position.z = playerZ;
         
-        // Calculate look-at point based on facing direction
-        const lookX = playerX + Math.sin(playerFacingAngle) * lookDistance;
-        const lookZ = playerZ - Math.cos(playerFacingAngle) * lookDistance;
-        camera.lookAt(lookX, eyeHeight * 0.8, lookZ);
+        // Calculate look direction from yaw and pitch
+        const lookX = playerX - Math.sin(fpYaw) * Math.cos(fpPitch);
+        const lookY = eyeHeight + Math.sin(fpPitch);
+        const lookZ = playerZ - Math.cos(fpYaw) * Math.cos(fpPitch);
+        camera.lookAt(lookX, lookY, lookZ);
       }
       
       checkCampfireHealing();
