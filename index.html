@@ -3737,89 +3737,297 @@
     let isNearCampfire = false;
     
     // ============================================
-    // QUESTION GENERATION
+    // CURRICULUM & QUESTION GENERATION
     // ============================================
     
+    // Curriculum loaded from Google Sheets
+    let curriculum = [];
+    let curriculumLoaded = false;
+    
+    // Tier to Level mapping (can be incremented as player progresses)
+    // Starting with Tier 1 → Level 2 as requested
+    const tierToLevel = {
+      1: 2,  // Wolves/Cultists (easy, timed) → Level 2 (Bridging Numbers)
+      2: 3,  // Trees (medium, no timer) → Level 3 (Medium Addition)
+      3: 4,  // Fuel/Metal (hard, 1 question) → Level 4 (Missing Addend)
+      4: 5   // Keys (hardest, rare) → Level 5 (Equation Balance)
+    };
+    
+    // Google Sheet ID from the public URL
+    const SHEET_ID = '14dM5CYAzZiXJt0o7ejzSbbkqsNwQp64KBGAOkfsph7Y';
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    
+    // Load curriculum from Google Sheets
+    async function loadCurriculum() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const text = await response.text();
+        // Google returns JSONP, strip the wrapper
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        
+        const rows = json.table.rows;
+        curriculum = [];
+        
+        for (let i = 1; i < rows.length; i++) { // Skip header row
+          const row = rows[i];
+          if (!row.c || !row.c[0] || !row.c[0].v) continue; // Skip empty rows
+          
+          const level = {
+            level: parseInt(row.c[0]?.v) || 0,
+            name: row.c[1]?.v || '',
+            type: row.c[2]?.v || 'add',
+            numbersA: row.c[3]?.v || '',
+            numbersB: row.c[4]?.v || '',
+            numbersC: row.c[5]?.v || '',
+            maxSum: row.c[6]?.v || '',
+            randomizeOrder: row.c[7]?.v || '',
+            special: row.c[8]?.v || '',
+            description: row.c[9]?.v || ''
+          };
+          curriculum.push(level);
+        }
+        
+        curriculumLoaded = true;
+        console.log('Curriculum loaded:', curriculum);
+      } catch (error) {
+        console.error('Failed to load curriculum from Google Sheets:', error);
+        // Fall back to hardcoded curriculum
+        loadFallbackCurriculum();
+      }
+    }
+    
+    // Fallback curriculum if Google Sheets fails
+    function loadFallbackCurriculum() {
+      curriculum = [
+        { level: 1, name: 'Easy Addition', type: 'add', numbersA: '0-5', numbersB: '0-5', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding numbers 0-5' },
+        { level: 2, name: 'Bridging Numbers', type: 'add', numbersA: '0,1,2,3,4,5,9,10', numbersB: '0,1,2,3,4,5,9,10', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding 0-5 and 9,10' },
+        { level: 3, name: 'Medium Addition', type: 'add', numbersA: '4-10', numbersB: '4-10', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding numbers 4-10' },
+        { level: 4, name: 'Missing Addend', type: 'missing', numbersA: '0-10', numbersB: '0-10', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: '? + b = c format' },
+        { level: 5, name: 'Equation Balance', type: 'balance', numbersA: '0-10', numbersB: '0-10', numbersC: '0-10', maxSum: '', randomizeOrder: 'No', special: '', description: 'a + b = c + ?' },
+        { level: 6, name: 'Triple Addition', type: 'triple', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '20', randomizeOrder: 'No', special: '', description: 'Adding three single digits' },
+        { level: 7, name: 'Triple Missing', type: 'triple_missing', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '20', randomizeOrder: 'No', special: '', description: 'a + b + ? = d' },
+        { level: 8, name: 'Tens Plus Ones', type: 'add', numbersA: 'tens', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: '70 + 3 or 3 + 70' },
+        { level: 9, name: 'Adding Ten', type: 'add', numbersA: '10-99', numbersB: '10', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: 'Two-digit + 10' },
+        { level: 10, name: 'Make Ten Triple', type: 'triple', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '', randomizeOrder: 'No', special: 'make_ten_pair', description: '8 + 1 + 2' },
+        { level: 11, name: 'Complement to 20', type: 'complement', numbersA: '0-20', numbersB: '', numbersC: '', maxSum: '20', randomizeOrder: 'Yes', special: '', description: 'a + ? = 20' },
+        { level: 12, name: 'Two-Digit Plus One', type: 'add', numbersA: '21-99', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: '45 + 7' }
+      ];
+      curriculumLoaded = true;
+      console.log('Using fallback curriculum');
+    }
+    
+    // Parse a number spec like "0-5", "0,1,2,3,4,5,9,10", "tens", or "10"
+    function parseNumberSpec(spec) {
+      if (!spec || spec === '') return [0];
+      spec = String(spec).trim();
+      
+      // Special case: "tens" means 10, 20, 30, ..., 90
+      if (spec === 'tens') {
+        return [10, 20, 30, 40, 50, 60, 70, 80, 90];
+      }
+      
+      // Range: "0-5" or "4-10"
+      if (spec.includes('-')) {
+        const [min, max] = spec.split('-').map(n => parseInt(n.trim()));
+        const nums = [];
+        for (let i = min; i <= max; i++) nums.push(i);
+        return nums;
+      }
+      
+      // List: "0,1,2,3,4,5,9,10"
+      if (spec.includes(',')) {
+        return spec.split(',').map(n => parseInt(n.trim()));
+      }
+      
+      // Single number
+      return [parseInt(spec)];
+    }
+    
+    // Pick a random element from an array
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    // Shuffle an array (Fisher-Yates)
+    function shuffle(arr) {
+      const result = [...arr];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+    
+    // Generate a question based on curriculum level
+    function generateQuestionForLevel(levelNum) {
+      const levelData = curriculum.find(l => l.level === levelNum);
+      if (!levelData) {
+        console.warn(`Level ${levelNum} not found, falling back to level 1`);
+        return generateQuestionForLevel(1);
+      }
+      
+      const numbersA = parseNumberSpec(levelData.numbersA);
+      const numbersB = parseNumberSpec(levelData.numbersB);
+      const numbersC = parseNumberSpec(levelData.numbersC);
+      const maxSum = levelData.maxSum ? parseInt(levelData.maxSum) : Infinity;
+      const randomizeOrder = String(levelData.randomizeOrder).toLowerCase() === 'yes';
+      const special = levelData.special || '';
+      const type = levelData.type || 'add';
+      
+      let attempts = 0;
+      while (attempts < 100) {
+        attempts++;
+        let question = null;
+        
+        switch (type) {
+          case 'add': {
+            let a = pickRandom(numbersA);
+            let b = pickRandom(numbersB);
+            if (a + b > maxSum) continue;
+            if (randomizeOrder && Math.random() < 0.5) [a, b] = [b, a];
+            question = { equation: `${a} + ${b}`, answer: a + b };
+            break;
+          }
+          
+          case 'missing': {
+            // ? + b = c or a + ? = c
+            const a = pickRandom(numbersA);
+            const b = pickRandom(numbersB);
+            const c = a + b;
+            if (c > maxSum) continue;
+            
+            if (randomizeOrder && Math.random() < 0.5) {
+              question = { equation: `? + ${b} = ${c}`, answer: a, isKeyQuestion: true };
+            } else {
+              question = { equation: `${a} + ? = ${c}`, answer: b, isKeyQuestion: true };
+            }
+            break;
+          }
+          
+          case 'balance': {
+            // a + b = c + ? (mystery can be anywhere)
+            const a = pickRandom(numbersA);
+            const b = pickRandom(numbersB);
+            const c = pickRandom(numbersC);
+            const d = a + b - c; // What ? must equal
+            if (d < 0 || d > 20) continue; // Keep answer reasonable
+            
+            // Randomly place the mystery in one of 4 positions
+            const pos = Math.floor(Math.random() * 4);
+            if (pos === 0) {
+              question = { equation: `? + ${b} = ${c} + ${d}`, answer: a, isKeyQuestion: true };
+            } else if (pos === 1) {
+              question = { equation: `${a} + ? = ${c} + ${d}`, answer: b, isKeyQuestion: true };
+            } else if (pos === 2) {
+              question = { equation: `${a} + ${b} = ? + ${d}`, answer: c, isKeyQuestion: true };
+            } else {
+              question = { equation: `${a} + ${b} = ${c} + ?`, answer: d, isKeyQuestion: true };
+            }
+            break;
+          }
+          
+          case 'triple': {
+            // a + b + c (three numbers)
+            let a = pickRandom(numbersA);
+            let b = pickRandom(numbersB);
+            let c = pickRandom(numbersC);
+            
+            // Special case: make_ten_pair means two numbers must sum to 10
+            if (special === 'make_ten_pair') {
+              a = Math.floor(Math.random() * 10); // 0-9
+              b = 10 - a; // Complement to 10
+              c = pickRandom(numbersC);
+              const nums = shuffle([a, b, c]);
+              [a, b, c] = nums;
+            }
+            
+            if (a + b + c > maxSum) continue;
+            question = { equation: `${a} + ${b} + ${c}`, answer: a + b + c };
+            break;
+          }
+          
+          case 'triple_missing': {
+            // a + b + ? = d (mystery can be anywhere)
+            let a = pickRandom(numbersA);
+            let b = pickRandom(numbersB);
+            let c = pickRandom(numbersC);
+            const d = a + b + c;
+            if (d > maxSum) continue;
+            
+            const pos = Math.floor(Math.random() * 3);
+            if (pos === 0) {
+              question = { equation: `? + ${b} + ${c} = ${d}`, answer: a, isKeyQuestion: true };
+            } else if (pos === 1) {
+              question = { equation: `${a} + ? + ${c} = ${d}`, answer: b, isKeyQuestion: true };
+            } else {
+              question = { equation: `${a} + ${b} + ? = ${d}`, answer: c, isKeyQuestion: true };
+            }
+            break;
+          }
+          
+          case 'complement': {
+            // a + ? = target (where target is maxSum, typically 20)
+            const target = maxSum || 20;
+            const a = pickRandom(numbersA);
+            if (a > target) continue;
+            const answer = target - a;
+            
+            if (randomizeOrder && Math.random() < 0.5) {
+              question = { equation: `? + ${a} = ${target}`, answer: answer, isKeyQuestion: true };
+            } else {
+              question = { equation: `${a} + ? = ${target}`, answer: answer, isKeyQuestion: true };
+            }
+            break;
+          }
+          
+          default:
+            // Default to simple addition
+            const a = pickRandom(numbersA);
+            const b = pickRandom(numbersB);
+            question = { equation: `${a} + ${b}`, answer: a + b };
+        }
+        
+        if (question) return question;
+      }
+      
+      // Fallback if we couldn't generate a valid question
+      return { equation: '1 + 1', answer: 2 };
+    }
+    
+    // Generate question for a specific tier
+    function generateTierQuestion(tier) {
+      const level = tierToLevel[tier] || tier;
+      return generateQuestionForLevel(level);
+    }
+    
+    // Legacy function wrappers for compatibility
     function generateWolfQuestion() {
-      const a = Math.floor(Math.random() * 6);
-      const b = Math.floor(Math.random() * 6);
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      return generateTierQuestion(1);
     }
     
     function generateCultistQuestion() {
-      // Same as wolf questions
-      const a = Math.floor(Math.random() * 6);
-      const b = Math.floor(Math.random() * 6);
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      return generateTierQuestion(1);
     }
     
     function generateTreeQuestion() {
-      const a = Math.random() < 0.5 ? Math.floor(Math.random() * 4) : (Math.random() < 0.5 ? 9 : 10);
-      const b = 6 + Math.floor(Math.random() * 5);
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      return generateTierQuestion(2);
     }
     
-    // Harder questions for Good Axe/Spear (both numbers 4 or higher)
     function generateHarderQuestion() {
-      const a = 4 + Math.floor(Math.random() * 7); // 4-10
-      const b = 4 + Math.floor(Math.random() * 7); // 4-10
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      // When player has upgraded weapons, use one tier higher
+      return generateTierQuestion(3);
     }
     
-    // Chainsaw question (single problem)
     function generateChainsawQuestion() {
-      const a = 4 + Math.floor(Math.random() * 7); // 4-10
-      const b = 4 + Math.floor(Math.random() * 7); // 4-10
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      return generateTierQuestion(3);
     }
     
     function generateCoalOrMetalQuestion() {
-      const a = 5 + Math.floor(Math.random() * 6);
-      const b = 5 + Math.floor(Math.random() * 6);
-      return {
-        equation: `${a} + ${b}`,
-        answer: a + b
-      };
+      return generateTierQuestion(3);
     }
     
     function generateKeyQuestion() {
-      // Format: ? + b = c  OR  a + ? = c
-      // Both numbers between 0 and 10
-      const a = Math.floor(Math.random() * 11); // 0-10
-      const b = Math.floor(Math.random() * 11); // 0-10
-      const c = a + b;
-      
-      // Randomly choose which number is the mystery
-      if (Math.random() < 0.5) {
-        // ? + b = c (solve for a)
-        return {
-          equation: `? + ${b} = ${c}`,
-          answer: a,
-          isKeyQuestion: true  // Flag to not add "= ?" in display
-        };
-      } else {
-        // a + ? = c (solve for b)
-        return {
-          equation: `${a} + ? = ${c}`,
-          answer: b,
-          isKeyQuestion: true  // Flag to not add "= ?" in display
-        };
-      }
+      return generateTierQuestion(4);
     }
     
     function generateUniqueQuestions(generator, count) {
@@ -3838,6 +4046,9 @@
       
       return questions;
     }
+    
+    // Initialize curriculum on page load
+    loadCurriculum();
     
     // ============================================
     // ENTITY GENERATION
@@ -3993,6 +4204,11 @@
       questionsCorrectFirstTry = []; // Reset first-try tracking
       currentQuestionAttempts = 0; // Reset attempt counter
       currentQuestionTimedOut = false;
+      
+      // Release pointer lock so player can type in the dialog
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
       
       if (actionKey === 'fightWolf') {
         // Spear: 2 harder questions, otherwise 3 normal questions
@@ -4155,6 +4371,11 @@
       currentQuestions = [];
       currentQuestionIndex = 0;
       questionsCorrect = 0;
+      
+      // Re-lock pointer if in first-person mode
+      if (cameraMode === 'first-person') {
+        canvas.requestPointerLock();
+      }
     }
     
     function flashRedScreen() {
@@ -6491,6 +6712,11 @@
       questionsCorrectFirstTry = [];
       currentQuestionAttempts = 0;
       
+      // Release pointer lock so player can type
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+      
       mathBubbleLabel.textContent = `⚒️ Craft ${recipe.name}`;
       mathQuestionCounter.textContent = '';
       mathTimerBar.style.display = 'none';
@@ -6750,6 +6976,11 @@
       questionsCorrectFirstTry = [];
       currentQuestionAttempts = 0;
       
+      // Release pointer lock so player can type
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+      
       mathBubbleLabel.textContent = '🌱 Harvest Time!';
       mathQuestionCounter.textContent = '';
       mathTimerBar.style.display = 'none';
@@ -6793,6 +7024,11 @@
       currentQuestionIndex = 0;
       questionsCorrectFirstTry = [];
       currentQuestionAttempts = 0;
+      
+      // Release pointer lock so player can type
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
       
       mathBubbleLabel.textContent = '🍲 Make Stew';
       mathQuestionCounter.textContent = '';
