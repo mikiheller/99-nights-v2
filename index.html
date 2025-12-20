@@ -3910,17 +3910,26 @@
             const b = pickRandom(numbersB);
             const c = pickRandom(numbersC);
             const d = a + b - c; // What ? must equal
-            if (d < 0 || d > 20) continue; // Keep answer reasonable
+            if (d < 0) continue; // No negative answers
             
             // Randomly place the mystery in one of 4 positions
             const pos = Math.floor(Math.random() * 4);
+            let answer;
             if (pos === 0) {
+              answer = a;
+              if (answer > maxSum) continue; // Respect maxSum for answer
               question = { equation: `? + ${b} = ${c} + ${d}`, answer: a, isKeyQuestion: true };
             } else if (pos === 1) {
+              answer = b;
+              if (answer > maxSum) continue;
               question = { equation: `${a} + ? = ${c} + ${d}`, answer: b, isKeyQuestion: true };
             } else if (pos === 2) {
+              answer = c;
+              if (answer > maxSum) continue;
               question = { equation: `${a} + ${b} = ? + ${d}`, answer: c, isKeyQuestion: true };
             } else {
+              answer = d;
+              if (answer > maxSum) continue;
               question = { equation: `${a} + ${b} = ${c} + ?`, answer: d, isKeyQuestion: true };
             }
             break;
@@ -4907,28 +4916,13 @@
       
       switch (tier) {
         case 'wooden':
-          // 50% Good Axe, 25% 3 metal scraps, 25% 1 fuel canister
-          if (roll < 0.5) {
-            return { type: 'goodAxe', name: 'Good Axe', description: 'Trees now take 2 harder problems to chop!' };
-          } else if (roll < 0.75) {
-            return { type: 'scraps', amount: 3, name: '3 Metal Scraps', description: 'Added to your inventory!' };
-          } else {
-            return { type: 'fuel', amount: 1, name: '1 Fuel Canister', description: 'Added to your inventory!' };
-          }
-          
+          // Always Good Axe
+          return { type: 'goodAxe', name: 'Good Axe', description: 'Trees now take 2 harder problems to chop!' };
+
         case 'golden':
-          // If already have Good Axe: 50% scraps, 50% fuel
-          // Otherwise: Good Axe
-          if (rewardsState.weapons.hasGoodAxe) {
-            if (roll < 0.5) {
-              return { type: 'scraps', amount: 3, name: '3 Metal Scraps', description: 'Added to your inventory!' };
-            } else {
-              return { type: 'fuel', amount: 1, name: '1 Fuel Canister', description: 'Added to your inventory!' };
-            }
-          } else {
-            return { type: 'goodAxe', name: 'Good Axe', description: 'Trees now take 2 harder problems to chop!' };
-          }
-          
+          // Always 1 diamond + 2 fuel canisters
+          return { type: 'diamondAndFuel', amount: 1, fuelAmount: 2, name: '1 Diamond + 2 Fuel', description: 'A shiny diamond and fuel for your fire!' };
+
         case 'ruby':
           return { type: 'spear', name: 'Spear', description: 'Wolves and cultists now take 2 harder problems to defeat!' };
           
@@ -4968,6 +4962,12 @@
           const currentFuel = parseInt(coalCount.textContent) || 0;
           coalCount.textContent = currentFuel + reward.amount;
           break;
+        case 'diamondAndFuel':
+          // Award diamond(s) and fuel canisters
+          diamondsEarned += reward.amount;
+          const currentFuelDF = parseInt(coalCount.textContent) || 0;
+          coalCount.textContent = currentFuelDF + reward.fuelAmount;
+          break;
         case 'diamonds':
           // Award diamonds
           for (let i = 0; i < reward.amount; i++) {
@@ -5002,9 +5002,10 @@
         chainsaw: '⛓️',
         scraps: '⚙️',
         fuel: '⛽',
-        diamonds: '💎'
+        diamonds: '💎',
+        diamondAndFuel: '💎⛽'
       };
-      
+
       const emoji = rewardEmoji[reward.type] || '🎁';
       
       popup.innerHTML = `
