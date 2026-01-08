@@ -154,6 +154,52 @@
       border-color: var(--accent-fire);
     }
 
+    .lobby-button {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--bg-panel-soft) 0%, var(--bg-panel) 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 18px;
+    }
+    
+    .lobby-button:hover {
+      background: rgba(255, 123, 0, 0.1);
+      border-color: var(--accent-fire);
+      transform: scale(1.1);
+    }
+
+    .game-mode-header {
+      background: linear-gradient(135deg, rgba(255, 123, 0, 0.2) 0%, rgba(255, 123, 0, 0.05) 100%);
+      border: 1px solid var(--accent-fire);
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-align: center;
+      margin-bottom: 0;
+    }
+
+    .game-mode-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-fire);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .game-mode-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     .fp-crosshair {
       position: absolute;
       top: 50%;
@@ -1091,6 +1137,15 @@
 
     <!-- Right: Info Panel -->
     <div class="info-panel">
+      <!-- Game Mode Header -->
+      <div class="game-mode-header">
+        <div class="game-mode-title">
+          <span id="gameModeIcon">➕</span>
+          <span id="gameModeTitle">Addition Mode</span>
+        </div>
+        <div class="game-mode-subtitle">99 Nights Math Forest</div>
+      </div>
+
       <!-- Day & Time -->
       <div class="info-section day-time-row">
         <div class="day-section">
@@ -1100,6 +1155,7 @@
           <div class="cycle-icon" id="cycleIcon">☀️</div>
           <div class="cycle-countdown" id="cycleCountdown">3:00</div>
         </div>
+        <div class="lobby-button" id="lobbyButton" title="Return to Portal Lobby">🚪</div>
         <div class="pause-button" id="pauseButton" title="Pause Game">⏸️</div>
         <div class="camera-toggle" id="cameraToggle" title="Toggle First/Third Person View">👁️</div>
       </div>
@@ -3226,7 +3282,7 @@
     let isNight = false;
     let currentDay = 1;
     let currentNight = 0; // Track which night we're on (increments when night starts)
-    const DAY_DURATION = 180; // 3 minutes
+    const DAY_DURATION = 120; // 2 minutes
     const NIGHT_DURATION = 90; // 1.5 minutes
     let cycleTimeRemaining = DAY_DURATION;
     let nightWarningShown = false;
@@ -3737,28 +3793,146 @@
     let isNearCampfire = false;
     
     // ============================================
+    // GAME MODE DETECTION & CONFIGURATION
+    // ============================================
+    
+    // Get game mode from URL parameter (default to addition)
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameMode = urlParams.get('mode') || 'addition';
+    
+    // Game mode configurations
+    const GAME_MODES = {
+      addition: {
+        name: 'Addition Mode',
+        icon: '➕',
+        description: 'Practice addition problems'
+      },
+      subtraction: {
+        name: 'Subtraction Mode',
+        icon: '➖',
+        description: 'Practice subtraction problems'
+      },
+      advanced_add_sub: {
+        name: 'Advanced Add & Subtract',
+        icon: '➕➖',
+        description: 'Challenging addition and subtraction'
+      },
+      multiplication: {
+        name: 'Multiplication Mode',
+        icon: '✖️',
+        description: 'Practice multiplication'
+      },
+      division: {
+        name: 'Division Mode',
+        icon: '➗',
+        description: 'Practice division'
+      },
+      advanced_mul_div: {
+        name: 'Advanced Multiply & Divide',
+        icon: '✖️➗',
+        description: 'Challenging multiplication and division'
+      }
+    };
+    
+    // Update UI with current game mode
+    const currentModeConfig = GAME_MODES[gameMode] || GAME_MODES.addition;
+    document.getElementById('gameModeIcon').textContent = currentModeConfig.icon;
+    document.getElementById('gameModeTitle').textContent = currentModeConfig.name;
+    
+    // Lobby button handler
+    document.getElementById('lobbyButton').addEventListener('click', () => {
+      if (confirm('Return to the Portal Lobby? Your progress in this session will be lost.')) {
+        window.location.href = 'lobby.html';
+      }
+    });
+    
+    // ============================================
+    // CURRICULUM DEFINITIONS BY MODE
+    // ============================================
+    
+    // Addition curriculum (existing - loaded from Google Sheets or fallback)
+    const ADDITION_CURRICULUM = [
+      { level: 1, name: 'Easy Addition', type: 'add', numbersA: '0-5', numbersB: '0-5', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding numbers 0-5' },
+      { level: 2, name: 'Bridging Numbers', type: 'add', numbersA: '0,1,2,3,4,5,9,10', numbersB: '0,1,2,3,4,5,9,10', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding 0-5 and 9,10' },
+      { level: 3, name: 'Medium Addition', type: 'add', numbersA: '4-10', numbersB: '4-10', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Adding numbers 4-10' },
+      { level: 4, name: 'Missing Addend', type: 'missing', numbersA: '0-10', numbersB: '0-10', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: '? + b = c format' },
+      { level: 5, name: 'Equation Balance', type: 'balance', numbersA: '0-10', numbersB: '0-10', numbersC: '0-10', maxSum: '', randomizeOrder: 'No', special: '', description: 'a + b = c + ?' },
+      { level: 6, name: 'Triple Addition', type: 'triple', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '20', randomizeOrder: 'No', special: '', description: 'Adding three single digits' },
+      { level: 7, name: 'Triple Missing', type: 'triple_missing', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '20', randomizeOrder: 'No', special: '', description: 'a + b + ? = d' },
+      { level: 8, name: 'Tens Plus Ones', type: 'add', numbersA: 'tens', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: '70 + 3 or 3 + 70' },
+      { level: 9, name: 'Adding Ten', type: 'add', numbersA: '10-99', numbersB: '10', numbersC: '', maxSum: '', randomizeOrder: 'Yes', special: '', description: 'Two-digit + 10' },
+      { level: 10, name: 'Make Ten Triple', type: 'triple', numbersA: '0-9', numbersB: '0-9', numbersC: '0-9', maxSum: '', randomizeOrder: 'No', special: 'make_ten_pair', description: '8 + 1 + 2' },
+      { level: 11, name: 'Complement to 20', type: 'complement', numbersA: '0-20', numbersB: '', numbersC: '', maxSum: '20', randomizeOrder: 'Yes', special: '', description: 'a + ? = 20' },
+      { level: 12, name: 'Two-Digit Plus One', type: 'add', numbersA: '21-99', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: '45 + 7' }
+    ];
+    
+    // Subtraction curriculum
+    // Level 1: Single digit minus single digit (9 - 3)
+    // Level 2: Single digit minus ? = single digit (8 - ? = 5)
+    // Level 3: Number between 10 and 20 minus single digit (13 - 4)
+    // Level 4: Double digit minus 10 (46 - 10)
+    // Level 5: Double digit minus single digit (63 - 4)
+    const SUBTRACTION_CURRICULUM = [
+      { level: 1, name: 'Basic Subtraction', type: 'subtract', numbersA: '1-10', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: 'no_negative', description: 'Numbers 1-10 minus single digit (10 - 4)' },
+      { level: 2, name: 'Missing Subtrahend', type: 'subtract_missing', numbersA: '1-9', numbersB: '0-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: 'no_negative', description: 'Single digit minus ? = result (8 - ? = 5)' },
+      { level: 3, name: 'Teens Minus Single', type: 'subtract', numbersA: '10-20', numbersB: '1-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: 'no_negative', description: 'Number 10-20 minus single digit (13 - 4)' },
+      { level: 4, name: 'Minus Ten', type: 'subtract', numbersA: '20-99', numbersB: '10', numbersC: '', maxSum: '', randomizeOrder: 'No', special: '', description: 'Double digit minus 10 (46 - 10)' },
+      { level: 5, name: 'Double Minus Single', type: 'subtract', numbersA: '10-99', numbersB: '1-9', numbersC: '', maxSum: '', randomizeOrder: 'No', special: 'no_negative', description: 'Double digit minus single digit (63 - 4)' }
+    ];
+    
+    // Get curriculum for current mode
+    function getCurriculumForMode(mode) {
+      switch (mode) {
+        case 'subtraction':
+          return SUBTRACTION_CURRICULUM;
+        case 'addition':
+        default:
+          return ADDITION_CURRICULUM;
+      }
+    }
+    
+    // ============================================
     // CURRICULUM & QUESTION GENERATION
     // ============================================
     
-    // Curriculum loaded from Google Sheets
+    // Curriculum loaded from Google Sheets or using mode-specific defaults
     let curriculum = [];
     let curriculumLoaded = false;
     
-    // Tier to Level mapping (can be incremented as player progresses)
-    // Starting with Tier 1 → Level 2 as requested
-    const tierToLevel = {
-      1: 2,  // Wolves/Cultists (easy, timed) → Level 2 (Bridging Numbers)
-      2: 3,  // Trees (medium, no timer) → Level 3 (Medium Addition)
-      3: 4,  // Fuel/Metal (hard, 1 question) → Level 4 (Missing Addend)
-      4: 5   // Keys (hardest, rare) → Level 5 (Equation Balance)
-    };
+    // Tier to Level mapping - increments every 3 days
+    // Base: Tier 1 → Level 2, Tier 2 → Level 3, etc.
+    // Every 3 days, all tiers go up by 1 level
+    function getLevelForTier(tier) {
+      // For subtraction mode, always use Level 1 for now (single digit - single digit)
+      // This can be changed later as the player progresses
+      if (gameMode === 'subtraction') {
+        return 1;
+      }
+      
+      const baseLevel = tier + 1; // Tier 1 starts at Level 2
+      const dayIncrement = Math.floor((currentDay - 1) / 3); // +1 level every 3 days
+      const level = baseLevel + dayIncrement;
+      
+      // Cap at max available level in curriculum
+      const maxLevel = curriculum.length > 0 ? Math.max(...curriculum.map(l => l.level)) : 12;
+      return Math.min(level, maxLevel);
+    }
     
-    // Google Sheet ID from the public URL
+    // Google Sheet ID from the public URL (only used for addition mode)
     const SHEET_ID = '14dM5CYAzZiXJt0o7ejzSbbkqsNwQp64KBGAOkfsph7Y';
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
     
-    // Load curriculum from Google Sheets
+    // Load curriculum based on game mode
     async function loadCurriculum() {
+      // For non-addition modes, use the built-in curriculum
+      if (gameMode !== 'addition') {
+        curriculum = getCurriculumForMode(gameMode);
+        curriculumLoaded = true;
+        console.log(`Curriculum loaded for ${gameMode} mode:`, curriculum);
+        return;
+      }
+      
+      // For addition mode, try to load from Google Sheets
       try {
         const response = await fetch(SHEET_URL);
         const text = await response.text();
@@ -3788,7 +3962,7 @@
         }
         
         curriculumLoaded = true;
-        console.log('Curriculum loaded:', curriculum);
+        console.log('Curriculum loaded from Google Sheets:', curriculum);
       } catch (error) {
         console.error('Failed to load curriculum from Google Sheets:', error);
         // Fall back to hardcoded curriculum
@@ -3989,23 +4163,61 @@
             break;
           }
           
-          default:
-            // Default to simple addition
+          case 'subtract': {
+            // a - b = ? (subtraction)
             const a = pickRandom(numbersA);
             const b = pickRandom(numbersB);
-            question = { equation: `${a} + ${b}`, answer: a + b };
+            const result = a - b;
+            
+            // Skip if result would be negative and 'no_negative' is set
+            if (special === 'no_negative' && result < 0) continue;
+            
+            question = { equation: `${a} − ${b}`, answer: result };
+            break;
+          }
+          
+          case 'subtract_missing': {
+            // a - ? = c (find the subtrahend)
+            const a = pickRandom(numbersA);
+            const b = pickRandom(numbersB);
+            const c = a - b;
+            
+            // Skip if result would be negative and 'no_negative' is set
+            if (special === 'no_negative' && c < 0) continue;
+            
+            question = { equation: `${a} − ? = ${c}`, answer: b, isKeyQuestion: true };
+            break;
+          }
+          
+          default:
+            // Default to simple addition (or subtraction if in subtraction mode)
+            const a = pickRandom(numbersA);
+            const b = pickRandom(numbersB);
+            if (gameMode === 'subtraction') {
+              const result = a - b;
+              if (result >= 0) {
+                question = { equation: `${a} − ${b}`, answer: result };
+              } else {
+                question = { equation: `${b} − ${a}`, answer: b - a };
+              }
+            } else {
+              question = { equation: `${a} + ${b}`, answer: a + b };
+            }
         }
         
         if (question) return question;
       }
       
       // Fallback if we couldn't generate a valid question
+      if (gameMode === 'subtraction') {
+        return { equation: '5 − 2', answer: 3 };
+      }
       return { equation: '1 + 1', answer: 2 };
     }
     
     // Generate question for a specific tier
     function generateTierQuestion(tier) {
-      const level = tierToLevel[tier] || tier;
+      const level = getLevelForTier(tier);
       return generateQuestionForLevel(level);
     }
     
@@ -4917,12 +5129,12 @@
       switch (tier) {
         case 'wooden':
           // Always Good Axe
-          return { type: 'goodAxe', name: 'Good Axe', description: 'Trees now take 2 harder problems to chop!' };
-
+            return { type: 'goodAxe', name: 'Good Axe', description: 'Trees now take 2 harder problems to chop!' };
+          
         case 'golden':
           // Always 1 diamond + 2 fuel canisters
           return { type: 'diamondAndFuel', amount: 1, fuelAmount: 2, name: '1 Diamond + 2 Fuel', description: 'A shiny diamond and fuel for your fire!' };
-
+          
         case 'ruby':
           return { type: 'spear', name: 'Spear', description: 'Wolves and cultists now take 2 harder problems to defeat!' };
           
@@ -5005,7 +5217,7 @@
         diamonds: '💎',
         diamondAndFuel: '💎⛽'
       };
-
+      
       const emoji = rewardEmoji[reward.type] || '🎁';
       
       popup.innerHTML = `
