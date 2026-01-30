@@ -4959,12 +4959,12 @@
     
     // Attempt pet encounter (called during player movement)
     function attemptPetEncounter() {
-      if (!canHavePetEncounter()) return false;
-      
-      // Throttle checks to once per second
+      // Throttle checks to once per second - MUST BE FIRST to avoid per-frame overhead
       const now = Date.now();
       if (now - lastPetEncounterCheck < 1000) return false;
       lastPetEncounterCheck = now;
+      
+      if (!canHavePetEncounter()) return false;
       
       // Random chance
       if (Math.random() < PET_ENCOUNTER_CHANCE) {
@@ -10620,7 +10620,7 @@
           checkFarmPlotProximity(); // Check for harvest
           checkCrockPotProximity(); // Check for crock pot tooltip
           checkBiofuelProcessorProximity(); // Check for biofuel tooltip
-          attemptPetEncounter(); // Check for pet encounter (daytime only)
+          attemptPetEncounter();
         }
       }
 
@@ -10671,7 +10671,7 @@
     function animate() {
       requestAnimationFrame(animate);
       updatePlayer();
-      updatePetPosition(); // Update pet following behavior
+      updatePetPosition();
       renderer.render(scene, camera);
     }
     
@@ -10820,8 +10820,8 @@
       // Initialize pet if player has one
       if (gameSave.pet) {
         createPetModel();
-        updatePetHappiness(); // Update happiness based on time since last fed
-        updatePetDisplay(); // Show pet info in UI
+        updatePetHappiness();
+        updatePetDisplay();
       }
       
       // Generate entities
