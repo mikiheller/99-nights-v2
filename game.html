@@ -5685,31 +5685,43 @@
     }
     
     // Pet ability: Cat wolf alert
+    let lastCatWolfCheck = 0;
+    let catWolfAlertShowing = false;
+    
     function checkCatWolfAlert() {
       if (!gameSave.pet || gameSave.pet.type !== 'cat') return;
       if (!arePetAbilitiesActive()) return;
+      
+      // Throttle to every 500ms
+      const now = Date.now();
+      if (now - lastCatWolfCheck < 500) return;
+      lastCatWolfCheck = now;
       
       // Check for nearby wolves
       const alertRadius = 15;
       let nearbyWolf = false;
       
-      entities.forEach(entity => {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
         if (entity.type === 'wolf' && entity.mesh) {
           const dx = entity.mesh.position.x - playerX;
           const dz = entity.mesh.position.z - playerZ;
           const dist = Math.sqrt(dx * dx + dz * dz);
           if (dist < alertRadius) {
             nearbyWolf = true;
+            break; // Found one, no need to check more
           }
         }
-      });
+      }
       
-      // Show/hide wolf alert
-      const alertEl = document.getElementById('catWolfAlert');
-      if (nearbyWolf && !alertEl) {
+      // Show/hide wolf alert (only if state changed)
+      if (nearbyWolf && !catWolfAlertShowing) {
         showCatWolfAlert();
-      } else if (!nearbyWolf && alertEl) {
-        alertEl.remove();
+        catWolfAlertShowing = true;
+      } else if (!nearbyWolf && catWolfAlertShowing) {
+        const alertEl = document.getElementById('catWolfAlert');
+        if (alertEl) alertEl.remove();
+        catWolfAlertShowing = false;
       }
     }
     
