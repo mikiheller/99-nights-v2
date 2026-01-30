@@ -175,6 +175,345 @@
       transform: scale(1.1);
     }
 
+    .status-button {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--bg-panel-soft) 0%, var(--bg-panel) 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 18px;
+    }
+    
+    .status-button:hover {
+      background: rgba(255, 123, 0, 0.1);
+      border-color: var(--accent-fire);
+      transform: scale(1.1);
+    }
+
+    /* Status Panel Overlay */
+    .status-panel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 9998;
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .status-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      max-width: 95vw;
+      max-height: 85vh;
+      background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+      border: 2px solid var(--accent-fire);
+      border-radius: 16px;
+      padding: 24px;
+      z-index: 9999;
+      display: none;
+      overflow-y: auto;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 123, 0, 0.2);
+    }
+
+    @keyframes slideIn {
+      from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+      to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .status-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .status-panel-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-fire);
+      font-family: "Kalam", cursive;
+    }
+
+    .status-panel-close {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 94, 94, 0.2);
+      border: 1px solid var(--accent-bad);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s;
+    }
+
+    .status-panel-close:hover {
+      background: rgba(255, 94, 94, 0.4);
+      transform: scale(1.1);
+    }
+
+    .status-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .status-tab {
+      padding: 10px 20px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      color: var(--text-muted);
+    }
+
+    .status-tab:hover {
+      background: rgba(255, 123, 0, 0.1);
+      border-color: var(--accent-fire);
+    }
+
+    .status-tab.active {
+      background: rgba(255, 123, 0, 0.2);
+      border-color: var(--accent-fire);
+      color: var(--accent-fire);
+    }
+
+    .status-tab-content {
+      display: none;
+    }
+
+    .status-tab-content.active {
+      display: block;
+    }
+
+    /* Stats Section */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-fire);
+      font-family: "Kalam", cursive;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Achievement Category */
+    .achievement-category {
+      margin-bottom: 20px;
+    }
+
+    .achievement-category-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-left: 3px solid var(--accent-fire);
+    }
+
+    .achievement-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .achievement-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .achievement-card.earned {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border-color: #f59e0b;
+    }
+
+    .achievement-card.locked {
+      opacity: 0.6;
+    }
+
+    .achievement-icon {
+      font-size: 32px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-panel-soft);
+      border-radius: 8px;
+    }
+
+    .achievement-card.earned .achievement-icon {
+      background: rgba(245, 158, 11, 0.2);
+    }
+
+    .achievement-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .achievement-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .achievement-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .achievement-progress-bar {
+      height: 6px;
+      background: var(--bg-deep);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .achievement-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-fire) 0%, var(--accent-fire-soft) 100%);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .achievement-progress-text {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .achievement-reward {
+      font-size: 12px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Quest List */
+    .quest-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quest-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .quest-card.completed {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border-color: #22c55e;
+    }
+
+    .quest-icon {
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-panel-soft);
+      border-radius: 8px;
+    }
+
+    .quest-info {
+      flex: 1;
+    }
+
+    .quest-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .quest-progress-bar {
+      height: 8px;
+      background: var(--bg-deep);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .quest-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .quest-progress-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .quest-reward {
+      font-size: 14px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    .no-quests-message {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
     .game-mode-header {
       background: linear-gradient(135deg, rgba(255, 123, 0, 0.2) 0%, rgba(255, 123, 0, 0.05) 100%);
       border: 1px solid var(--accent-fire);
@@ -1237,6 +1576,7 @@
           <div class="cycle-countdown" id="cycleCountdown">3:00</div>
         </div>
         <div class="lobby-button" id="lobbyButton" title="Return to Portal Lobby">🚪</div>
+        <div class="status-button" id="statusButton" title="View Progress & Achievements">📊</div>
         <div class="pause-button" id="pauseButton" title="Pause Game">⏸️</div>
         <div class="camera-toggle" id="cameraToggle" title="Toggle First/Third Person View">👁️</div>
       </div>
@@ -1524,6 +1864,90 @@
     <div class="crafting-hint">Click an item to craft</div>
     <div class="crafting-items" id="craftingItems">
       <!-- Items will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Status Panel Overlay -->
+  <div class="status-panel-overlay" id="statusPanelOverlay"></div>
+  
+  <!-- Status Panel -->
+  <div class="status-panel" id="statusPanel">
+    <div class="status-panel-header">
+      <div class="status-panel-title">📊 Your Progress</div>
+      <div class="status-panel-close" id="statusPanelClose">✕</div>
+    </div>
+    
+    <div class="status-tabs">
+      <div class="status-tab active" data-tab="overview">Overview</div>
+      <div class="status-tab" data-tab="achievements">Achievements</div>
+      <div class="status-tab" data-tab="quests">Quests</div>
+    </div>
+    
+    <!-- Overview Tab -->
+    <div class="status-tab-content active" id="tab-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statusLevel">1</div>
+          <div class="stat-label">Level</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusXP">0</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusStreak">0</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusBestStreak">0</div>
+          <div class="stat-label">Best Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusDiamonds">0</div>
+          <div class="stat-label">Diamonds 💎</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusNights">0</div>
+          <div class="stat-label">Nights Survived</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusQuestions">0</div>
+          <div class="stat-label">Questions Correct</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusWolves">0</div>
+          <div class="stat-label">Wolves Defeated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statusAchievements">0</div>
+          <div class="stat-label">Achievements</div>
+        </div>
+      </div>
+      
+      <!-- XP Progress -->
+      <div style="margin-top: 16px; padding: 16px; background: var(--bg-panel); border-radius: 10px; border: 1px solid var(--border-soft);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 14px; color: var(--text-main);">Level Progress</span>
+          <span style="font-size: 14px; color: var(--accent-fire);" id="statusXPProgress">0 / 100 XP</span>
+        </div>
+        <div style="height: 12px; background: var(--bg-deep); border-radius: 6px; overflow: hidden;">
+          <div id="statusXPBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-fire) 0%, var(--accent-fire-soft) 100%); border-radius: 6px; transition: width 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Achievements Tab -->
+    <div class="status-tab-content" id="tab-achievements">
+      <div id="achievementsList">
+        <!-- Achievements will be populated by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- Quests Tab -->
+    <div class="status-tab-content" id="tab-quests">
+      <div id="questsList">
+        <!-- Quests will be populated by JavaScript -->
+      </div>
     </div>
   </div>
 
@@ -3592,6 +4016,9 @@
           bestStreak: 0,
           totalPlayTime: 0,
           gamesPlayed: 0,
+          fastAnswers3sec: 0,    // Answers under 3 seconds
+          fastAnswers2sec: 0,    // Answers under 2 seconds
+          totalRareItemsFound: 0 // Rare items collected
         },
         
         // Daily login tracking
@@ -3807,6 +4234,9 @@
         // Update session stats for quests
         updateSessionStat('questionsCorrect', (gameSave.sessionStats?.questionsCorrect || 0) + 1);
         updateSessionStat('bestStreak', Math.max(gameSave.sessionStats?.bestStreak || 0, gameSave.stats.currentStreak));
+        
+        // Check achievements for questions and streaks
+        checkAchievements();
       } else {
         gameSave.stats.currentStreak = 0;
       }
@@ -3833,6 +4263,9 @@
       // Award XP for surviving the night
       awardXP(XP_REWARDS.surviveNight, 'Night survived!');
       
+      // Check achievements
+      checkAchievements();
+      
       saveGame();
     }
     
@@ -3840,6 +4273,8 @@
       gameSave.stats.totalWolvesDefeated++;
       // Update session stats for quests
       updateSessionStat('wolvesDefeated', (gameSave.sessionStats?.wolvesDefeated || 0) + 1);
+      // Check achievements
+      checkAchievements();
       saveGame();
     }
     
@@ -3847,6 +4282,8 @@
       gameSave.stats.totalTreesChopped++;
       // Update session stats for quests
       updateSessionStat('treesChopped', (gameSave.sessionStats?.treesChopped || 0) + 1);
+      // Check achievements
+      checkAchievements();
       saveGame();
     }
     
@@ -3854,6 +4291,8 @@
       gameSave.stats.totalCultistsDefeated++;
       // Update session stats for quests
       updateSessionStat('cultistsDefeated', (gameSave.sessionStats?.cultistsDefeated || 0) + 1);
+      // Check achievements
+      checkAchievements();
       saveGame();
     }
     
@@ -4008,6 +4447,360 @@
       streakBonus: 2         // Per streak level
     };
     
+    // ============================================
+    // ACHIEVEMENT SYSTEM
+    // ============================================
+    
+    const ACHIEVEMENTS = {
+      // Math Master - Questions Answered
+      math_first_steps: {
+        id: 'math_first_steps',
+        name: 'First Steps',
+        description: 'Answer 10 questions correctly',
+        icon: '📝',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 10,
+        reward: 5
+      },
+      math_century: {
+        id: 'math_century',
+        name: 'Century Club',
+        description: 'Answer 100 questions correctly',
+        icon: '💯',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 100,
+        reward: 15
+      },
+      math_machine: {
+        id: 'math_machine',
+        name: 'Math Machine',
+        description: 'Answer 500 questions correctly',
+        icon: '🤖',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 500,
+        reward: 30
+      },
+      math_legend: {
+        id: 'math_legend',
+        name: 'Math Legend',
+        description: 'Answer 1000 questions correctly',
+        icon: '🏆',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 1000,
+        reward: 50
+      },
+      
+      // Streak Star
+      streak_fire: {
+        id: 'streak_fire',
+        name: 'On Fire',
+        description: 'Reach a 10 streak',
+        icon: '🔥',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 10,
+        reward: 10
+      },
+      streak_unstoppable: {
+        id: 'streak_unstoppable',
+        name: 'Unstoppable',
+        description: 'Reach a 25 streak',
+        icon: '⚡',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 25,
+        reward: 20
+      },
+      streak_perfect: {
+        id: 'streak_perfect',
+        name: 'Perfect Mind',
+        description: 'Reach a 50 streak',
+        icon: '🧠',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 50,
+        reward: 35
+      },
+      streak_legendary: {
+        id: 'streak_legendary',
+        name: 'Legendary',
+        description: 'Reach a 100 streak',
+        icon: '👑',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 100,
+        reward: 75
+      },
+      
+      // Survivor
+      survivor_first: {
+        id: 'survivor_first',
+        name: 'First Dawn',
+        description: 'Survive your first night',
+        icon: '🌅',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 1,
+        reward: 5
+      },
+      survivor_week: {
+        id: 'survivor_week',
+        name: 'Week Warrior',
+        description: 'Survive 7 nights total',
+        icon: '📅',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 7,
+        reward: 15
+      },
+      survivor_master: {
+        id: 'survivor_master',
+        name: 'Night Master',
+        description: 'Survive 25 nights total',
+        icon: '🌙',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 25,
+        reward: 30
+      },
+      survivor_eternal: {
+        id: 'survivor_eternal',
+        name: 'Eternal Survivor',
+        description: 'Survive 50 nights total',
+        icon: '⭐',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 50,
+        reward: 50
+      },
+      
+      // Speed Demon
+      speed_quick: {
+        id: 'speed_quick',
+        name: 'Quick Draw',
+        description: 'Answer 10 questions under 3 seconds',
+        icon: '⏱️',
+        category: 'Speed Demon',
+        stat: 'fastAnswers3sec',
+        target: 10,
+        reward: 10
+      },
+      speed_lightning: {
+        id: 'speed_lightning',
+        name: 'Lightning Fast',
+        description: 'Answer 50 questions under 2 seconds',
+        icon: '⚡',
+        category: 'Speed Demon',
+        stat: 'fastAnswers2sec',
+        target: 50,
+        reward: 25
+      },
+      
+      // Hunter
+      hunter_wolf: {
+        id: 'hunter_wolf',
+        name: 'Wolf Slayer',
+        description: 'Defeat 10 wolves',
+        icon: '🐺',
+        category: 'Hunter',
+        stat: 'totalWolvesDefeated',
+        target: 10,
+        reward: 10
+      },
+      hunter_pack: {
+        id: 'hunter_pack',
+        name: 'Pack Leader',
+        description: 'Defeat 50 wolves',
+        icon: '🐾',
+        category: 'Hunter',
+        stat: 'totalWolvesDefeated',
+        target: 50,
+        reward: 25
+      },
+      hunter_cult: {
+        id: 'hunter_cult',
+        name: 'Cult Crusher',
+        description: 'Defeat 25 cultists',
+        icon: '👤',
+        category: 'Hunter',
+        stat: 'totalCultistsDefeated',
+        target: 25,
+        reward: 20
+      },
+      
+      // Collector
+      collector_lucky: {
+        id: 'collector_lucky',
+        name: 'Lucky Find',
+        description: 'Find your first rare item',
+        icon: '🍀',
+        category: 'Collector',
+        stat: 'totalRareItemsFound',
+        target: 1,
+        reward: 5
+      },
+      collector_treasure: {
+        id: 'collector_treasure',
+        name: 'Treasure Hunter',
+        description: 'Find 10 rare items',
+        icon: '💎',
+        category: 'Collector',
+        stat: 'totalRareItemsFound',
+        target: 10,
+        reward: 20
+      },
+      
+      // Lumberjack
+      lumber_chopper: {
+        id: 'lumber_chopper',
+        name: 'Tree Chopper',
+        description: 'Chop 25 trees',
+        icon: '🪓',
+        category: 'Lumberjack',
+        stat: 'totalTreesChopped',
+        target: 25,
+        reward: 10
+      },
+      lumber_deforest: {
+        id: 'lumber_deforest',
+        name: 'Deforestation',
+        description: 'Chop 100 trees',
+        icon: '🌲',
+        category: 'Lumberjack',
+        stat: 'totalTreesChopped',
+        target: 100,
+        reward: 25
+      }
+    };
+    
+    // Check all achievements and unlock any that are newly earned
+    function checkAchievements() {
+      if (!gameSave.achievements) {
+        gameSave.achievements = [];
+      }
+      
+      Object.values(ACHIEVEMENTS).forEach(achievement => {
+        // Skip if already earned
+        if (gameSave.achievements.includes(achievement.id)) {
+          return;
+        }
+        
+        // Get current stat value
+        const statValue = gameSave.stats[achievement.stat] || 0;
+        
+        // Check if achievement is earned
+        if (statValue >= achievement.target) {
+          // Award the achievement
+          gameSave.achievements.push(achievement.id);
+          
+          // Award diamonds
+          diamondsEarned += achievement.reward;
+          
+          // Show notification
+          showAchievementUnlock(achievement);
+          
+          // Save
+          saveGame();
+        }
+      });
+    }
+    
+    // Show achievement unlock celebration
+    function showAchievementUnlock(achievement) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 24px 48px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: "Kalam", cursive;
+        z-index: 10001;
+        text-align: center;
+        animation: achievementPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 8px 32px rgba(245, 158, 11, 0.5), 0 0 60px rgba(245, 158, 11, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      `;
+      notification.innerHTML = `
+        <div style="font-size: 56px; margin-bottom: 12px; animation: achievementBounce 0.5s ease-in-out 0.3s;">${achievement.icon}</div>
+        <div style="font-size: 16px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 4px;">Achievement Unlocked!</div>
+        <div style="font-size: 28px; margin-bottom: 8px;">${achievement.name}</div>
+        <div style="font-size: 14px; opacity: 0.85;">${achievement.description}</div>
+        <div style="font-size: 20px; margin-top: 12px; color: #fef3c7;">+${achievement.reward} 💎</div>
+      `;
+      
+      // Add animation styles
+      if (!document.getElementById('achievement-unlock-style')) {
+        const style = document.createElement('style');
+        style.id = 'achievement-unlock-style';
+        style.textContent = `
+          @keyframes achievementPop {
+            0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+            50% { transform: translateX(-50%) scale(1.1); }
+            70% { transform: translateX(-50%) scale(0.95); }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+          }
+          @keyframes achievementBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+          @keyframes achievementShine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(notification);
+      
+      // Remove after delay
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(-50%) scale(0.9)';
+        notification.style.transition = 'all 0.5s ease-out';
+        setTimeout(() => notification.remove(), 500);
+      }, 4000);
+    }
+    
+    // Get achievement progress for display
+    function getAchievementProgress(achievementId) {
+      const achievement = ACHIEVEMENTS[achievementId];
+      if (!achievement) return { current: 0, target: 0, percent: 0 };
+      
+      const current = gameSave.stats[achievement.stat] || 0;
+      const percent = Math.min(100, (current / achievement.target) * 100);
+      
+      return { current, target: achievement.target, percent };
+    }
+    
+    // Get all achievements grouped by category
+    function getAchievementsByCategory() {
+      const categories = {};
+      
+      Object.values(ACHIEVEMENTS).forEach(achievement => {
+        if (!categories[achievement.category]) {
+          categories[achievement.category] = [];
+        }
+        categories[achievement.category].push({
+          ...achievement,
+          earned: gameSave.achievements?.includes(achievement.id) || false,
+          progress: getAchievementProgress(achievement.id)
+        });
+      });
+      
+      return categories;
+    }
+    
     // Track answer timing for speed bonuses
     let questionStartTime = 0;
     
@@ -4080,9 +4873,16 @@
         if (answerTimeMs < 2000) {
           totalXP += XP_REWARDS.speedBonus2sec;
           reasons.push('+10 FAST!');
+          // Track fast answer stats for achievements
+          gameSave.stats.fastAnswers2sec++;
+          gameSave.stats.fastAnswers3sec++; // Under 2s also counts as under 3s
+          checkAchievements();
         } else if (answerTimeMs < 3000) {
           totalXP += XP_REWARDS.speedBonus3sec;
           reasons.push('+5 quick');
+          // Track fast answer stats for achievements
+          gameSave.stats.fastAnswers3sec++;
+          checkAchievements();
         }
       }
       
@@ -4560,6 +5360,11 @@
     function awardRareItemDiamond(itemName) {
       // Track rare item for quests
       updateSessionStat('rareItemsFound', (gameSave.sessionStats?.rareItemsFound || 0) + 1);
+      
+      // Track lifetime rare items for achievements
+      gameSave.stats.totalRareItemsFound++;
+      checkAchievements();
+      saveGame();
       
       // First show the diamond animation
       animateFlyingDiamond(() => {
@@ -8493,6 +9298,174 @@
         startTimer(true); // Pass true to resume with current time
       }
     });
+    
+    // ============================================
+    // STATUS PANEL
+    // ============================================
+    
+    const statusButton = document.getElementById('statusButton');
+    const statusPanel = document.getElementById('statusPanel');
+    const statusPanelOverlay = document.getElementById('statusPanelOverlay');
+    const statusPanelClose = document.getElementById('statusPanelClose');
+    const statusTabs = document.querySelectorAll('.status-tab');
+    
+    // Open status panel
+    statusButton.addEventListener('click', () => {
+      openStatusPanel();
+    });
+    
+    // Close status panel
+    statusPanelClose.addEventListener('click', closeStatusPanel);
+    statusPanelOverlay.addEventListener('click', closeStatusPanel);
+    
+    function openStatusPanel() {
+      isPaused = true;
+      statusPanel.style.display = 'block';
+      statusPanelOverlay.style.display = 'block';
+      updateStatusPanel();
+    }
+    
+    function closeStatusPanel() {
+      statusPanel.style.display = 'none';
+      statusPanelOverlay.style.display = 'none';
+      isPaused = false;
+    }
+    
+    // Tab switching
+    statusTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Update active tab
+        statusTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Show corresponding content
+        document.querySelectorAll('.status-tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+    
+    // Update status panel with current data
+    function updateStatusPanel() {
+      // Overview stats
+      const level = getLevelFromXP(gameSave.playerXP);
+      document.getElementById('statusLevel').textContent = level;
+      document.getElementById('statusXP').textContent = gameSave.playerXP.toLocaleString();
+      document.getElementById('statusStreak').textContent = gameSave.stats.currentStreak;
+      document.getElementById('statusBestStreak').textContent = gameSave.stats.bestStreak;
+      document.getElementById('statusDiamonds').textContent = calculateTotalDiamonds();
+      document.getElementById('statusNights').textContent = gameSave.stats.totalNightsSurvived;
+      document.getElementById('statusQuestions').textContent = gameSave.stats.totalQuestionsCorrect;
+      document.getElementById('statusWolves').textContent = gameSave.stats.totalWolvesDefeated;
+      document.getElementById('statusAchievements').textContent = (gameSave.achievements || []).length;
+      
+      // XP progress bar
+      const progress = getLevelProgress(gameSave.playerXP);
+      const nextLevelXP = getXPForNextLevel(gameSave.playerXP);
+      const currentLevelXP = LEVEL_THRESHOLDS[level - 1] || 0;
+      document.getElementById('statusXPBar').style.width = `${progress}%`;
+      if (nextLevelXP) {
+        document.getElementById('statusXPProgress').textContent = `${gameSave.playerXP - currentLevelXP} / ${nextLevelXP - currentLevelXP} XP`;
+      } else {
+        document.getElementById('statusXPProgress').textContent = 'MAX LEVEL!';
+      }
+      
+      // Update achievements tab
+      updateAchievementsTab();
+      
+      // Update quests tab
+      updateQuestsTab();
+    }
+    
+    // Populate achievements tab
+    function updateAchievementsTab() {
+      const container = document.getElementById('achievementsList');
+      const categories = getAchievementsByCategory();
+      
+      let html = '';
+      
+      Object.entries(categories).forEach(([categoryName, achievements]) => {
+        const earnedCount = achievements.filter(a => a.earned).length;
+        
+        html += `
+          <div class="achievement-category">
+            <div class="achievement-category-title">${categoryName} (${earnedCount}/${achievements.length})</div>
+            <div class="achievement-grid">
+        `;
+        
+        achievements.forEach(achievement => {
+          const statusClass = achievement.earned ? 'earned' : 'locked';
+          const progressPercent = achievement.earned ? 100 : achievement.progress.percent;
+          
+          html += `
+            <div class="achievement-card ${statusClass}">
+              <div class="achievement-icon">${achievement.icon}</div>
+              <div class="achievement-info">
+                <div class="achievement-name">${achievement.name}</div>
+                <div class="achievement-desc">${achievement.description}</div>
+                ${achievement.earned ? 
+                  `<div class="achievement-reward">✓ Earned +${achievement.reward}💎</div>` :
+                  `<div class="achievement-progress-bar">
+                    <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+                  </div>
+                  <div class="achievement-progress-text">${achievement.progress.current} / ${achievement.target}</div>`
+                }
+              </div>
+            </div>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    // Populate quests tab
+    function updateQuestsTab() {
+      const container = document.getElementById('questsList');
+      
+      if (!gameSave.dailyQuests || gameSave.dailyQuests.length === 0) {
+        container.innerHTML = `
+          <div class="no-quests-message">
+            <div style="font-size: 40px; margin-bottom: 12px;">📋</div>
+            <div>No active quests</div>
+            <div style="font-size: 12px; margin-top: 8px;">Visit the Quest Board in the lobby to get quests!</div>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '<div class="quest-list">';
+      
+      gameSave.dailyQuests.forEach(quest => {
+        const progress = gameSave.sessionStats?.[quest.stat] || 0;
+        const currentProgress = Math.min(progress, quest.target);
+        const progressPercent = (currentProgress / quest.target) * 100;
+        const isCompleted = quest.completed;
+        
+        html += `
+          <div class="quest-card ${isCompleted ? 'completed' : ''}">
+            <div class="quest-icon">${quest.icon}</div>
+            <div class="quest-info">
+              <div class="quest-name">${quest.name}</div>
+              <div class="quest-progress-bar">
+                <div class="quest-progress-fill" style="width: ${progressPercent}%"></div>
+              </div>
+              <div class="quest-progress-text">${currentProgress} / ${quest.target} ${isCompleted ? '✓ Complete!' : ''}</div>
+            </div>
+            <div class="quest-reward">${quest.reward}💎</div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      container.innerHTML = html;
+    }
     
     // ============================================
     // GAME LOOP

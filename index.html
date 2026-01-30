@@ -702,6 +702,229 @@
       box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
     }
 
+    /* Achievement Gallery Button */
+    .achievement-button {
+      position: absolute;
+      top: 20px;
+      right: 200px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #402a1a 0%, #301a0c 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .achievement-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Achievement Gallery Panel */
+    .achievement-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(2, 4, 10, 0.95);
+      z-index: 1000;
+      display: none;
+      overflow-y: auto;
+    }
+
+    .achievement-panel.active {
+      display: block;
+    }
+
+    .achievement-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .achievement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-soft);
+    }
+
+    .achievement-header-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #f59e0b;
+    }
+
+    .achievement-header-stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .achievement-stat {
+      text-align: center;
+    }
+
+    .achievement-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-fire);
+    }
+
+    .achievement-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .achievement-close {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 94, 94, 0.2);
+      border: 2px solid #ff5e5e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .achievement-close:hover {
+      background: rgba(255, 94, 94, 0.4);
+      transform: scale(1.1);
+    }
+
+    .achievement-category {
+      margin-bottom: 30px;
+    }
+
+    .achievement-category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-left: 12px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .achievement-category-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .achievement-category-count {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .achievement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+    }
+
+    .achievement-card {
+      background: linear-gradient(135deg, #1a2332 0%, #0c1420 100%);
+      border: 2px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .achievement-card.earned {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border-color: #f59e0b;
+    }
+
+    .achievement-card.locked {
+      opacity: 0.5;
+    }
+
+    .achievement-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .achievement-card-icon {
+      font-size: 40px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-panel);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .achievement-card.earned .achievement-card-icon {
+      background: rgba(245, 158, 11, 0.3);
+    }
+
+    .achievement-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .achievement-card-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .achievement-card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .achievement-card-progress {
+      height: 8px;
+      background: var(--bg-deep);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .achievement-card-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .achievement-card-status {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .achievement-card.earned .achievement-card-status {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .achievement-card-reward {
+      font-size: 14px;
+      color: #fbbf24;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
     .quest-panel {
       position: fixed;
       top: 0;
@@ -920,6 +1143,9 @@
       </div>
     </div>
 
+    <!-- Achievement Button -->
+    <div class="achievement-button" id="achievementButton" title="Achievements">🏆</div>
+
     <!-- Quest Button -->
     <div class="quest-button" id="questButton" title="Daily Quests">📋</div>
 
@@ -986,6 +1212,34 @@
 
         <div class="classes-grid" id="classesGrid">
           <!-- Classes will be inserted here by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievement Panel -->
+    <div class="achievement-panel" id="achievementPanel">
+      <div class="achievement-content">
+        <div class="achievement-header">
+          <div class="achievement-header-title">🏆 Achievements</div>
+          <div class="achievement-header-stats">
+            <div class="achievement-stat">
+              <div class="achievement-stat-value" id="achievementEarnedCount">0</div>
+              <div class="achievement-stat-label">Earned</div>
+            </div>
+            <div class="achievement-stat">
+              <div class="achievement-stat-value" id="achievementTotalCount">0</div>
+              <div class="achievement-stat-label">Total</div>
+            </div>
+            <div class="achievement-stat">
+              <div class="achievement-stat-value" id="achievementDiamonds">0💎</div>
+              <div class="achievement-stat-label">Rewards Earned</div>
+            </div>
+          </div>
+          <div class="achievement-close" id="achievementClose">✕</div>
+        </div>
+        
+        <div id="achievementGallery">
+          <!-- Achievements will be populated by JavaScript -->
         </div>
       </div>
     </div>
@@ -1899,6 +2153,342 @@
     shopClose.addEventListener('click', () => {
       shopPanel.classList.remove('active');
     });
+
+    // ============================================
+    // ACHIEVEMENT SYSTEM
+    // ============================================
+    
+    // Achievement definitions (mirror of game.html)
+    const ACHIEVEMENTS = {
+      // Math Master - Questions Answered
+      math_first_steps: {
+        id: 'math_first_steps',
+        name: 'First Steps',
+        description: 'Answer 10 questions correctly',
+        icon: '📝',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 10,
+        reward: 5
+      },
+      math_century: {
+        id: 'math_century',
+        name: 'Century Club',
+        description: 'Answer 100 questions correctly',
+        icon: '💯',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 100,
+        reward: 15
+      },
+      math_machine: {
+        id: 'math_machine',
+        name: 'Math Machine',
+        description: 'Answer 500 questions correctly',
+        icon: '🤖',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 500,
+        reward: 30
+      },
+      math_legend: {
+        id: 'math_legend',
+        name: 'Math Legend',
+        description: 'Answer 1000 questions correctly',
+        icon: '🏆',
+        category: 'Math Master',
+        stat: 'totalQuestionsCorrect',
+        target: 1000,
+        reward: 50
+      },
+      
+      // Streak Star
+      streak_fire: {
+        id: 'streak_fire',
+        name: 'On Fire',
+        description: 'Reach a 10 streak',
+        icon: '🔥',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 10,
+        reward: 10
+      },
+      streak_unstoppable: {
+        id: 'streak_unstoppable',
+        name: 'Unstoppable',
+        description: 'Reach a 25 streak',
+        icon: '⚡',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 25,
+        reward: 20
+      },
+      streak_perfect: {
+        id: 'streak_perfect',
+        name: 'Perfect Mind',
+        description: 'Reach a 50 streak',
+        icon: '🧠',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 50,
+        reward: 35
+      },
+      streak_legendary: {
+        id: 'streak_legendary',
+        name: 'Legendary',
+        description: 'Reach a 100 streak',
+        icon: '👑',
+        category: 'Streak Star',
+        stat: 'bestStreak',
+        target: 100,
+        reward: 75
+      },
+      
+      // Survivor
+      survivor_first: {
+        id: 'survivor_first',
+        name: 'First Dawn',
+        description: 'Survive your first night',
+        icon: '🌅',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 1,
+        reward: 5
+      },
+      survivor_week: {
+        id: 'survivor_week',
+        name: 'Week Warrior',
+        description: 'Survive 7 nights total',
+        icon: '📅',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 7,
+        reward: 15
+      },
+      survivor_master: {
+        id: 'survivor_master',
+        name: 'Night Master',
+        description: 'Survive 25 nights total',
+        icon: '🌙',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 25,
+        reward: 30
+      },
+      survivor_eternal: {
+        id: 'survivor_eternal',
+        name: 'Eternal Survivor',
+        description: 'Survive 50 nights total',
+        icon: '⭐',
+        category: 'Survivor',
+        stat: 'totalNightsSurvived',
+        target: 50,
+        reward: 50
+      },
+      
+      // Speed Demon
+      speed_quick: {
+        id: 'speed_quick',
+        name: 'Quick Draw',
+        description: 'Answer 10 questions under 3 seconds',
+        icon: '⏱️',
+        category: 'Speed Demon',
+        stat: 'fastAnswers3sec',
+        target: 10,
+        reward: 10
+      },
+      speed_lightning: {
+        id: 'speed_lightning',
+        name: 'Lightning Fast',
+        description: 'Answer 50 questions under 2 seconds',
+        icon: '⚡',
+        category: 'Speed Demon',
+        stat: 'fastAnswers2sec',
+        target: 50,
+        reward: 25
+      },
+      
+      // Hunter
+      hunter_wolf: {
+        id: 'hunter_wolf',
+        name: 'Wolf Slayer',
+        description: 'Defeat 10 wolves',
+        icon: '🐺',
+        category: 'Hunter',
+        stat: 'totalWolvesDefeated',
+        target: 10,
+        reward: 10
+      },
+      hunter_pack: {
+        id: 'hunter_pack',
+        name: 'Pack Leader',
+        description: 'Defeat 50 wolves',
+        icon: '🐾',
+        category: 'Hunter',
+        stat: 'totalWolvesDefeated',
+        target: 50,
+        reward: 25
+      },
+      hunter_cult: {
+        id: 'hunter_cult',
+        name: 'Cult Crusher',
+        description: 'Defeat 25 cultists',
+        icon: '👤',
+        category: 'Hunter',
+        stat: 'totalCultistsDefeated',
+        target: 25,
+        reward: 20
+      },
+      
+      // Collector
+      collector_lucky: {
+        id: 'collector_lucky',
+        name: 'Lucky Find',
+        description: 'Find your first rare item',
+        icon: '🍀',
+        category: 'Collector',
+        stat: 'totalRareItemsFound',
+        target: 1,
+        reward: 5
+      },
+      collector_treasure: {
+        id: 'collector_treasure',
+        name: 'Treasure Hunter',
+        description: 'Find 10 rare items',
+        icon: '💎',
+        category: 'Collector',
+        stat: 'totalRareItemsFound',
+        target: 10,
+        reward: 20
+      },
+      
+      // Lumberjack
+      lumber_chopper: {
+        id: 'lumber_chopper',
+        name: 'Tree Chopper',
+        description: 'Chop 25 trees',
+        icon: '🪓',
+        category: 'Lumberjack',
+        stat: 'totalTreesChopped',
+        target: 25,
+        reward: 10
+      },
+      lumber_deforest: {
+        id: 'lumber_deforest',
+        name: 'Deforestation',
+        description: 'Chop 100 trees',
+        icon: '🌲',
+        category: 'Lumberjack',
+        stat: 'totalTreesChopped',
+        target: 100,
+        reward: 25
+      }
+    };
+    
+    // Achievement panel controls
+    const achievementButton = document.getElementById('achievementButton');
+    const achievementPanel = document.getElementById('achievementPanel');
+    const achievementClose = document.getElementById('achievementClose');
+    
+    achievementButton.addEventListener('click', () => {
+      populateAchievementGallery();
+      achievementPanel.classList.add('active');
+    });
+    
+    achievementClose.addEventListener('click', () => {
+      achievementPanel.classList.remove('active');
+    });
+    
+    // Get achievement progress
+    function getAchievementProgress(achievement, stats) {
+      const current = stats[achievement.stat] || 0;
+      const percent = Math.min(100, (current / achievement.target) * 100);
+      return { current, target: achievement.target, percent };
+    }
+    
+    // Get achievements grouped by category
+    function getAchievementsByCategory(earnedList, stats) {
+      const categories = {};
+      
+      Object.values(ACHIEVEMENTS).forEach(achievement => {
+        if (!categories[achievement.category]) {
+          categories[achievement.category] = [];
+        }
+        categories[achievement.category].push({
+          ...achievement,
+          earned: earnedList.includes(achievement.id),
+          progress: getAchievementProgress(achievement, stats)
+        });
+      });
+      
+      return categories;
+    }
+    
+    // Populate achievement gallery
+    function populateAchievementGallery() {
+      const gallery = document.getElementById('achievementGallery');
+      const earnedList = gameSave.achievements || [];
+      const stats = gameSave.stats || {};
+      
+      // Calculate totals
+      const totalAchievements = Object.keys(ACHIEVEMENTS).length;
+      const earnedCount = earnedList.length;
+      const totalDiamondsEarned = earnedList.reduce((sum, id) => {
+        return sum + (ACHIEVEMENTS[id]?.reward || 0);
+      }, 0);
+      
+      // Update header stats
+      document.getElementById('achievementEarnedCount').textContent = earnedCount;
+      document.getElementById('achievementTotalCount').textContent = totalAchievements;
+      document.getElementById('achievementDiamonds').textContent = totalDiamondsEarned + '💎';
+      
+      const categories = getAchievementsByCategory(earnedList, stats);
+      
+      let html = '';
+      
+      Object.entries(categories).forEach(([categoryName, achievements]) => {
+        const categoryEarned = achievements.filter(a => a.earned).length;
+        
+        html += `
+          <div class="achievement-category">
+            <div class="achievement-category-header">
+              <div class="achievement-category-name">${categoryName}</div>
+              <div class="achievement-category-count">${categoryEarned} / ${achievements.length}</div>
+            </div>
+            <div class="achievement-grid">
+        `;
+        
+        achievements.forEach(achievement => {
+          const statusClass = achievement.earned ? 'earned' : 'locked';
+          const progressPercent = achievement.earned ? 100 : achievement.progress.percent;
+          
+          html += `
+            <div class="achievement-card ${statusClass}">
+              <div class="achievement-card-icon">${achievement.icon}</div>
+              <div class="achievement-card-info">
+                <div class="achievement-card-name">${achievement.name}</div>
+                <div class="achievement-card-desc">${achievement.description}</div>
+                ${achievement.earned ? 
+                  `<div class="achievement-card-status">✓ Earned!</div>
+                   <div class="achievement-card-reward">+${achievement.reward}💎</div>` :
+                  `<div class="achievement-card-progress">
+                    <div class="achievement-card-progress-fill" style="width: ${progressPercent}%"></div>
+                  </div>
+                  <div class="achievement-card-status">${achievement.progress.current} / ${achievement.target}</div>`
+                }
+              </div>
+            </div>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+      });
+      
+      gallery.innerHTML = html;
+    }
 
     // Initialize lobby stats on load
     updateLobbyStats();

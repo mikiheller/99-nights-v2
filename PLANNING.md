@@ -133,7 +133,7 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 | 2.2 Classes/Upgrades | ✅ Complete | `phase2-classes` | Diamond spending, 10 class upgrades |
 | 2.3 Streaks & Combos | ✅ Complete | `phase2-xp-levels` | Bundled with XP system |
 | 2.4 Quest Board | ✅ Complete | `phase2-quests` | Daily quests with 13 quest types |
-| 2.5 Achievement Expansion | Not Started | `phase2-achievements` | More badges and milestones |
+| 2.5 Achievement Expansion | ✅ Complete | `phase2-achievements` | 20 achievements, in-game status panel |
 
 ### Phase 3: Pets & Content
 **Goal:** Add depth with pets and new things to discover
@@ -718,6 +718,46 @@ pet: {
 **Next steps:**
 - Phase 2.5: Achievement Expansion
 - Phase 3: Pets & Content
+
+---
+
+### Session 7 - Achievement Expansion
+**Date:** 2026-01-30
+**Branch:** `phase2-achievements`
+**What was done:**
+- Implemented comprehensive achievement system with 20 achievements across 7 categories:
+  - **Math Master** (4): First Steps, Century Club, Math Machine, Math Legend
+  - **Streak Star** (4): On Fire, Unstoppable, Perfect Mind, Legendary
+  - **Survivor** (4): First Dawn, Week Warrior, Night Master, Eternal Survivor
+  - **Speed Demon** (2): Quick Draw, Lightning Fast
+  - **Hunter** (3): Wolf Slayer, Pack Leader, Cult Crusher
+  - **Collector** (2): Lucky Find, Treasure Hunter
+  - **Lumberjack** (2): Tree Chopper, Deforestation
+- Added achievement unlock celebration popup with animation
+- Added new stats tracking: fastAnswers3sec, fastAnswers2sec, totalRareItemsFound
+- **In-game status panel** (📊 button) showing:
+  - Overview tab: Level, XP, streaks, diamonds, stats with XP progress bar
+  - Achievements tab: All achievements with progress tracking
+  - Quests tab: Current daily quests with progress
+- **Achievement gallery in lobby** (🏆 button):
+  - Browse all achievements by category
+  - See earned count and total rewards
+  - Progress bars for incomplete achievements
+
+**How it works:**
+1. Achievements auto-unlock when requirements are met
+2. Diamond rewards are awarded immediately upon unlock
+3. Celebration popup shows with achievement details
+4. Check progress anytime via 📊 button in-game or 🏆 button in lobby
+
+**New Stats Tracked:**
+- `fastAnswers3sec` - Answers under 3 seconds
+- `fastAnswers2sec` - Answers under 2 seconds
+- `totalRareItemsFound` - Lifetime rare items collected
+
+**Next steps:**
+- Phase 3.1: Pet System
+- Phase 4.2: Daily Login Rewards
 
 ---
 
