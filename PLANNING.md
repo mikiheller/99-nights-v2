@@ -847,4 +847,25 @@ pet: {
 
 ---
 
+### Session 10 - Performance Fix
+**Date:** 2026-01-30
+**Branch:** `phase4-daily-rewards`
+**What was done:**
+- Fixed severe game lag caused by pet encounter system
+- **Root cause:** `attemptPetEncounter()` had the throttle check AFTER `canHavePetEncounter()`
+  - This meant every single frame during player movement was running multiple checks
+  - Including `getLevelFromXP()` which iterates through level thresholds
+- **Fix:** Moved the throttle check to be the FIRST thing in the function
+  - Now eligibility checks only run once per second instead of ~60 times per second
+- Systematic debugging approach:
+  1. Disabled all new features (achievements, pets, status panel)
+  2. Confirmed game was smooth
+  3. Re-enabled features one by one
+  4. Found pet encounters caused the lag
+  5. Identified throttle placement bug
+
+**Lesson learned:** Always put throttle/rate-limit checks at the very beginning of frequently-called functions, before any other logic.
+
+---
+
 *This document should be updated by each agent session. Keep it current!*
