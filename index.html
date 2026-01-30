@@ -702,6 +702,40 @@
       box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
     }
 
+    /* Daily Reward Button */
+    .daily-reward-button {
+      position: absolute;
+      top: 20px;
+      right: 320px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #3a2a1a 0%, #2a1a0c 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+    }
+
+    .daily-reward-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+    }
+
+    .daily-reward-button.has-reward {
+      animation: rewardPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes rewardPulse {
+      0%, 100% { box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3); }
+      50% { box-shadow: 0 4px 25px rgba(251, 191, 36, 0.7); }
+    }
+
     /* Pet Button */
     .pet-button {
       position: absolute;
@@ -1417,6 +1451,9 @@
       </div>
     </div>
 
+    <!-- Daily Reward Button -->
+    <div class="daily-reward-button" id="dailyRewardButton" title="Daily Rewards">🎁</div>
+
     <!-- Pet Button -->
     <div class="pet-button" id="petButton" title="Your Pet">🐾</div>
 
@@ -2115,6 +2152,387 @@
       }
       return null;
     }
+    
+    // Current game save reference (loaded once on init)
+    let gameSave = loadSave() || {};
+    
+    // Save updated data back to localStorage
+    function saveSave(save) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+        gameSave = save; // Update reference
+      } catch (e) {
+        console.error('Failed to save:', e);
+      }
+    }
+    
+    // ============================================
+    // DAILY LOGIN REWARDS
+    // ============================================
+    
+    // Daily reward amounts (7-day cycle)
+    const DAILY_REWARDS = [
+      { day: 1, diamonds: 5, label: 'Day 1' },
+      { day: 2, diamonds: 10, label: 'Day 2' },
+      { day: 3, diamonds: 15, label: 'Day 3' },
+      { day: 4, diamonds: 20, label: 'Day 4' },
+      { day: 5, diamonds: 25, label: 'Day 5' },
+      { day: 6, diamonds: 30, label: 'Day 6' },
+      { day: 7, diamonds: 50, label: 'Week Bonus!' }
+    ];
+    
+    // Check if player should receive daily reward
+    function checkDailyReward() {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Already claimed today
+      if (gameSave.lastRewardClaimed === today) {
+        return null;
+      }
+      
+      // Calculate consecutive days
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      let consecutiveDays = gameSave.consecutiveLoginDays || 0;
+      
+      if (gameSave.lastRewardClaimed === yesterday) {
+        // Streak continues
+        consecutiveDays++;
+      } else if (gameSave.lastRewardClaimed) {
+        // Streak broken
+        consecutiveDays = 1;
+      } else {
+        // First time
+        consecutiveDays = 1;
+      }
+      
+      // Get reward for current day in cycle (1-7)
+      const dayInCycle = ((consecutiveDays - 1) % 7) + 1;
+      const reward = DAILY_REWARDS[dayInCycle - 1];
+      
+      // Check for streak bonus (7+ consecutive days = 1.5x multiplier)
+      const streakBonus = consecutiveDays >= 7 ? 1.5 : 1;
+      const totalReward = Math.floor(reward.diamonds * streakBonus);
+      
+      return {
+        dayInCycle,
+        consecutiveDays,
+        baseReward: reward.diamonds,
+        streakBonus,
+        totalReward,
+        label: reward.label
+      };
+    }
+    
+    // Claim daily reward
+    function claimDailyReward() {
+      const reward = checkDailyReward();
+      if (!reward) return null;
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Update save
+      gameSave.lastRewardClaimed = today;
+      gameSave.consecutiveLoginDays = reward.consecutiveDays;
+      gameSave.totalDiamondsEarned = (gameSave.totalDiamondsEarned || 0) + reward.totalReward;
+      
+      saveSave(gameSave);
+      updateLobbyStats();
+      
+      return reward;
+    }
+    
+    // Show daily reward popup
+    function showDailyRewardPopup() {
+      const reward = checkDailyReward();
+      if (!reward) return;
+      
+      const overlay = document.createElement('div');
+      overlay.id = 'dailyRewardOverlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+      `;
+      
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+        border: 3px solid #fbbf24;
+        border-radius: 20px;
+        padding: 40px 50px;
+        max-width: 500px;
+        text-align: center;
+        animation: bounceIn 0.5s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(251, 191, 36, 0.3);
+      `;
+      
+      // Build day indicators
+      let dayIndicators = '';
+      for (let i = 1; i <= 7; i++) {
+        const isCurrentDay = i === reward.dayInCycle;
+        const isPastDay = i < reward.dayInCycle || (reward.consecutiveDays > 7 && i <= 7);
+        const dayReward = DAILY_REWARDS[i - 1];
+        
+        dayIndicators += `
+          <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            ${isCurrentDay ? 'transform: scale(1.2);' : ''}
+          ">
+            <div style="
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: ${isCurrentDay ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : isPastDay ? '#22c55e' : 'rgba(255,255,255,0.1)'};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: ${isCurrentDay ? '20px' : '14px'};
+              color: ${isCurrentDay || isPastDay ? 'white' : '#666'};
+              font-weight: 700;
+              border: 2px solid ${isCurrentDay ? '#fbbf24' : isPastDay ? '#22c55e' : 'rgba(255,255,255,0.2)'};
+              ${isCurrentDay ? 'box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);' : ''}
+            ">${isPastDay && !isCurrentDay ? '✓' : i}</div>
+            <div style="font-size: 10px; color: #888; margin-top: 4px;">${dayReward.diamonds}💎</div>
+          </div>
+        `;
+      }
+      
+      popup.innerHTML = `
+        <div style="font-size: 50px; margin-bottom: 15px;">🎁</div>
+        <div style="font-size: 28px; font-weight: 700; color: #fbbf24; margin-bottom: 10px; font-family: 'Kalam', cursive;">
+          Daily Reward!
+        </div>
+        <div style="font-size: 16px; color: #c4c4c4; margin-bottom: 25px;">
+          ${reward.label} - ${reward.consecutiveDays} day${reward.consecutiveDays > 1 ? 's' : ''} streak!
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 25px;">
+          ${dayIndicators}
+        </div>
+        
+        <div style="
+          background: rgba(251, 191, 36, 0.15);
+          border: 2px solid rgba(251, 191, 36, 0.3);
+          border-radius: 16px;
+          padding: 20px;
+          margin-bottom: 25px;
+        ">
+          <div style="font-size: 48px; font-weight: 700; color: #fbbf24; font-family: 'Kalam', cursive;">
+            +${reward.totalReward} 💎
+          </div>
+          ${reward.streakBonus > 1 ? `
+            <div style="font-size: 14px; color: #22c55e; margin-top: 8px;">
+              ✨ Week streak bonus: ${Math.round((reward.streakBonus - 1) * 100)}% extra!
+            </div>
+          ` : ''}
+        </div>
+        
+        <button id="claimDailyRewardBtn" style="
+          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+          border: none;
+          color: #000;
+          padding: 16px 50px;
+          border-radius: 12px;
+          font-size: 20px;
+          font-weight: 700;
+          font-family: 'Kalam', cursive;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">Claim Reward!</button>
+        
+        <div style="font-size: 12px; color: #666; margin-top: 15px;">
+          Come back tomorrow for more rewards!
+        </div>
+      `;
+      
+      // Add animation styles
+      if (!document.getElementById('daily-reward-style')) {
+        const style = document.createElement('style');
+        style.id = 'daily-reward-style';
+        style.textContent = `
+          @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      overlay.appendChild(popup);
+      document.body.appendChild(overlay);
+      
+      // Claim button handler
+      document.getElementById('claimDailyRewardBtn').addEventListener('click', () => {
+        claimDailyReward();
+        
+        // Show confetti effect
+        for (let i = 0; i < 30; i++) {
+          const confetti = document.createElement('div');
+          confetti.style.cssText = `
+            position: fixed;
+            top: -20px;
+            left: ${Math.random() * 100}%;
+            width: 10px;
+            height: 10px;
+            background: ${['#fbbf24', '#22c55e', '#ff5e5e', '#3b82f6', '#a855f7'][Math.floor(Math.random() * 5)]};
+            border-radius: 50%;
+            animation: confetti ${2 + Math.random() * 2}s linear forwards;
+            animation-delay: ${Math.random() * 0.5}s;
+            z-index: 2001;
+          `;
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), 4000);
+        }
+        
+        // Close popup
+        setTimeout(() => {
+          overlay.remove();
+        }, 500);
+      });
+    }
+    
+    // Update daily reward button appearance
+    function updateDailyRewardButton() {
+      const btn = document.getElementById('dailyRewardButton');
+      if (checkDailyReward()) {
+        btn.classList.add('has-reward');
+        btn.title = 'Claim your daily reward!';
+      } else {
+        btn.classList.remove('has-reward');
+        btn.title = 'Daily rewards (come back tomorrow!)';
+      }
+    }
+    
+    // Daily reward button click - show popup or info
+    document.getElementById('dailyRewardButton').addEventListener('click', () => {
+      if (checkDailyReward()) {
+        showDailyRewardPopup();
+      } else {
+        showDailyRewardInfo();
+      }
+    });
+    
+    // Show daily reward info (when already claimed)
+    function showDailyRewardInfo() {
+      const consecutiveDays = gameSave.consecutiveLoginDays || 0;
+      const dayInCycle = consecutiveDays > 0 ? ((consecutiveDays - 1) % 7) + 1 : 0;
+      
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      // Build day indicators
+      let dayIndicators = '';
+      for (let i = 1; i <= 7; i++) {
+        const isPastDay = i <= dayInCycle;
+        const dayReward = DAILY_REWARDS[i - 1];
+        
+        dayIndicators += `
+          <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          ">
+            <div style="
+              width: 45px;
+              height: 45px;
+              border-radius: 50%;
+              background: ${isPastDay ? '#22c55e' : 'rgba(255,255,255,0.1)'};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+              color: ${isPastDay ? 'white' : '#666'};
+              font-weight: 700;
+              border: 2px solid ${isPastDay ? '#22c55e' : 'rgba(255,255,255,0.2)'};
+            ">${isPastDay ? '✓' : i}</div>
+            <div style="font-size: 11px; color: #888; margin-top: 4px;">${dayReward.diamonds}💎</div>
+            <div style="font-size: 9px; color: #666;">${dayReward.label}</div>
+          </div>
+        `;
+      }
+      
+      overlay.innerHTML = `
+        <div style="
+          background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+          border: 3px solid #fbbf24;
+          border-radius: 20px;
+          padding: 30px 40px;
+          max-width: 500px;
+          text-align: center;
+        ">
+          <div style="font-size: 40px; margin-bottom: 15px;">🎁</div>
+          <div style="font-size: 24px; font-weight: 700; color: #fbbf24; margin-bottom: 10px; font-family: 'Kalam', cursive;">
+            Daily Rewards
+          </div>
+          <div style="font-size: 14px; color: #22c55e; margin-bottom: 20px;">
+            ✓ Today's reward claimed!
+          </div>
+          
+          <div style="font-size: 16px; color: #c4c4c4; margin-bottom: 20px;">
+            Current streak: <strong>${consecutiveDays}</strong> day${consecutiveDays !== 1 ? 's' : ''}
+            ${consecutiveDays >= 7 ? '<span style="color: #fbbf24;"> (1.5x bonus active!)</span>' : ''}
+          </div>
+          
+          <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 25px;">
+            ${dayIndicators}
+          </div>
+          
+          <div style="font-size: 13px; color: #888; margin-bottom: 20px;">
+            Come back tomorrow for your next reward!
+          </div>
+          
+          <button onclick="this.parentElement.parentElement.remove()" style="
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Kalam', cursive;
+            cursor: pointer;
+          ">Close</button>
+        </div>
+      `;
+      
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+      });
+    }
+    
+    // Show daily reward on page load if available
+    setTimeout(() => {
+      updateDailyRewardButton();
+      if (checkDailyReward()) {
+        showDailyRewardPopup();
+      }
+    }, 500);
 
     // Save data
     function saveSave(save) {

@@ -151,7 +151,7 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 | Task | Status | Branch | Notes |
 |------|--------|--------|-------|
 | 4.1 Boss Nights | Not Started | `phase4-bosses` | Special challenge every 10th night |
-| 4.2 Daily Login Rewards | Not Started | `phase4-daily` | Incentive to return daily |
+| 4.2 Daily Login Rewards | ✅ Complete | `phase4-daily-rewards` | 7-day reward cycle with streak bonuses |
 | 4.3 Speed Bonuses | Not Started | `phase4-speed` | Reward fast answers |
 | 4.4 Close Call Feedback | Not Started | `phase4-polish` | Screen effects, sounds |
 | 4.5 Bug Fixes | Not Started | `phase4-fixes` | Address issues from testing |
@@ -804,6 +804,46 @@ pet: {
 
 **Next steps:**
 - Phase 4.2: Daily Login Rewards
+
+---
+
+### Session 9 - Daily Login Rewards
+**Date:** 2026-01-30
+**Branch:** `phase4-daily-rewards`
+**What was done:**
+- Implemented daily login reward system:
+  - 7-day reward cycle with escalating diamonds (5, 10, 15, 20, 25, 30, 50)
+  - Automatic popup when opening lobby with unclaimed reward
+  - Streak tracking: 7+ consecutive days = 1.5x bonus multiplier
+  - Visual progress indicator showing all 7 days
+  - Confetti celebration on claim!
+- Added 🎁 Daily Reward button in lobby
+  - Pulses when reward available
+  - Shows progress when already claimed
+- Fixed gameSave reference in lobby (was undefined)
+
+**Reward Structure:**
+| Day | Base Reward | With Streak Bonus (7+ days) |
+|-----|-------------|----------------------------|
+| 1 | 5💎 | 7💎 |
+| 2 | 10💎 | 15💎 |
+| 3 | 15💎 | 22💎 |
+| 4 | 20💎 | 30💎 |
+| 5 | 25💎 | 37💎 |
+| 6 | 30💎 | 45💎 |
+| 7 | 50💎 | 75💎 |
+
+**How it works:**
+1. Open lobby each day
+2. Popup shows with current day's reward
+3. Click "Claim Reward!" to collect diamonds
+4. Streak continues if you play consecutive days
+5. After 7+ days, all rewards get 1.5x multiplier
+6. Missing a day resets streak to 1
+
+**Data tracked:**
+- `lastRewardClaimed`: Date of last claim
+- `consecutiveLoginDays`: Current streak count
 
 ---
 
