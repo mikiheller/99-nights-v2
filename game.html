@@ -1501,6 +1501,92 @@
       white-space: nowrap;
       animation: streakPulse 1s ease-in-out infinite;
     }
+
+    /* Pet Display */
+    .pet-section {
+      padding: 12px !important;
+    }
+
+    .pet-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pet-icon {
+      font-size: 36px;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245, 158, 11, 0.15);
+      border: 2px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+    }
+
+    .pet-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pet-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      font-family: 'Kalam', cursive;
+    }
+
+    .pet-happiness-bar {
+      height: 8px;
+      background: var(--bg-deep);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .pet-happiness-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .pet-happiness-fill.hungry {
+      background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+    }
+
+    .pet-happiness-fill.very-hungry {
+      background: linear-gradient(90deg, #ff5e5e 0%, #ff8080 100%);
+    }
+
+    .pet-status {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .pet-feed-btn {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border: none;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pet-feed-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+
+    .pet-feed-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
     
     @keyframes streakPulse {
       0%, 100% { transform: scale(1); }
@@ -1563,6 +1649,21 @@
             <div class="xp-text" id="xpText">0 / 100 XP</div>
           </div>
           <div class="streak-badge" id="streakBadge" style="display: none;">🔥 <span id="streakCount">0</span></div>
+        </div>
+      </div>
+
+      <!-- Pet Display -->
+      <div class="info-section pet-section" id="petSection" style="display: none;">
+        <div class="pet-display">
+          <div class="pet-icon" id="petIcon">🐱</div>
+          <div class="pet-info">
+            <div class="pet-name" id="petName">Pet Name</div>
+            <div class="pet-happiness-bar">
+              <div class="pet-happiness-fill" id="petHappinessBar" style="width: 100%;"></div>
+            </div>
+            <div class="pet-status" id="petStatus">Very Happy 😊</div>
+          </div>
+          <button class="pet-feed-btn" id="petFeedBtn" title="Feed your pet (uses 1 carrot)">🥕</button>
         </div>
       </div>
 
@@ -4799,6 +4900,911 @@
       });
       
       return categories;
+    }
+    
+    // ============================================
+    // PET SYSTEM
+    // ============================================
+    
+    // Pet type definitions
+    const PET_TYPES = {
+      cat: {
+        type: 'cat',
+        name: 'Cat',
+        icon: '🐱',
+        description: 'A loyal feline companion',
+        abilities: ['Wolf Alert', '+10% Rare Items'],
+        abilityDesc: 'Alerts you when wolves are nearby and increases rare item drops',
+        defaultNames: ['Whiskers', 'Mittens', 'Shadow', 'Luna', 'Simba', 'Mochi']
+      },
+      pig: {
+        type: 'pig',
+        name: 'Pig',
+        icon: '🐷',
+        description: 'A friendly farm friend',
+        abilities: ['Find Carrots', '+1 Harvest Bonus'],
+        abilityDesc: 'Occasionally finds buried carrots and increases farm harvests',
+        defaultNames: ['Piglet', 'Bacon', 'Oink', 'Truffle', 'Hammy', 'Porky']
+      },
+      bee: {
+        type: 'bee',
+        name: 'Bee',
+        icon: '🐝',
+        description: 'A buzzing helper bee',
+        abilities: ['Produce Honey', 'Faster Farm'],
+        abilityDesc: 'Produces healing honey over time and speeds up crop growth',
+        defaultNames: ['Buzz', 'Honey', 'Bumble', 'Zippy', 'Sunny', 'Nectar']
+      }
+    };
+    
+    // Pet encounter chance (per movement tick during daytime, roughly)
+    const PET_ENCOUNTER_CHANCE = 0.001; // 0.1% per check - will happen eventually
+    
+    // Track if pet encounter is available this session
+    let petEncounterAvailable = true;
+    let lastPetEncounterCheck = 0;
+    
+    // Check if player can have a pet encounter
+    function canHavePetEncounter() {
+      // Must not already have a pet
+      if (gameSave.pet) return false;
+      // Must be daytime
+      if (isNighttime) return false;
+      // Must be at least level 2 (unlock requirement from spec)
+      if (getLevelFromXP(gameSave.playerXP) < 2) return false;
+      // Encounter must be available this session
+      if (!petEncounterAvailable) return false;
+      return true;
+    }
+    
+    // Attempt pet encounter (called during player movement)
+    function attemptPetEncounter() {
+      if (!canHavePetEncounter()) return false;
+      
+      // Throttle checks to once per second
+      const now = Date.now();
+      if (now - lastPetEncounterCheck < 1000) return false;
+      lastPetEncounterCheck = now;
+      
+      // Random chance
+      if (Math.random() < PET_ENCOUNTER_CHANCE) {
+        triggerPetEncounter();
+        return true;
+      }
+      return false;
+    }
+    
+    // Trigger a pet encounter
+    function triggerPetEncounter() {
+      petEncounterAvailable = false; // Only one encounter per session
+      
+      // Pick a random pet type
+      const petTypes = Object.keys(PET_TYPES);
+      const randomType = petTypes[Math.floor(Math.random() * petTypes.length)];
+      const pet = PET_TYPES[randomType];
+      
+      showPetEncounterDialog(pet);
+    }
+    
+    // Show pet encounter dialog
+    function showPetEncounterDialog(pet) {
+      isPaused = true;
+      
+      const overlay = document.createElement('div');
+      overlay.id = 'petEncounterOverlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+      `;
+      
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+        border: 3px solid #f59e0b;
+        border-radius: 20px;
+        padding: 30px 40px;
+        max-width: 500px;
+        text-align: center;
+        animation: bounceIn 0.5s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(245, 158, 11, 0.3);
+      `;
+      
+      dialog.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 15px; animation: petBounce 1s ease-in-out infinite;">${pet.icon}</div>
+        <div style="font-size: 28px; font-weight: 700; color: #f59e0b; margin-bottom: 10px; font-family: 'Kalam', cursive;">
+          A Wild ${pet.name} Appears!
+        </div>
+        <div style="font-size: 16px; color: #c4c4c4; margin-bottom: 20px;">
+          ${pet.description}
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 20px;">
+          <div style="font-size: 14px; color: #f59e0b; font-weight: 600; margin-bottom: 5px;">Abilities:</div>
+          <div style="font-size: 13px; color: #c4c4c4;">${pet.abilityDesc}</div>
+        </div>
+        <div style="font-size: 16px; color: #7cd992; margin-bottom: 25px;">
+          Answer 3 questions correctly to befriend ${pet.name}!
+        </div>
+        <button id="startTamingBtn" style="
+          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+          border: none;
+          color: white;
+          padding: 14px 40px;
+          border-radius: 10px;
+          font-size: 18px;
+          font-weight: 700;
+          font-family: 'Kalam', cursive;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-right: 10px;
+        ">Try to Befriend!</button>
+        <button id="skipTamingBtn" style="
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #c4c4c4;
+          padding: 14px 30px;
+          border-radius: 10px;
+          font-size: 16px;
+          font-family: 'Kalam', cursive;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">Not Now</button>
+      `;
+      
+      // Add animation styles
+      if (!document.getElementById('pet-encounter-style')) {
+        const style = document.createElement('style');
+        style.id = 'pet-encounter-style';
+        style.textContent = `
+          @keyframes petBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+          }
+          @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      
+      // Button handlers
+      document.getElementById('startTamingBtn').addEventListener('click', () => {
+        overlay.remove();
+        startPetTaming(pet);
+      });
+      
+      document.getElementById('skipTamingBtn').addEventListener('click', () => {
+        overlay.remove();
+        isPaused = false;
+        // Pet runs away - encounter over for this session
+      });
+    }
+    
+    // Pet taming state
+    let tamingPet = null;
+    let tamingQuestionsCorrect = 0;
+    let tamingQuestionsTotal = 0;
+    const TAMING_QUESTIONS_REQUIRED = 3;
+    
+    // Start pet taming mini-game
+    function startPetTaming(pet) {
+      tamingPet = pet;
+      tamingQuestionsCorrect = 0;
+      tamingQuestionsTotal = 0;
+      
+      showTamingQuestion();
+    }
+    
+    // Show taming question
+    function showTamingQuestion() {
+      // Generate a question using current game mode
+      const questions = generateQuestionsFromAdminConfig('chop', 1); // Use easy questions
+      const question = questions[0];
+      
+      const overlay = document.createElement('div');
+      overlay.id = 'tamingQuestionOverlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+        border: 3px solid #f59e0b;
+        border-radius: 20px;
+        padding: 30px 40px;
+        max-width: 450px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      `;
+      
+      dialog.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;">
+          <span style="font-size: 50px;">${tamingPet.icon}</span>
+          <div style="text-align: left;">
+            <div style="font-size: 14px; color: #c4c4c4;">Taming Progress</div>
+            <div style="display: flex; gap: 8px; margin-top: 5px;">
+              ${Array(TAMING_QUESTIONS_REQUIRED).fill(0).map((_, i) => `
+                <div style="
+                  width: 24px;
+                  height: 24px;
+                  border-radius: 50%;
+                  background: ${i < tamingQuestionsCorrect ? '#22c55e' : 'rgba(255,255,255,0.1)'};
+                  border: 2px solid ${i < tamingQuestionsCorrect ? '#22c55e' : 'rgba(255,255,255,0.2)'};
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 14px;
+                ">${i < tamingQuestionsCorrect ? '✓' : ''}</div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="font-size: 36px; font-weight: 700; color: var(--accent-fire); margin-bottom: 25px; font-family: 'Kalam', cursive;">
+          ${question.display}
+        </div>
+        
+        <input type="number" id="tamingAnswerInput" style="
+          width: 150px;
+          padding: 15px;
+          font-size: 28px;
+          text-align: center;
+          border-radius: 10px;
+          border: 2px solid rgba(255, 123, 0, 0.5);
+          background: rgba(0,0,0,0.3);
+          color: white;
+          font-family: 'Kalam', cursive;
+          outline: none;
+        " placeholder="?" autofocus>
+        
+        <div style="margin-top: 20px;">
+          <button id="tamingSubmitBtn" style="
+            background: linear-gradient(135deg, var(--accent-fire) 0%, #ff9500 100%);
+            border: none;
+            color: white;
+            padding: 12px 35px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Kalam', cursive;
+            cursor: pointer;
+          ">Submit</button>
+        </div>
+        
+        <div id="tamingFeedback" style="margin-top: 15px; font-size: 18px; min-height: 25px;"></div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      
+      const input = document.getElementById('tamingAnswerInput');
+      const submitBtn = document.getElementById('tamingSubmitBtn');
+      const feedback = document.getElementById('tamingFeedback');
+      
+      input.focus();
+      
+      const handleSubmit = () => {
+        const answer = parseInt(input.value);
+        if (isNaN(answer)) return;
+        
+        tamingQuestionsTotal++;
+        
+        if (answer === question.answer) {
+          tamingQuestionsCorrect++;
+          
+          if (tamingQuestionsCorrect >= TAMING_QUESTIONS_REQUIRED) {
+            // Success! Pet is tamed
+            feedback.innerHTML = '<span style="color: #22c55e;">Correct! 🎉</span>';
+            setTimeout(() => {
+              overlay.remove();
+              completePetTaming();
+            }, 1000);
+          } else {
+            // More questions needed
+            feedback.innerHTML = '<span style="color: #22c55e;">Correct! ✓</span>';
+            setTimeout(() => {
+              overlay.remove();
+              showTamingQuestion();
+            }, 800);
+          }
+        } else {
+          // Wrong answer - pet gets scared
+          feedback.innerHTML = `<span style="color: #ff5e5e;">Wrong! The answer was ${question.answer}</span>`;
+          setTimeout(() => {
+            overlay.remove();
+            failPetTaming();
+          }, 1500);
+        }
+      };
+      
+      submitBtn.addEventListener('click', handleSubmit);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSubmit();
+      });
+    }
+    
+    // Pet taming failed
+    function failPetTaming() {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      overlay.innerHTML = `
+        <div style="
+          background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+          border: 3px solid #ff5e5e;
+          border-radius: 20px;
+          padding: 30px 40px;
+          max-width: 400px;
+          text-align: center;
+        ">
+          <div style="font-size: 60px; margin-bottom: 15px;">😿</div>
+          <div style="font-size: 24px; font-weight: 700; color: #ff5e5e; margin-bottom: 15px; font-family: 'Kalam', cursive;">
+            The ${tamingPet.name} Got Scared!
+          </div>
+          <div style="font-size: 16px; color: #c4c4c4; margin-bottom: 20px;">
+            Don't worry, you might find another pet later!
+          </div>
+          <button id="tamingFailOkBtn" style="
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Kalam', cursive;
+            cursor: pointer;
+          ">OK</button>
+        </div>
+      `;
+      
+      document.body.appendChild(overlay);
+      
+      document.getElementById('tamingFailOkBtn').addEventListener('click', () => {
+        overlay.remove();
+        tamingPet = null;
+        isPaused = false;
+      });
+    }
+    
+    // Pet taming completed successfully
+    function completePetTaming() {
+      showPetNamingDialog();
+    }
+    
+    // Show pet naming dialog
+    function showPetNamingDialog() {
+      const overlay = document.createElement('div');
+      overlay.id = 'petNamingOverlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      const suggestedName = tamingPet.defaultNames[Math.floor(Math.random() * tamingPet.defaultNames.length)];
+      
+      overlay.innerHTML = `
+        <div style="
+          background: linear-gradient(180deg, #1a2332 0%, #0c1420 100%);
+          border: 3px solid #22c55e;
+          border-radius: 20px;
+          padding: 30px 40px;
+          max-width: 450px;
+          text-align: center;
+          animation: bounceIn 0.5s ease;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
+        ">
+          <div style="font-size: 80px; margin-bottom: 15px;">${tamingPet.icon}</div>
+          <div style="font-size: 28px; font-weight: 700; color: #22c55e; margin-bottom: 10px; font-family: 'Kalam', cursive;">
+            You Made a New Friend!
+          </div>
+          <div style="font-size: 16px; color: #c4c4c4; margin-bottom: 25px;">
+            What would you like to name your ${tamingPet.name}?
+          </div>
+          
+          <input type="text" id="petNameInput" value="${suggestedName}" style="
+            width: 250px;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #22c55e;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-family: 'Kalam', cursive;
+            outline: none;
+          " maxlength="15">
+          
+          <div style="margin-top: 20px;">
+            <button id="confirmPetNameBtn" style="
+              background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+              border: none;
+              color: white;
+              padding: 14px 40px;
+              border-radius: 10px;
+              font-size: 18px;
+              font-weight: 700;
+              font-family: 'Kalam', cursive;
+              cursor: pointer;
+            ">Welcome ${suggestedName}!</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(overlay);
+      
+      const input = document.getElementById('petNameInput');
+      const confirmBtn = document.getElementById('confirmPetNameBtn');
+      
+      input.select();
+      
+      input.addEventListener('input', () => {
+        const name = input.value.trim() || tamingPet.name;
+        confirmBtn.textContent = `Welcome ${name}!`;
+      });
+      
+      confirmBtn.addEventListener('click', () => {
+        const petName = input.value.trim() || suggestedName;
+        finalizePetAdoption(petName);
+        overlay.remove();
+      });
+      
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmBtn.click();
+        }
+      });
+    }
+    
+    // Finalize pet adoption
+    function finalizePetAdoption(petName) {
+      gameSave.pet = {
+        type: tamingPet.type,
+        name: petName,
+        level: 1,
+        happiness: 100,
+        adoptedDate: new Date().toISOString(),
+        lastFed: new Date().toISOString(),
+        totalCarrotsFed: 0
+      };
+      
+      saveGame();
+      tamingPet = null;
+      isPaused = false;
+      
+      // Show welcome celebration
+      showPetWelcomeCelebration();
+      
+      // Create pet 3D model
+      createPetModel();
+    }
+    
+    // Show pet welcome celebration
+    function showPetWelcomeCelebration() {
+      const pet = gameSave.pet;
+      const petType = PET_TYPES[pet.type];
+      
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        padding: 24px 48px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: "Kalam", cursive;
+        z-index: 10001;
+        text-align: center;
+        animation: achievementPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 8px 32px rgba(34, 197, 94, 0.5);
+      `;
+      notification.innerHTML = `
+        <div style="font-size: 56px; margin-bottom: 12px;">${petType.icon}</div>
+        <div style="font-size: 16px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 4px;">New Pet!</div>
+        <div style="font-size: 28px; margin-bottom: 8px;">${pet.name} joins your adventure!</div>
+        <div style="font-size: 14px; opacity: 0.85;">${petType.abilities.join(' • ')}</div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(-50%) scale(0.9)';
+        notification.style.transition = 'all 0.5s ease-out';
+        setTimeout(() => notification.remove(), 500);
+      }, 4000);
+    }
+    
+    // Pet 3D model reference
+    let petModel = null;
+    
+    // Create pet 3D model
+    function createPetModel() {
+      if (!gameSave.pet) return;
+      if (petModel) {
+        scene.remove(petModel);
+      }
+      
+      const petType = gameSave.pet.type;
+      
+      petModel = new THREE.Group();
+      
+      if (petType === 'cat') {
+        // Cat body
+        const bodyGeo = new THREE.BoxGeometry(0.6, 0.4, 0.8);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.3;
+        petModel.add(body);
+        
+        // Cat head
+        const headGeo = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+        const head = new THREE.Mesh(headGeo, bodyMat);
+        head.position.set(0, 0.5, 0.5);
+        petModel.add(head);
+        
+        // Cat ears
+        const earGeo = new THREE.ConeGeometry(0.1, 0.2, 4);
+        const ear1 = new THREE.Mesh(earGeo, bodyMat);
+        ear1.position.set(-0.15, 0.8, 0.5);
+        petModel.add(ear1);
+        const ear2 = new THREE.Mesh(earGeo, bodyMat);
+        ear2.position.set(0.15, 0.8, 0.5);
+        petModel.add(ear2);
+        
+        // Cat tail
+        const tailGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.6);
+        const tail = new THREE.Mesh(tailGeo, bodyMat);
+        tail.position.set(0, 0.5, -0.5);
+        tail.rotation.x = Math.PI / 4;
+        petModel.add(tail);
+        
+      } else if (petType === 'pig') {
+        // Pig body
+        const bodyGeo = new THREE.BoxGeometry(0.7, 0.5, 0.9);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.35;
+        petModel.add(body);
+        
+        // Pig head
+        const headGeo = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+        const head = new THREE.Mesh(headGeo, bodyMat);
+        head.position.set(0, 0.45, 0.55);
+        petModel.add(head);
+        
+        // Pig snout
+        const snoutGeo = new THREE.BoxGeometry(0.25, 0.2, 0.15);
+        const snoutMat = new THREE.MeshLambertMaterial({ color: 0xFFA0B0 });
+        const snout = new THREE.Mesh(snoutGeo, snoutMat);
+        snout.position.set(0, 0.4, 0.8);
+        petModel.add(snout);
+        
+        // Pig ears
+        const earGeo = new THREE.BoxGeometry(0.15, 0.15, 0.05);
+        const ear1 = new THREE.Mesh(earGeo, bodyMat);
+        ear1.position.set(-0.2, 0.7, 0.5);
+        ear1.rotation.z = -0.3;
+        petModel.add(ear1);
+        const ear2 = new THREE.Mesh(earGeo, bodyMat);
+        ear2.position.set(0.2, 0.7, 0.5);
+        ear2.rotation.z = 0.3;
+        petModel.add(ear2);
+        
+      } else if (petType === 'bee') {
+        // Bee body (striped)
+        const bodyGeo = new THREE.SphereGeometry(0.3, 8, 8);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.8; // Float in air
+        body.scale.set(1, 0.8, 1.2);
+        petModel.add(body);
+        
+        // Bee stripes
+        const stripeMat = new THREE.MeshLambertMaterial({ color: 0x000000 });
+        for (let i = -1; i <= 1; i++) {
+          const stripeGeo = new THREE.TorusGeometry(0.25, 0.03, 8, 16);
+          const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+          stripe.position.set(0, 0.8, i * 0.15);
+          stripe.rotation.x = Math.PI / 2;
+          petModel.add(stripe);
+        }
+        
+        // Bee wings
+        const wingGeo = new THREE.PlaneGeometry(0.3, 0.2);
+        const wingMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const wing1 = new THREE.Mesh(wingGeo, wingMat);
+        wing1.position.set(-0.25, 1, 0);
+        wing1.rotation.z = 0.3;
+        petModel.add(wing1);
+        const wing2 = new THREE.Mesh(wingGeo, wingMat);
+        wing2.position.set(0.25, 1, 0);
+        wing2.rotation.z = -0.3;
+        petModel.add(wing2);
+      }
+      
+      scene.add(petModel);
+    }
+    
+    // Update pet position (follows player)
+    function updatePetPosition() {
+      if (!petModel || !gameSave.pet) return;
+      
+      // Pet follows behind and to the side of player
+      const followDistance = 1.5;
+      const sideOffset = 0.8;
+      
+      const targetX = playerX - Math.sin(playerFacingAngle) * followDistance + Math.cos(playerFacingAngle) * sideOffset;
+      const targetZ = playerZ - Math.cos(playerFacingAngle) * followDistance - Math.sin(playerFacingAngle) * sideOffset;
+      
+      // Smooth follow
+      petModel.position.x += (targetX - petModel.position.x) * 0.1;
+      petModel.position.z += (targetZ - petModel.position.z) * 0.1;
+      
+      // Face toward player
+      petModel.rotation.y = Math.atan2(playerX - petModel.position.x, playerZ - petModel.position.z);
+      
+      // Bee hovers up and down
+      if (gameSave.pet.type === 'bee') {
+        petModel.position.y = 0.5 + Math.sin(Date.now() * 0.005) * 0.1;
+      }
+    }
+    
+    // Get pet happiness description
+    function getPetHappinessStatus() {
+      if (!gameSave.pet) return null;
+      const happiness = gameSave.pet.happiness;
+      if (happiness >= 80) return { text: 'Very Happy', color: '#22c55e', emoji: '😊' };
+      if (happiness >= 50) return { text: 'Content', color: '#f59e0b', emoji: '😐' };
+      if (happiness >= 30) return { text: 'Hungry', color: '#ff9500', emoji: '😟' };
+      return { text: 'Very Hungry', color: '#ff5e5e', emoji: '😢' };
+    }
+    
+    // Feed pet with carrot
+    function feedPet() {
+      if (!gameSave.pet) return false;
+      
+      const carrotCount = parseInt(document.getElementById('carrotCount').textContent) || 0;
+      if (carrotCount <= 0) {
+        showCraftNotification('No carrots to feed your pet!');
+        return false;
+      }
+      
+      // Use a carrot
+      document.getElementById('carrotCount').textContent = carrotCount - 1;
+      
+      // Increase happiness
+      gameSave.pet.happiness = Math.min(100, gameSave.pet.happiness + 25);
+      gameSave.pet.lastFed = new Date().toISOString();
+      gameSave.pet.totalCarrotsFed++;
+      
+      saveGame();
+      
+      const petType = PET_TYPES[gameSave.pet.type];
+      showCraftNotification(`${petType.icon} ${gameSave.pet.name} loved the carrot! 🥕`);
+      
+      return true;
+    }
+    
+    // Update pet happiness (called daily or on game start)
+    function updatePetHappiness() {
+      if (!gameSave.pet) return;
+      
+      const lastFed = new Date(gameSave.pet.lastFed);
+      const now = new Date();
+      const hoursSinceLastFed = (now - lastFed) / (1000 * 60 * 60);
+      
+      // Decrease happiness based on time since last feeding
+      // Lose about 5 happiness per day (every ~5 hours lose 1 point)
+      const happinessLoss = Math.floor(hoursSinceLastFed / 5);
+      if (happinessLoss > 0) {
+        gameSave.pet.happiness = Math.max(0, gameSave.pet.happiness - happinessLoss);
+        gameSave.pet.lastFed = now.toISOString(); // Reset timer
+        saveGame();
+      }
+    }
+    
+    // Check if pet abilities are active (happiness > 30)
+    function arePetAbilitiesActive() {
+      if (!gameSave.pet) return false;
+      return gameSave.pet.happiness >= 30;
+    }
+    
+    // Update pet UI display
+    function updatePetDisplay() {
+      const petSection = document.getElementById('petSection');
+      
+      if (!gameSave.pet) {
+        petSection.style.display = 'none';
+        return;
+      }
+      
+      petSection.style.display = 'block';
+      
+      const petType = PET_TYPES[gameSave.pet.type];
+      const happinessStatus = getPetHappinessStatus();
+      
+      document.getElementById('petIcon').textContent = petType.icon;
+      document.getElementById('petName').textContent = gameSave.pet.name;
+      document.getElementById('petStatus').textContent = `${happinessStatus.text} ${happinessStatus.emoji}`;
+      document.getElementById('petStatus').style.color = happinessStatus.color;
+      
+      const happinessBar = document.getElementById('petHappinessBar');
+      happinessBar.style.width = `${gameSave.pet.happiness}%`;
+      happinessBar.className = 'pet-happiness-fill';
+      if (gameSave.pet.happiness < 30) {
+        happinessBar.classList.add('very-hungry');
+      } else if (gameSave.pet.happiness < 50) {
+        happinessBar.classList.add('hungry');
+      }
+    }
+    
+    // Pet ability: Cat wolf alert
+    function checkCatWolfAlert() {
+      if (!gameSave.pet || gameSave.pet.type !== 'cat') return;
+      if (!arePetAbilitiesActive()) return;
+      
+      // Check for nearby wolves
+      const alertRadius = 15;
+      let nearbyWolf = false;
+      
+      entities.forEach(entity => {
+        if (entity.type === 'wolf' && entity.mesh) {
+          const dx = entity.mesh.position.x - playerX;
+          const dz = entity.mesh.position.z - playerZ;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < alertRadius) {
+            nearbyWolf = true;
+          }
+        }
+      });
+      
+      // Show/hide wolf alert
+      const alertEl = document.getElementById('catWolfAlert');
+      if (nearbyWolf && !alertEl) {
+        showCatWolfAlert();
+      } else if (!nearbyWolf && alertEl) {
+        alertEl.remove();
+      }
+    }
+    
+    // Show cat wolf alert
+    function showCatWolfAlert() {
+      if (document.getElementById('catWolfAlert')) return;
+      
+      const alert = document.createElement('div');
+      alert.id = 'catWolfAlert';
+      alert.style.cssText = `
+        position: fixed;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 94, 94, 0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: 'Kalam', cursive;
+        z-index: 100;
+        animation: alertPulse 1s ease-in-out infinite;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      `;
+      alert.innerHTML = `🐱 <span>Your cat senses a wolf nearby!</span> 🐺`;
+      
+      if (!document.getElementById('cat-alert-style')) {
+        const style = document.createElement('style');
+        style.id = 'cat-alert-style';
+        style.textContent = `
+          @keyframes alertPulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.8; transform: translateX(-50%) scale(1.02); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(alert);
+    }
+    
+    // Pet ability: Cat rare item bonus (+10%)
+    function getCatRareBonus() {
+      if (!gameSave.pet || gameSave.pet.type !== 'cat') return 1;
+      if (!arePetAbilitiesActive()) return 1;
+      return 1.1; // 10% increase
+    }
+    
+    // Pet ability: Pig harvest bonus (+1)
+    function getPigHarvestBonus() {
+      if (!gameSave.pet || gameSave.pet.type !== 'pig') return 0;
+      if (!arePetAbilitiesActive()) return 0;
+      return 1;
+    }
+    
+    // Pet ability: Pig finds carrots occasionally
+    let lastPigCarrotFind = 0;
+    function checkPigCarrotFind() {
+      if (!gameSave.pet || gameSave.pet.type !== 'pig') return;
+      if (!arePetAbilitiesActive()) return;
+      
+      // Only check every 30 seconds
+      const now = Date.now();
+      if (now - lastPigCarrotFind < 30000) return;
+      lastPigCarrotFind = now;
+      
+      // 5% chance to find a carrot
+      if (Math.random() < 0.05) {
+        const currentCarrots = parseInt(document.getElementById('carrotCount').textContent) || 0;
+        document.getElementById('carrotCount').textContent = currentCarrots + 1;
+        showCraftNotification('🐷 Your pig found a buried carrot! 🥕');
+      }
+    }
+    
+    // Pet ability: Bee produces honey
+    let lastHoneyProduction = 0;
+    function checkBeeHoneyProduction() {
+      if (!gameSave.pet || gameSave.pet.type !== 'bee') return;
+      if (!arePetAbilitiesActive()) return;
+      
+      // Only check every 60 seconds
+      const now = Date.now();
+      if (now - lastHoneyProduction < 60000) return;
+      lastHoneyProduction = now;
+      
+      // 10% chance to produce honey (heals player)
+      if (Math.random() < 0.1) {
+        const healAmount = 10;
+        playerHealth = Math.min(100, playerHealth + healAmount);
+        updateHealthBar();
+        showCraftNotification(`🐝 Your bee shared honey with you! +${healAmount}❤️`);
+      }
     }
     
     // Track answer timing for speed bonuses
@@ -9425,6 +10431,13 @@
       container.innerHTML = html;
     }
     
+    // Pet feed button handler
+    document.getElementById('petFeedBtn').addEventListener('click', () => {
+      if (feedPet()) {
+        updatePetDisplay();
+      }
+    });
+    
     // Populate quests tab
     function updateQuestsTab() {
       const container = document.getElementById('questsList');
@@ -9595,6 +10608,7 @@
           checkFarmPlotProximity(); // Check for harvest
           checkCrockPotProximity(); // Check for crock pot tooltip
           checkBiofuelProcessorProximity(); // Check for biofuel tooltip
+          attemptPetEncounter(); // Check for pet encounter (daytime only)
         }
       }
 
@@ -9635,11 +10649,17 @@
       updateCultists(); // Update cultist AI
       updateDeerMonster(); // Update deer monster AI
       updateMinimap();
+      
+      // Pet abilities (throttled internally)
+      checkCatWolfAlert();
+      checkPigCarrotFind();
+      checkBeeHoneyProduction();
     }
     
     function animate() {
       requestAnimationFrame(animate);
       updatePlayer();
+      updatePetPosition(); // Update pet following behavior
       renderer.render(scene, camera);
     }
     
@@ -9784,6 +10804,13 @@
       // Create player
       playerMesh = createPlayer(playerX, playerZ);
       scene.add(playerMesh);
+      
+      // Initialize pet if player has one
+      if (gameSave.pet) {
+        createPetModel();
+        updatePetHappiness(); // Update happiness based on time since last fed
+        updatePetDisplay(); // Show pet info in UI
+      }
       
       // Generate entities
       generateEntities();

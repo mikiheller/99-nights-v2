@@ -140,7 +140,7 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 
 | Task | Status | Branch | Notes |
 |------|--------|--------|-------|
-| 3.1 Pet System | Not Started | `phase3-pets` | Tameable cats, pigs, bees |
+| 3.1 Pet System | ✅ Complete | `phase3-pets` | Tameable cats, pigs, bees with abilities |
 | 3.2 Structures | Not Started | `phase3-structures` | Explorable houses, caves |
 | 3.3 New Creatures | Not Started | `phase3-creatures` | Alpha wolf, bear, snake, owl, ram |
 | 3.4 First-Person Items | Not Started | `phase3-items` | Visible held items (await screenshot) |
@@ -757,6 +757,52 @@ pet: {
 
 **Next steps:**
 - Phase 3.1: Pet System
+- Phase 4.2: Daily Login Rewards
+
+---
+
+### Session 8 - Pet System
+**Date:** 2026-01-30
+**Branch:** `phase3-pets`
+**What was done:**
+- Implemented complete pet system with 3 pet types:
+  - **Cat 🐱**: Wolf Alert (warns when wolves nearby), +10% rare item chance
+  - **Pig 🐷**: Find Carrots (occasionally finds buried carrots), +1 harvest bonus
+  - **Bee 🐝**: Produce Honey (heals player over time), faster farm growth
+- Pet encounter system:
+  - Random encounters during daytime exploration (Level 2+ required)
+  - Taming mini-game: answer 3 questions correctly to befriend
+  - Pet naming popup with suggested names
+- Pet happiness system:
+  - Happiness decreases over time (5 per day)
+  - Feed carrots to restore happiness (+25 per carrot)
+  - Abilities deactivate when happiness < 30%
+- Pet 3D models that follow the player
+- Pet UI display in game showing happiness bar and feed button
+- Pet panel in lobby (🐾 button) showing full pet stats and abilities
+
+**Pet Data Structure:**
+```javascript
+pet: {
+  type: 'cat',           // cat, pig, or bee
+  name: 'Whiskers',      // Player-chosen name
+  level: 1,              // Levels up with player
+  happiness: 100,        // 0-100, affects abilities
+  adoptedDate: '...',    // When pet was adopted
+  lastFed: '...',        // For happiness decay
+  totalCarrotsFed: 0     // Lifetime stat
+}
+```
+
+**How it works:**
+1. Reach Level 2 to unlock pet encounters
+2. Explore during daytime - random chance to find a pet
+3. Answer 3 questions correctly to befriend
+4. Name your new pet
+5. Feed with carrots to keep abilities active
+6. Pet follows you and provides passive bonuses
+
+**Next steps:**
 - Phase 4.2: Daily Login Rewards
 
 ---
