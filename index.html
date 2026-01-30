@@ -164,6 +164,729 @@
       left: 50%;
       transform: translate(-50%, -50%);
     }
+
+    /* Admin Panel Styles */
+    .admin-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #1a2a40 0%, #0c1420 100%);
+      border: 2px solid var(--accent-fire);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 123, 0, 0.3);
+    }
+
+    .admin-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(255, 123, 0, 0.5);
+    }
+
+    .admin-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(2, 4, 10, 0.95);
+      z-index: 1000;
+      display: none;
+      overflow-y: auto;
+    }
+
+    .admin-panel.active {
+      display: block;
+    }
+
+    .admin-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-soft);
+    }
+
+    .admin-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent-fire);
+    }
+
+    .admin-close {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 94, 94, 0.2);
+      border: 2px solid #ff5e5e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .admin-close:hover {
+      background: rgba(255, 94, 94, 0.4);
+      transform: scale(1.1);
+    }
+
+    .admin-section {
+      background: linear-gradient(180deg, #0c1420 0%, #060a16 100%);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .admin-section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-fire-soft);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mapping-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 100px 120px;
+      gap: 15px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .mapping-row:last-child {
+      border-bottom: none;
+    }
+
+    .mapping-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .mapping-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1a2a40;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: 'Kalam', cursive;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .mapping-select:focus {
+      outline: none;
+      border-color: var(--accent-fire);
+    }
+
+    .mapping-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1a2a40;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: 'Kalam', cursive;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .mapping-input:focus {
+      outline: none;
+      border-color: var(--accent-fire);
+    }
+
+    .mapping-header {
+      display: grid;
+      grid-template-columns: 180px 1fr 100px 120px;
+      gap: 15px;
+      padding: 0 0 10px 0;
+      border-bottom: 2px solid var(--accent-fire);
+      margin-bottom: 5px;
+    }
+
+    .mapping-header-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .admin-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .admin-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-family: 'Kalam', cursive;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .admin-btn-save {
+      background: linear-gradient(135deg, var(--accent-fire) 0%, #ff9500 100%);
+      border: none;
+      color: white;
+    }
+
+    .admin-btn-save:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(255, 123, 0, 0.5);
+    }
+
+    .admin-btn-reset {
+      background: transparent;
+      border: 2px solid var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    .admin-btn-reset:hover {
+      border-color: #ff5e5e;
+      color: #ff5e5e;
+    }
+
+    .save-notification {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--accent-ok) 0%, #5cb978 100%);
+      color: white;
+      padding: 15px 30px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .save-notification.visible {
+      opacity: 1;
+    }
+
+    .problem-types-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .problem-type-card {
+      background: #1a2a40;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .problem-type-id {
+      font-size: 11px;
+      color: var(--accent-fire);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .problem-type-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .problem-type-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Class Shop Styles */
+    .shop-button {
+      position: absolute;
+      top: 20px;
+      right: 80px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #2a1a40 0%, #1a0c30 100%);
+      border: 2px solid #a855f7;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+    }
+
+    .shop-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+    }
+
+    .stats-bar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+
+    .stat-display {
+      background: linear-gradient(135deg, #1a2a40 0%, #0c1420 100%);
+      border: 2px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stat-display.diamonds {
+      border-color: #60d5f7;
+      color: #60d5f7;
+    }
+
+    .stat-display.level {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+
+    .shop-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(2, 4, 10, 0.95);
+      z-index: 1000;
+      display: none;
+      overflow-y: auto;
+    }
+
+    .shop-panel.active {
+      display: block;
+    }
+
+    .shop-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-soft);
+    }
+
+    .shop-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #a855f7;
+    }
+
+    .shop-diamonds {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 24px;
+      color: #60d5f7;
+    }
+
+    .shop-close {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 94, 94, 0.2);
+      border: 2px solid #ff5e5e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .shop-close:hover {
+      background: rgba(255, 94, 94, 0.4);
+      transform: scale(1.1);
+    }
+
+    .classes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .class-card {
+      background: linear-gradient(180deg, #1a2a40 0%, #0c1420 100%);
+      border: 2px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .class-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .class-card.owned {
+      border-color: var(--accent-ok);
+      background: linear-gradient(180deg, #1a3020 0%, #0c200c 100%);
+    }
+
+    .class-card.locked {
+      opacity: 0.5;
+      border-color: #444;
+    }
+
+    .class-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .class-icon {
+      font-size: 36px;
+    }
+
+    .class-cost {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #60d5f7;
+    }
+
+    .class-card.owned .class-cost {
+      color: var(--accent-ok);
+    }
+
+    .class-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .class-effect {
+      font-size: 14px;
+      color: var(--accent-fire-soft);
+      margin-bottom: 12px;
+    }
+
+    .class-requirement {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .class-card.locked .class-requirement {
+      color: #ff6b6b;
+    }
+
+    .class-buy-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: 'Kalam', cursive;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+      border: none;
+      color: white;
+    }
+
+    .class-buy-btn:hover:not(:disabled) {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.5);
+    }
+
+    .class-buy-btn:disabled {
+      background: #333;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .class-card.owned .class-buy-btn {
+      background: var(--accent-ok);
+      cursor: default;
+    }
+
+    .class-card.locked .class-buy-btn {
+      background: #444;
+    }
+
+    .purchase-notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+      color: white;
+      padding: 30px 50px;
+      border-radius: 16px;
+      font-size: 24px;
+      font-weight: 700;
+      z-index: 2000;
+      text-align: center;
+      animation: purchasePop 0.5s ease-out;
+    }
+
+    @keyframes purchasePop {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    /* Quest Board Styles */
+    .quest-button {
+      position: absolute;
+      top: 20px;
+      right: 140px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #1a402a 0%, #0c301a 100%);
+      border: 2px solid #22c55e;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    }
+
+    .quest-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+    }
+
+    .quest-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(2, 4, 10, 0.95);
+      z-index: 1000;
+      display: none;
+      overflow-y: auto;
+    }
+
+    .quest-panel.active {
+      display: block;
+    }
+
+    .quest-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .quest-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-soft);
+    }
+
+    .quest-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #22c55e;
+    }
+
+    .quest-close {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 94, 94, 0.2);
+      border: 2px solid #ff5e5e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .quest-close:hover {
+      background: rgba(255, 94, 94, 0.4);
+      transform: scale(1.1);
+    }
+
+    .quest-refresh-info {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .quests-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .quest-card {
+      background: linear-gradient(180deg, #1a2a40 0%, #0c1420 100%);
+      border: 2px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 20px;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .quest-card:hover {
+      transform: translateX(4px);
+      border-color: #22c55e;
+    }
+
+    .quest-card.completed {
+      border-color: var(--accent-ok);
+      background: linear-gradient(180deg, #1a3020 0%, #0c200c 100%);
+      opacity: 0.8;
+    }
+
+    .quest-icon {
+      font-size: 40px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 12px;
+    }
+
+    .quest-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quest-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .quest-progress-bar {
+      height: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .quest-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .quest-progress-text {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .quest-reward {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .quest-reward-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #60d5f7;
+    }
+
+    .quest-reward-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .quest-card.completed .quest-reward-amount {
+      color: var(--accent-ok);
+    }
+
+    .no-quests {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .refresh-quests-btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Kalam', cursive;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-quests-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.5);
+    }
+
+    .refresh-quests-btn:disabled {
+      background: #333;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -185,6 +908,106 @@
     
     <div class="controls-hint">
       <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move • Mouse to look • Walk through a portal to enter!
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-display diamonds">
+        💎 <span id="diamondCount">0</span>
+      </div>
+      <div class="stat-display level">
+        ⭐ Level <span id="playerLevel">1</span>
+      </div>
+    </div>
+
+    <!-- Quest Button -->
+    <div class="quest-button" id="questButton" title="Daily Quests">📋</div>
+
+    <!-- Shop Button -->
+    <div class="shop-button" id="shopButton" title="Class Shop">🏪</div>
+
+    <!-- Admin Button -->
+    <div class="admin-button" id="adminButton" title="Math Settings">⚙️</div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+      <div class="admin-content">
+        <div class="admin-header">
+          <div class="admin-title">⚙️ Math Settings</div>
+          <div class="admin-close" id="adminClose">✕</div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">📝 Problem Mappings</div>
+          <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 14px;">
+            Choose which math problems appear for each game action
+          </p>
+          
+          <div class="mapping-header">
+            <div class="mapping-header-label">Action</div>
+            <div class="mapping-header-label">Problem Type</div>
+            <div class="mapping-header-label">Questions</div>
+            <div class="mapping-header-label">Timer (sec)</div>
+          </div>
+
+          <div id="mappingsContainer">
+            <!-- Mappings will be inserted here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">📚 Problem Types Reference</div>
+          <div class="problem-types-grid" id="problemTypesGrid">
+            <!-- Problem types will be inserted here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="admin-buttons">
+          <button class="admin-btn admin-btn-reset" id="resetMappingsBtn">Reset to Defaults</button>
+          <button class="admin-btn admin-btn-save" id="saveMappingsBtn">💾 Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-notification" id="saveNotification">✓ Settings Saved!</div>
+
+    <!-- Shop Panel -->
+    <div class="shop-panel" id="shopPanel">
+      <div class="shop-content">
+        <div class="shop-header">
+          <div class="shop-title">🏪 Class Shop</div>
+          <div class="shop-diamonds">💎 <span id="shopDiamondCount">0</span></div>
+          <div class="shop-close" id="shopClose">✕</div>
+        </div>
+
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+          Spend your diamonds on permanent upgrades that persist across games!
+        </p>
+
+        <div class="classes-grid" id="classesGrid">
+          <!-- Classes will be inserted here by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Quest Panel -->
+    <div class="quest-panel" id="questPanel">
+      <div class="quest-content">
+        <div class="quest-header">
+          <div class="quest-title">📋 Daily Quests</div>
+          <div class="quest-close" id="questClose">✕</div>
+        </div>
+
+        <div class="quest-refresh-info" id="questRefreshInfo">
+          Quests refresh daily. Complete quests to earn diamonds!
+        </div>
+
+        <div class="quests-grid" id="questsGrid">
+          <!-- Quests will be inserted here by JavaScript -->
+        </div>
+
+        <button class="refresh-quests-btn" id="refreshQuestsBtn">🎰 Spin for New Quests</button>
+      </div>
     </div>
   </div>
 
@@ -675,6 +1498,627 @@
     });
     
     animate();
+
+    // ============================================
+    // ADMIN PANEL - PERSISTENCE & CONFIG
+    // ============================================
+
+    const SAVE_KEY = '99nights_save_v1';
+
+    // Game actions that can be configured
+    const GAME_ACTIONS = [
+      { id: 'fightWolf', name: '🐺 Fight Wolf', defaultTimer: 7 },
+      { id: 'fightCultist', name: '👤 Fight Cultist', defaultTimer: 7 },
+      { id: 'chop', name: '🌲 Chop Tree', defaultTimer: 0 },
+      { id: 'collectFuel', name: '⛽ Collect Fuel', defaultTimer: 0 },
+      { id: 'salvageFan', name: '🔧 Salvage Fan', defaultTimer: 0 },
+      { id: 'salvageBolt', name: '🔩 Salvage Bolt', defaultTimer: 0 },
+      { id: 'salvageRadio', name: '📻 Salvage Radio', defaultTimer: 0 },
+      { id: 'collectKey', name: '🔑 Collect Key', defaultTimer: 0 },
+      { id: 'crafting', name: '🔨 Crafting', defaultTimer: 0 },
+      { id: 'harvestFarm', name: '🥕 Harvest Farm', defaultTimer: 0 },
+      { id: 'makeStew', name: '🍲 Make Stew', defaultTimer: 0 },
+    ];
+
+    // Problem types available
+    const PROBLEM_TYPES = [
+      // Addition
+      { id: 'add_level1', name: 'Easy Addition', desc: 'Adding 0-5' },
+      { id: 'add_level2', name: 'Bridging Numbers', desc: 'Adding 0-5 and 9,10' },
+      { id: 'add_level3', name: 'Medium Addition', desc: 'Adding 4-10' },
+      { id: 'add_level4', name: 'Missing Addend', desc: '? + b = c' },
+      { id: 'add_level5', name: 'Equation Balance', desc: 'a + b = c + ?' },
+      { id: 'add_level6', name: 'Triple Addition', desc: 'a + b + c' },
+      { id: 'add_level7', name: 'Triple Missing', desc: 'a + b + ? = d' },
+      { id: 'add_level8', name: 'Tens Plus Ones', desc: '70 + 3' },
+      { id: 'add_level9', name: 'Adding Ten', desc: 'Two-digit + 10' },
+      { id: 'add_level10', name: 'Make Ten Triple', desc: '8 + 1 + 2' },
+      { id: 'add_level11', name: 'Complement to 20', desc: 'a + ? = 20' },
+      { id: 'add_level12', name: 'Two-Digit Plus One', desc: '45 + 7' },
+      // Subtraction
+      { id: 'subtract_level1', name: 'Basic Subtraction', desc: '10 - 4' },
+      { id: 'subtract_level2', name: 'Missing Subtrahend', desc: '8 - ? = 5' },
+      { id: 'subtract_level3', name: 'Teens Minus Single', desc: '13 - 4' },
+      { id: 'subtract_level4', name: 'Minus Ten', desc: '46 - 10' },
+      { id: 'subtract_level5', name: 'Double Minus Single', desc: '63 - 4' },
+    ];
+
+    // Default mappings
+    const DEFAULT_MAPPINGS = {
+      fightWolf: { problemType: 'subtract_level1', questionCount: 3, timerSeconds: 7 },
+      fightCultist: { problemType: 'subtract_level2', questionCount: 3, timerSeconds: 7 },
+      chop: { problemType: 'add_level3', questionCount: 2, timerSeconds: 0 },
+      collectFuel: { problemType: 'add_level1', questionCount: 1, timerSeconds: 0 },
+      salvageFan: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+      salvageBolt: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+      salvageRadio: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+      collectKey: { problemType: 'add_level5', questionCount: 3, timerSeconds: 0 },
+      crafting: { problemType: 'subtract_level1', questionCount: 1, timerSeconds: 0 },
+      harvestFarm: { problemType: 'add_level6', questionCount: 1, timerSeconds: 0 },
+      makeStew: { problemType: 'subtract_level3', questionCount: 1, timerSeconds: 0 },
+    };
+
+    // Load save data
+    function loadSave() {
+      try {
+        const data = localStorage.getItem(SAVE_KEY);
+        if (data) {
+          return JSON.parse(data);
+        }
+      } catch (e) {
+        console.error('Failed to load save:', e);
+      }
+      return null;
+    }
+
+    // Save data
+    function saveSave(save) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+        return true;
+      } catch (e) {
+        console.error('Failed to save:', e);
+        return false;
+      }
+    }
+
+    // Get current mappings (from save or defaults)
+    function getMappings() {
+      const save = loadSave();
+      if (save && save.adminConfig && save.adminConfig.mathMappings) {
+        return { ...DEFAULT_MAPPINGS, ...save.adminConfig.mathMappings };
+      }
+      return { ...DEFAULT_MAPPINGS };
+    }
+
+    // Save mappings to save file
+    function saveMappings(mappings) {
+      let save = loadSave();
+      if (!save) {
+        // Create minimal save structure
+        save = {
+          version: 1,
+          adminConfig: { mathMappings: {} }
+        };
+      }
+      if (!save.adminConfig) {
+        save.adminConfig = { mathMappings: {} };
+      }
+      save.adminConfig.mathMappings = mappings;
+      return saveSave(save);
+    }
+
+    // Populate the mappings UI
+    function populateMappingsUI() {
+      const container = document.getElementById('mappingsContainer');
+      const mappings = getMappings();
+      
+      container.innerHTML = GAME_ACTIONS.map(action => {
+        const mapping = mappings[action.id] || DEFAULT_MAPPINGS[action.id];
+        const hasTimer = action.defaultTimer > 0;
+        
+        return `
+          <div class="mapping-row">
+            <div class="mapping-label">${action.name}</div>
+            <select class="mapping-select" data-action="${action.id}" data-field="problemType">
+              ${PROBLEM_TYPES.map(pt => 
+                `<option value="${pt.id}" ${mapping.problemType === pt.id ? 'selected' : ''}>${pt.name}</option>`
+              ).join('')}
+            </select>
+            <input type="number" class="mapping-input" data-action="${action.id}" data-field="questionCount" 
+                   value="${mapping.questionCount}" min="1" max="5">
+            <input type="number" class="mapping-input" data-action="${action.id}" data-field="timerSeconds" 
+                   value="${mapping.timerSeconds}" min="0" max="30" ${!hasTimer ? 'disabled style="opacity: 0.5"' : ''}>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Populate problem types reference
+    function populateProblemTypesUI() {
+      const grid = document.getElementById('problemTypesGrid');
+      
+      grid.innerHTML = PROBLEM_TYPES.map(pt => `
+        <div class="problem-type-card">
+          <div class="problem-type-id">${pt.id}</div>
+          <div class="problem-type-name">${pt.name}</div>
+          <div class="problem-type-desc">${pt.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    // Get current mappings from UI
+    function getMappingsFromUI() {
+      const mappings = {};
+      
+      GAME_ACTIONS.forEach(action => {
+        const problemType = document.querySelector(`[data-action="${action.id}"][data-field="problemType"]`).value;
+        const questionCount = parseInt(document.querySelector(`[data-action="${action.id}"][data-field="questionCount"]`).value) || 1;
+        const timerSeconds = parseInt(document.querySelector(`[data-action="${action.id}"][data-field="timerSeconds"]`).value) || 0;
+        
+        mappings[action.id] = { problemType, questionCount, timerSeconds };
+      });
+      
+      return mappings;
+    }
+
+    // Show save notification
+    function showSaveNotification() {
+      const notification = document.getElementById('saveNotification');
+      notification.classList.add('visible');
+      setTimeout(() => {
+        notification.classList.remove('visible');
+      }, 2000);
+    }
+
+    // Admin panel controls
+    const adminButton = document.getElementById('adminButton');
+    const adminPanel = document.getElementById('adminPanel');
+    const adminClose = document.getElementById('adminClose');
+    const saveMappingsBtn = document.getElementById('saveMappingsBtn');
+    const resetMappingsBtn = document.getElementById('resetMappingsBtn');
+
+    adminButton.addEventListener('click', () => {
+      populateMappingsUI();
+      populateProblemTypesUI();
+      adminPanel.classList.add('active');
+    });
+
+    adminClose.addEventListener('click', () => {
+      adminPanel.classList.remove('active');
+    });
+
+    saveMappingsBtn.addEventListener('click', () => {
+      const mappings = getMappingsFromUI();
+      if (saveMappings(mappings)) {
+        showSaveNotification();
+      }
+    });
+
+    resetMappingsBtn.addEventListener('click', () => {
+      if (confirm('Reset all mappings to defaults?')) {
+        saveMappings(DEFAULT_MAPPINGS);
+        populateMappingsUI();
+        showSaveNotification();
+      }
+    });
+
+    // Close panel with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && adminPanel.classList.contains('active')) {
+        adminPanel.classList.remove('active');
+      }
+      if (e.key === 'Escape' && shopPanel.classList.contains('active')) {
+        shopPanel.classList.remove('active');
+      }
+    });
+
+    // ============================================
+    // CLASS SHOP
+    // ============================================
+
+    // Class definitions
+    const CLASSES = [
+      { id: 'thick_skin', name: 'Thick Skin', icon: '🛡️', cost: 10, levelRequired: 1, 
+        effect: '-10% wolf damage', description: 'Wolves deal less damage to you' },
+      { id: 'lucky_axe', name: 'Lucky Axe', icon: '🍀', cost: 15, levelRequired: 1,
+        effect: '20% chance bonus wood', description: 'Sometimes get extra wood from trees' },
+      { id: 'quick_thinker', name: 'Quick Thinker', icon: '⚡', cost: 20, levelRequired: 2,
+        effect: '+2 seconds on timers', description: 'More time to answer timed questions' },
+      { id: 'sharp_memory', name: 'Sharp Memory', icon: '🧠', cost: 25, levelRequired: 3,
+        effect: 'Hint after wrong answer', description: 'Get a helpful hint when you make a mistake' },
+      { id: 'iron_stomach', name: 'Iron Stomach', icon: '🍖', cost: 15, levelRequired: 2,
+        effect: 'Food heals +25% more', description: 'Get more health from eating' },
+      { id: 'fire_master', name: 'Fire Master', icon: '🔥', cost: 20, levelRequired: 2,
+        effect: 'Campfire burns 20% longer', description: 'Fire drains slower' },
+      { id: 'eagle_eye', name: 'Eagle Eye', icon: '🦅', cost: 30, levelRequired: 4,
+        effect: 'See wolves from further', description: 'Spot wolves at greater distance' },
+      { id: 'math_prodigy', name: 'Math Prodigy', icon: '🎓', cost: 50, levelRequired: 5,
+        effect: '+50% XP from questions', description: 'Earn more XP from correct answers' },
+      { id: 'pet_whisperer', name: 'Pet Whisperer', icon: '🐱', cost: 25, levelRequired: 3,
+        effect: 'Pet abilities +25%', description: 'Your pet becomes more effective' },
+      { id: 'night_walker', name: 'Night Walker', icon: '🌙', cost: 40, levelRequired: 4,
+        effect: 'Move 10% faster at night', description: 'Move quicker during dangerous nights' },
+    ];
+
+    // Get available diamonds (total earned minus spent)
+    function getAvailableDiamonds() {
+      const save = loadSave();
+      if (!save) return 0;
+      const earned = save.totalDiamondsEarned || 0;
+      const spent = save.diamondsSpent || 0;
+      return earned - spent;
+    }
+
+    // Get player level
+    function getPlayerLevel() {
+      const save = loadSave();
+      if (!save) return 1;
+      return save.playerLevel || 1;
+    }
+
+    // Check if a class is owned
+    function isClassOwned(classId) {
+      const save = loadSave();
+      if (!save || !save.classes) return false;
+      return save.classes[classId]?.purchased === true;
+    }
+
+    // Purchase a class
+    function purchaseClass(classId) {
+      const classData = CLASSES.find(c => c.id === classId);
+      if (!classData) return false;
+
+      const available = getAvailableDiamonds();
+      const level = getPlayerLevel();
+
+      if (available < classData.cost) return false;
+      if (level < classData.levelRequired) return false;
+      if (isClassOwned(classId)) return false;
+
+      let save = loadSave();
+      if (!save) {
+        save = { version: 1, classes: {}, diamondsSpent: 0 };
+      }
+      if (!save.classes) save.classes = {};
+      if (!save.diamondsSpent) save.diamondsSpent = 0;
+
+      save.classes[classId] = { 
+        purchased: true, 
+        purchaseDate: new Date().toISOString() 
+      };
+      save.diamondsSpent += classData.cost;
+
+      saveSave(save);
+      return true;
+    }
+
+    // Update lobby stats display
+    function updateLobbyStats() {
+      const diamondCount = document.getElementById('diamondCount');
+      const playerLevel = document.getElementById('playerLevel');
+      
+      if (diamondCount) {
+        diamondCount.textContent = getAvailableDiamonds();
+      }
+      if (playerLevel) {
+        playerLevel.textContent = getPlayerLevel();
+      }
+    }
+
+    // Populate shop grid
+    function populateShopGrid() {
+      const grid = document.getElementById('classesGrid');
+      const shopDiamonds = document.getElementById('shopDiamondCount');
+      const available = getAvailableDiamonds();
+      const level = getPlayerLevel();
+
+      if (shopDiamonds) {
+        shopDiamonds.textContent = available;
+      }
+
+      grid.innerHTML = CLASSES.map(cls => {
+        const owned = isClassOwned(cls.id);
+        const canAfford = available >= cls.cost;
+        const meetsLevel = level >= cls.levelRequired;
+        const canBuy = !owned && canAfford && meetsLevel;
+
+        let statusClass = '';
+        let buttonText = '';
+        
+        if (owned) {
+          statusClass = 'owned';
+          buttonText = '✓ Owned';
+        } else if (!meetsLevel) {
+          statusClass = 'locked';
+          buttonText = `🔒 Level ${cls.levelRequired}`;
+        } else if (!canAfford) {
+          statusClass = '';
+          buttonText = `Need ${cls.cost - available} more 💎`;
+        } else {
+          buttonText = `Buy for ${cls.cost} 💎`;
+        }
+
+        return `
+          <div class="class-card ${statusClass}">
+            <div class="class-card-header">
+              <span class="class-icon">${cls.icon}</span>
+              <span class="class-cost">${owned ? '✓' : cls.cost + ' 💎'}</span>
+            </div>
+            <div class="class-name">${cls.name}</div>
+            <div class="class-effect">${cls.effect}</div>
+            <div class="class-requirement">Requires Level ${cls.levelRequired}</div>
+            <button class="class-buy-btn" 
+                    data-class-id="${cls.id}" 
+                    ${!canBuy ? 'disabled' : ''}>
+              ${buttonText}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Add click handlers
+      grid.querySelectorAll('.class-buy-btn:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const classId = btn.dataset.classId;
+          const classData = CLASSES.find(c => c.id === classId);
+          
+          if (purchaseClass(classId)) {
+            showPurchaseNotification(classData.name, classData.icon);
+            populateShopGrid();
+            updateLobbyStats();
+          }
+        });
+      });
+    }
+
+    // Show purchase notification
+    function showPurchaseNotification(className, icon) {
+      const notification = document.createElement('div');
+      notification.className = 'purchase-notification';
+      notification.innerHTML = `${icon} ${className} Unlocked!`;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
+    }
+
+    // Shop panel controls
+    const shopButton = document.getElementById('shopButton');
+    const shopPanel = document.getElementById('shopPanel');
+    const shopClose = document.getElementById('shopClose');
+
+    shopButton.addEventListener('click', () => {
+      populateShopGrid();
+      shopPanel.classList.add('active');
+    });
+
+    shopClose.addEventListener('click', () => {
+      shopPanel.classList.remove('active');
+    });
+
+    // Initialize lobby stats on load
+    updateLobbyStats();
+
+    // ============================================
+    // QUEST SYSTEM
+    // ============================================
+
+    // Quest definitions
+    const QUEST_TEMPLATES = [
+      // Easy quests
+      { id: 'chop_5', name: 'Lumberjack', icon: '🪓', description: 'Chop 5 trees', target: 5, stat: 'treesChopped', reward: 5 },
+      { id: 'wolves_2', name: 'Wolf Hunter', icon: '🐺', description: 'Defeat 2 wolves', target: 2, stat: 'wolvesDefeated', reward: 10 },
+      { id: 'questions_10', name: 'Quick Learner', icon: '📝', description: 'Answer 10 questions correctly', target: 10, stat: 'questionsCorrect', reward: 5 },
+      { id: 'streak_5', name: 'On Fire', icon: '🔥', description: 'Get a 5-streak', target: 5, stat: 'bestStreak', reward: 8 },
+      { id: 'survive_night', name: 'Survivor', icon: '🌙', description: 'Survive 1 night', target: 1, stat: 'nightsSurvived', reward: 5 },
+      // Medium quests
+      { id: 'chop_15', name: 'Master Lumberjack', icon: '🪓', description: 'Chop 15 trees', target: 15, stat: 'treesChopped', reward: 15 },
+      { id: 'wolves_5', name: 'Wolf Slayer', icon: '🐺', description: 'Defeat 5 wolves', target: 5, stat: 'wolvesDefeated', reward: 25 },
+      { id: 'questions_25', name: 'Math Whiz', icon: '📝', description: 'Answer 25 questions correctly', target: 25, stat: 'questionsCorrect', reward: 15 },
+      { id: 'streak_10', name: 'Unstoppable', icon: '🔥', description: 'Get a 10-streak', target: 10, stat: 'bestStreak', reward: 20 },
+      { id: 'night_3', name: 'Night Owl', icon: '🌙', description: 'Survive 3 nights', target: 3, stat: 'nightsSurvived', reward: 15 },
+      { id: 'cultists', name: 'Cult Buster', icon: '👤', description: 'Defeat all cultists', target: 3, stat: 'cultistsDefeated', reward: 15 },
+      // Hard quests  
+      { id: 'rare_item', name: 'Treasure Hunter', icon: '✨', description: 'Find a rare item', target: 1, stat: 'rareItemsFound', reward: 20 },
+      { id: 'no_damage', name: 'Untouchable', icon: '🛡️', description: 'Survive a night without damage', target: 1, stat: 'perfectNights', reward: 25 },
+    ];
+
+    // Get today's date string
+    function getTodayString() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    // Generate random quests for the day
+    function generateDailyQuests() {
+      const shuffled = [...QUEST_TEMPLATES].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 3).map(template => ({
+        ...template,
+        progress: 0,
+        completed: false,
+        claimed: false
+      }));
+    }
+
+    // Get current quests from save
+    function getQuests() {
+      const save = loadSave();
+      if (!save) return { quests: [], lastRefresh: null };
+      
+      const today = getTodayString();
+      
+      // Check if we need new quests (new day or no quests)
+      if (!save.dailyQuests || save.dailyQuests.length === 0 || save.lastQuestRefresh !== today) {
+        // Generate new quests
+        const newQuests = generateDailyQuests();
+        save.dailyQuests = newQuests;
+        save.lastQuestRefresh = today;
+        // Reset session stats for quest tracking
+        save.sessionStats = {
+          treesChopped: 0,
+          wolvesDefeated: 0,
+          questionsCorrect: 0,
+          bestStreak: 0,
+          nightsSurvived: 0,
+          cultistsDefeated: 0,
+          rareItemsFound: 0,
+          perfectNights: 0
+        };
+        saveSave(save);
+      }
+      
+      return {
+        quests: save.dailyQuests,
+        lastRefresh: save.lastQuestRefresh,
+        sessionStats: save.sessionStats || {}
+      };
+    }
+
+    // Update quest progress
+    function updateQuestProgress(stat, value) {
+      const save = loadSave();
+      if (!save || !save.dailyQuests) return;
+      
+      // Update session stat
+      if (!save.sessionStats) save.sessionStats = {};
+      save.sessionStats[stat] = Math.max(save.sessionStats[stat] || 0, value);
+      
+      // Check quest completion
+      save.dailyQuests.forEach(quest => {
+        if (quest.stat === stat && !quest.completed) {
+          quest.progress = Math.min(value, quest.target);
+          if (quest.progress >= quest.target) {
+            quest.completed = true;
+          }
+        }
+      });
+      
+      saveSave(save);
+    }
+
+    // Claim quest reward
+    function claimQuestReward(questId) {
+      const save = loadSave();
+      if (!save || !save.dailyQuests) return false;
+      
+      const quest = save.dailyQuests.find(q => q.id === questId);
+      if (!quest || !quest.completed || quest.claimed) return false;
+      
+      quest.claimed = true;
+      save.totalDiamondsEarned = (save.totalDiamondsEarned || 0) + quest.reward;
+      saveSave(save);
+      
+      return quest.reward;
+    }
+
+    // Force refresh quests (costs diamonds?)
+    function refreshQuests() {
+      const save = loadSave();
+      if (!save) return false;
+      
+      const newQuests = generateDailyQuests();
+      save.dailyQuests = newQuests;
+      save.lastQuestRefresh = getTodayString();
+      save.sessionStats = {
+        treesChopped: 0,
+        wolvesDefeated: 0,
+        questionsCorrect: 0,
+        bestStreak: 0,
+        nightsSurvived: 0,
+        cultistsDefeated: 0,
+        rareItemsFound: 0,
+        perfectNights: 0
+      };
+      saveSave(save);
+      
+      return true;
+    }
+
+    // Populate quests UI
+    function populateQuestsGrid() {
+      const grid = document.getElementById('questsGrid');
+      const refreshInfo = document.getElementById('questRefreshInfo');
+      const { quests, sessionStats } = getQuests();
+
+      if (quests.length === 0) {
+        grid.innerHTML = '<div class="no-quests">No quests available. Click refresh to get new quests!</div>';
+        return;
+      }
+
+      refreshInfo.textContent = `Complete quests to earn diamonds! Quests refresh daily.`;
+
+      grid.innerHTML = quests.map(quest => {
+        const progress = sessionStats[quest.stat] || 0;
+        const displayProgress = Math.min(progress, quest.target);
+        const percentage = (displayProgress / quest.target) * 100;
+        const isComplete = displayProgress >= quest.target;
+        const isClaimed = quest.claimed;
+
+        return `
+          <div class="quest-card ${isComplete ? 'completed' : ''}">
+            <div class="quest-icon">${quest.icon}</div>
+            <div class="quest-info">
+              <div class="quest-name">${quest.name}</div>
+              <div class="quest-progress-bar">
+                <div class="quest-progress-fill" style="width: ${percentage}%"></div>
+              </div>
+              <div class="quest-progress-text">${quest.description} (${displayProgress}/${quest.target})</div>
+            </div>
+            <div class="quest-reward">
+              <div class="quest-reward-amount">${isClaimed ? '✓' : quest.reward + ' 💎'}</div>
+              <div class="quest-reward-label">${isClaimed ? 'Claimed' : (isComplete ? 'Click to claim!' : 'Reward')}</div>
+              ${isComplete && !isClaimed ? `<button class="claim-btn" data-quest-id="${quest.id}" style="margin-top: 5px; padding: 5px 15px; background: #22c55e; border: none; border-radius: 5px; color: white; cursor: pointer;">Claim</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add claim handlers
+      grid.querySelectorAll('.claim-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const questId = btn.dataset.questId;
+          const reward = claimQuestReward(questId);
+          if (reward) {
+            showPurchaseNotification(`+${reward} Diamonds`, '💎');
+            populateQuestsGrid();
+            updateLobbyStats();
+          }
+        });
+      });
+    }
+
+    // Quest panel controls
+    const questButton = document.getElementById('questButton');
+    const questPanel = document.getElementById('questPanel');
+    const questClose = document.getElementById('questClose');
+    const refreshQuestsBtn = document.getElementById('refreshQuestsBtn');
+
+    questButton.addEventListener('click', () => {
+      populateQuestsGrid();
+      questPanel.classList.add('active');
+    });
+
+    questClose.addEventListener('click', () => {
+      questPanel.classList.remove('active');
+    });
+
+    refreshQuestsBtn.addEventListener('click', () => {
+      if (confirm('Spin for new quests? This will replace your current quests.')) {
+        refreshQuests();
+        populateQuestsGrid();
+      }
+    });
+
+    // Close quest panel with Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && questPanel.classList.contains('active')) {
+        questPanel.classList.remove('active');
+      }
+    });
   </script>
 </body>
 </html>

@@ -119,20 +119,20 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 
 | Task | Status | Branch | Notes |
 |------|--------|--------|-------|
-| 1.1 Persistence Layer | Not Started | `phase1-persistence` | localStorage save/load system |
-| 1.2 Admin Area | Not Started | `phase1-admin` | Math problem mapping UI in lobby |
-| 1.3 Refactor showAction() | Not Started | `phase1-refactor` | Use admin config instead of hardcoded |
-| 1.4 Mastery Tracking | Not Started | `phase1-mastery` | Track accuracy per problem type |
+| 1.1 Persistence Layer | ✅ Complete | `phase1-persistence` | localStorage save/load system |
+| 1.2 Admin Area | ✅ Complete | `phase1-admin` | Math problem mapping UI in lobby |
+| 1.3 Refactor showAction() | ✅ Complete | `phase1-admin` | Uses admin config, preserves weapon upgrades |
+| 1.4 Mastery Tracking | ✅ Complete | `phase1-persistence` | Track accuracy per problem type (bundled with 1.1) |
 
 ### Phase 2: Core Engagement
 **Goal:** Add progression systems that create "one more game" feeling
 
 | Task | Status | Branch | Notes |
 |------|--------|--------|-------|
-| 2.1 XP & Leveling | Not Started | `phase2-xp` | Visual level progression |
-| 2.2 Classes/Upgrades | Not Started | `phase2-classes` | Diamond spending, persistent upgrades |
-| 2.3 Streaks & Combos | Not Started | `phase2-streaks` | Consecutive correct answers bonus |
-| 2.4 Quest Board | Not Started | `phase2-quests` | Daily quests with spin mechanic |
+| 2.1 XP & Leveling | ✅ Complete | `phase2-xp-levels` | Visual level progression with celebrations |
+| 2.2 Classes/Upgrades | ✅ Complete | `phase2-classes` | Diamond spending, 10 class upgrades |
+| 2.3 Streaks & Combos | ✅ Complete | `phase2-xp-levels` | Bundled with XP system |
+| 2.4 Quest Board | ✅ Complete | `phase2-quests` | Daily quests with 13 quest types |
 | 2.5 Achievement Expansion | Not Started | `phase2-achievements` | More badges and milestones |
 
 ### Phase 3: Pets & Content
@@ -308,8 +308,8 @@ const PROBLEM_TYPES = [
 
 **Mastery Criteria:**
 - Minimum 20 attempts on this problem type
-- 90%+ overall accuracy
-- 80%+ accuracy on last 10 attempts
+- 80%+ overall accuracy
+- 90%+ accuracy on last 10 attempts (should improve over time)
 
 **UI: Mastery Dashboard (in lobby)**
 - Grid of problem types
@@ -555,6 +555,169 @@ pet: {
 
 **Next steps:**
 - Phase 1.1: Build persistence layer
+
+---
+
+### Session 2 - Persistence Layer Implementation
+**Date:** 2026-01-28
+**Branch:** `phase1-persistence`
+**What was done:**
+- Implemented complete persistence layer in game.html
+- Created `GameSave` object structure with all fields from spec
+- Implemented core functions: `saveGame()`, `loadGame()`, `resetGame()`, `exportSave()`, `importSave()`
+- Added mastery tracking system: `updateMastery()` called on every question answer
+- Added lifetime stat tracking: wolves defeated, trees chopped, cultists defeated, nights survived
+- Added daily login tracking with consecutive day counter
+- Hooked persistence into game initialization (loadGame on init)
+- Added save triggers on all key events (correct/wrong answers, combat, harvesting, night survival)
+- All questions now include their level for proper mastery tracking
+
+**Testing notes:**
+- Open browser console and type `gameSave` to see current save state
+- Use `exportSave()` to download save as JSON file
+- Use `importSave(file)` with file input to restore save
+- Use `resetGame()` to clear all progress (requires confirmation)
+- Save auto-saves after every mastery update, stat update, and game start
+
+**Next steps:**
+- Phase 2: Core Engagement features
+
+---
+
+### Session 3 - Admin Area & Config System
+**Date:** 2026-01-28
+**Branch:** `phase1-admin`
+**What was done:**
+- Added admin panel to lobby (index.html) with settings button in top-right corner
+- Created UI for configuring all 11 game actions:
+  - Problem type dropdown (17 types: 12 addition, 5 subtraction)
+  - Question count input (1-5)
+  - Timer duration input (for timed encounters)
+- Added problem types reference grid
+- Implemented save/reset functionality connected to persistence layer
+- Updated game.html to use admin config:
+  - New `generateQuestionsFromAdminConfig()` function
+  - New `getTimerFromAdminConfig()` function
+  - Modified `showAction()` to use config while preserving weapon upgrade logic
+  - Timer duration now configurable per action
+- Phase 1 Foundation is now complete!
+
+**How to use:**
+1. Go to lobby (index.html)
+2. Click the ⚙️ button in top-right
+3. Configure which math problems appear for each action
+4. Click "Save Settings"
+5. Settings persist across sessions
+
+**Next steps:**
+- Phase 2.2: Classes/Upgrades (diamond spending)
+- Phase 2.4: Quest Board
+
+---
+
+### Session 4 - XP & Leveling System
+**Date:** 2026-01-28
+**Branch:** `phase2-xp-levels`
+**What was done:**
+- Implemented complete XP & Leveling system:
+  - 10 levels with increasing thresholds (100 → 32,000 XP)
+  - XP rewards for correct answers (+10), first try bonus (+5), speed bonuses (+5/+10)
+  - XP for surviving nights (+50) and defeating all cultists (+25)
+  - Streak bonuses (+2 per streak level, capped at 10)
+- Added visual XP bar in game UI showing level, progress, and XP count
+- Added streak badge that appears at 3+ consecutive correct answers
+- Added floating "+XP" indicators when earning XP
+- Added level-up celebration with full-screen animation
+- Level rewards preview (pet taming at L2, class slots at L3/L7, quests at L5)
+- Streaks system integrated - tracks consecutive correct answers, resets on wrong
+
+**How it works:**
+- Answer questions correctly to earn XP
+- Faster answers = more XP (under 3s or 2s)
+- Build streaks for bonus XP
+- Level up to unlock features
+- Survive nights and defeat cultists for bonus XP
+
+**Next steps:**
+- Phase 2.4: Quest Board - daily challenges
+
+---
+
+### Session 5 - Classes/Upgrades System
+**Date:** 2026-01-28
+**Branch:** `phase2-classes`
+**What was done:**
+- Added Class Shop to lobby (🏪 button) with 10 purchasable classes:
+  - Thick Skin (10💎) - -10% wolf damage
+  - Lucky Axe (15💎) - 20% chance bonus wood
+  - Quick Thinker (20💎) - +2 seconds on timers
+  - Sharp Memory (25💎) - Hint after wrong answer (planned)
+  - Iron Stomach (15💎) - Food restores +25% more hunger
+  - Fire Master (20💎) - Campfire burns 20% slower
+  - Eagle Eye (30💎) - See wolves from further (visual - planned)
+  - Math Prodigy (50💎) - +50% XP from questions
+  - Pet Whisperer (25💎) - Pet abilities +25% (when pets added)
+  - Night Walker (40💎) - Move 10% faster at night
+- Added diamond and level display in lobby top-left
+- Classes are level-gated (require certain level to purchase)
+- Implemented class effects in game.html:
+  - getWolfDamage() - reduces wolf damage
+  - getLuckyAxeBonus() - random bonus wood
+  - getTimerBonus() - extra timer time
+  - getFoodHealingMultiplier() - food bonus
+  - getFireDrainMultiplier() - slower fire drain
+  - getXPMultiplier() - bonus XP
+  - getNightMovementMultiplier() - night speed boost
+- Classes persist across sessions
+
+**How to use:**
+1. Earn diamonds by surviving nights and collecting rare items
+2. Go to lobby and click 🏪 button
+3. Purchase classes that match your level
+4. Effects apply automatically in game!
+
+**Next steps:**
+- Phase 2.5: Achievement Expansion
+- Phase 3: Pets & Content
+
+---
+
+### Session 6 - Quest Board System
+**Date:** 2026-01-28
+**Branch:** `phase2-quests`
+**What was done:**
+- Added Quest Board to lobby (📋 button) with daily quests:
+  - 13 different quest types across easy/medium/hard difficulties
+  - 3 random quests per day (auto-refresh daily)
+  - Spin button to get new quests anytime
+- Quest types include:
+  - Chop trees (5/15)
+  - Defeat wolves (2/5)
+  - Answer questions correctly (10/25)
+  - Get streaks (5/10)
+  - Survive nights (1/3)
+  - Defeat all cultists
+  - Find rare items
+  - Survive night without damage
+- Real-time progress tracking during gameplay
+- Quest completion notifications in-game
+- Diamond rewards claimable in lobby
+- Session stats tracked for quest progress:
+  - treesChopped, wolvesDefeated, questionsCorrect
+  - bestStreak, nightsSurvived, cultistsDefeated
+  - rareItemsFound, perfectNights
+
+**How it works:**
+1. Open quest board in lobby (📋 button)
+2. View your 3 daily quests and progress
+3. Play the game - progress updates automatically
+4. When quest completes, notification shows in-game
+5. Return to lobby to claim diamond rewards
+6. Quests refresh daily or spin for new ones
+
+**Next steps:**
+- Phase 2.5: Achievement Expansion
+- Phase 3: Pets & Content
 
 ---
 

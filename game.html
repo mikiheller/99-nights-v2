@@ -1100,6 +1100,73 @@
     .hidden-until-crafted {
       display: none !important;
     }
+
+    /* XP & Level Display */
+    .xp-section {
+      padding: 12px 16px !important;
+    }
+    
+    .xp-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .level-badge {
+      background: linear-gradient(135deg, #ffd700 0%, #ff9500 100%);
+      color: #1a1a2e;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    }
+    
+    .xp-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .xp-bar {
+      height: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+    
+    .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700 0%, #ffaa00 100%);
+      border-radius: 6px;
+      transition: width 0.5s ease-out;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    
+    .xp-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    
+    .streak-badge {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff4500 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 6px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      animation: streakPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes streakPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
     
     /* Crafting Tooltip */
     .crafting-tooltip {
@@ -1144,6 +1211,20 @@
           <span id="gameModeTitle">Addition Mode</span>
         </div>
         <div class="game-mode-subtitle">99 Nights Math Forest</div>
+      </div>
+
+      <!-- XP & Level -->
+      <div class="info-section xp-section">
+        <div class="xp-row">
+          <div class="level-badge" id="levelText">Lvl 1</div>
+          <div class="xp-bar-wrapper">
+            <div class="xp-bar">
+              <div class="xp-bar-fill" id="xpBar" style="width: 0%;"></div>
+            </div>
+            <div class="xp-text" id="xpText">0 / 100 XP</div>
+          </div>
+          <div class="streak-badge" id="streakBadge" style="display: none;">🔥 <span id="streakCount">0</span></div>
+        </div>
       </div>
 
       <!-- Day & Time -->
@@ -3241,6 +3322,7 @@
     let currentQuestionAttempts = 0; // Track attempts for current question
     let timerInterval = null;
     let timeRemaining = 0;
+    let timerDuration = 7000; // Timer duration in ms (can be set from admin config)
     let currentQuestionTimedOut = false; // Track if current question timed out
     
     let playerHealth = 100;
@@ -3443,6 +3525,793 @@
           rewardsState.rareEntityMarkers.frostLockedCanister = randomCanister;
         }
       }
+    }
+    
+    // ============================================
+    // PERSISTENCE LAYER
+    // ============================================
+    
+    const SAVE_KEY = '99nights_save_v1';
+    
+    // Default save structure
+    function createDefaultSave() {
+      return {
+        version: 1,
+        
+        // Player progression
+        totalDiamondsEarned: 0,
+        diamondsSpent: 0,
+        playerLevel: 1,
+        playerXP: 0,
+        
+        // Mastery tracking (per problem type ID)
+        // e.g., "add_level1": { totalAttempts: 50, totalCorrect: 45, last10: [1,1,1,0,1,1,1,1,1,1], masteryAchieved: false }
+        mastery: {},
+        
+        // Purchased classes/upgrades
+        // e.g., "thick_skin": { purchased: true, purchaseDate: "2024-01-15" }
+        classes: {},
+        
+        // Pet data
+        pet: null, // or { type: 'cat', name: 'Whiskers', level: 1, happiness: 100 }
+        
+        // Admin configuration for math mappings
+        adminConfig: {
+          mathMappings: {
+            fightWolf: { problemType: 'subtract_level1', questionCount: 3, timerSeconds: 7 },
+            fightCultist: { problemType: 'subtract_level2', questionCount: 3, timerSeconds: 7 },
+            chop: { problemType: 'add_level3', questionCount: 2, timerSeconds: 0 },
+            collectFuel: { problemType: 'add_level1', questionCount: 1, timerSeconds: 0 },
+            salvageFan: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+            salvageBolt: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+            salvageRadio: { problemType: 'add_level2', questionCount: 1, timerSeconds: 0 },
+            collectKey: { problemType: 'add_level5', questionCount: 3, timerSeconds: 0 },
+            crafting: { problemType: 'subtract_level1', questionCount: 1, timerSeconds: 0 },
+            harvestFarm: { problemType: 'add_level6', questionCount: 1, timerSeconds: 0 },
+            makeStew: { problemType: 'subtract_level3', questionCount: 1, timerSeconds: 0 },
+          }
+        },
+        
+        // Daily quests
+        dailyQuests: [],
+        lastQuestRefresh: null,
+        
+        // Achievements
+        achievements: [],
+        
+        // Lifetime stats
+        stats: {
+          totalNightsSurvived: 0,
+          totalWolvesDefeated: 0,
+          totalTreesChopped: 0,
+          totalCultistsDefeated: 0,
+          bestNightReached: 0,
+          totalQuestionsAnswered: 0,
+          totalQuestionsCorrect: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          totalPlayTime: 0,
+          gamesPlayed: 0,
+        },
+        
+        // Daily login tracking
+        lastLoginDate: null,
+        consecutiveLoginDays: 0,
+        
+        // Last session state
+        lastGameMode: 'addition',
+        
+        // Timestamp for save
+        lastSaveTime: null
+      };
+    }
+    
+    // Current game save (loaded on init)
+    let gameSave = createDefaultSave();
+    
+    // Save game to localStorage
+    function saveGame() {
+      try {
+        // Update save with current game state
+        gameSave.totalDiamondsEarned = calculateTotalDiamonds();
+        gameSave.lastGameMode = gameMode;
+        gameSave.lastSaveTime = new Date().toISOString();
+        
+        // Update lifetime stats from current session
+        gameSave.stats.bestNightReached = Math.max(gameSave.stats.bestNightReached, currentNight);
+        
+        // Serialize and save
+        const saveData = JSON.stringify(gameSave);
+        localStorage.setItem(SAVE_KEY, saveData);
+        
+        console.log('Game saved successfully:', gameSave);
+        return true;
+      } catch (error) {
+        console.error('Failed to save game:', error);
+        return false;
+      }
+    }
+    
+    // Load game from localStorage
+    function loadGame() {
+      try {
+        const saveData = localStorage.getItem(SAVE_KEY);
+        
+        if (saveData) {
+          const loaded = JSON.parse(saveData);
+          
+          // Merge with defaults to handle new fields in updates
+          gameSave = { ...createDefaultSave(), ...loaded };
+          
+          // Deep merge nested objects
+          gameSave.stats = { ...createDefaultSave().stats, ...(loaded.stats || {}) };
+          gameSave.adminConfig = { 
+            ...createDefaultSave().adminConfig, 
+            ...(loaded.adminConfig || {}),
+            mathMappings: {
+              ...createDefaultSave().adminConfig.mathMappings,
+              ...(loaded.adminConfig?.mathMappings || {})
+            }
+          };
+          
+          console.log('Game loaded successfully:', gameSave);
+          return gameSave;
+        } else {
+          console.log('No save found, using defaults');
+          gameSave = createDefaultSave();
+          return gameSave;
+        }
+      } catch (error) {
+        console.error('Failed to load game:', error);
+        gameSave = createDefaultSave();
+        return gameSave;
+      }
+    }
+    
+    // Reset game progress (with confirmation)
+    function resetGame(skipConfirm = false) {
+      if (!skipConfirm && !confirm('Are you sure you want to reset ALL progress? This cannot be undone!')) {
+        return false;
+      }
+      
+      try {
+        localStorage.removeItem(SAVE_KEY);
+        gameSave = createDefaultSave();
+        console.log('Game reset successfully');
+        return true;
+      } catch (error) {
+        console.error('Failed to reset game:', error);
+        return false;
+      }
+    }
+    
+    // Export save as JSON file download
+    function exportSave() {
+      try {
+        // Make sure save is current
+        saveGame();
+        
+        const saveData = JSON.stringify(gameSave, null, 2);
+        const blob = new Blob([saveData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `99nights_save_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Save exported successfully');
+        return true;
+      } catch (error) {
+        console.error('Failed to export save:', error);
+        return false;
+      }
+    }
+    
+    // Import save from JSON file
+    function importSave(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            
+            // Validate it looks like a valid save
+            if (typeof imported.version !== 'number') {
+              throw new Error('Invalid save file format');
+            }
+            
+            // Merge with defaults
+            gameSave = { ...createDefaultSave(), ...imported };
+            gameSave.stats = { ...createDefaultSave().stats, ...(imported.stats || {}) };
+            gameSave.adminConfig = { 
+              ...createDefaultSave().adminConfig, 
+              ...(imported.adminConfig || {}),
+              mathMappings: {
+                ...createDefaultSave().adminConfig.mathMappings,
+                ...(imported.adminConfig?.mathMappings || {})
+              }
+            };
+            
+            // Save to localStorage
+            saveGame();
+            
+            console.log('Save imported successfully:', gameSave);
+            resolve(gameSave);
+          } catch (error) {
+            console.error('Failed to import save:', error);
+            reject(error);
+          }
+        };
+        
+        reader.onerror = () => {
+          reject(new Error('Failed to read file'));
+        };
+        
+        reader.readAsText(file);
+      });
+    }
+    
+    // Update mastery tracking after answering a question
+    function updateMastery(problemTypeId, wasCorrect) {
+      if (!gameSave.mastery[problemTypeId]) {
+        gameSave.mastery[problemTypeId] = {
+          totalAttempts: 0,
+          totalCorrect: 0,
+          last10: [],
+          masteryAchieved: false
+        };
+      }
+      
+      const mastery = gameSave.mastery[problemTypeId];
+      mastery.totalAttempts++;
+      if (wasCorrect) {
+        mastery.totalCorrect++;
+      }
+      
+      // Track last 10 attempts (1 = correct, 0 = wrong)
+      mastery.last10.push(wasCorrect ? 1 : 0);
+      if (mastery.last10.length > 10) {
+        mastery.last10.shift();
+      }
+      
+      // Check mastery criteria:
+      // - Minimum 20 attempts
+      // - 80%+ overall accuracy
+      // - 90%+ accuracy on last 10 attempts (should improve over time)
+      if (mastery.totalAttempts >= 20) {
+        const overallAccuracy = mastery.totalCorrect / mastery.totalAttempts;
+        const last10Correct = mastery.last10.reduce((sum, v) => sum + v, 0);
+        const last10Accuracy = mastery.last10.length >= 10 ? last10Correct / 10 : 0;
+        
+        if (overallAccuracy >= 0.8 && last10Accuracy >= 0.9) {
+          if (!mastery.masteryAchieved) {
+            mastery.masteryAchieved = true;
+            console.log(`Mastery achieved for ${problemTypeId}!`);
+            // Could show celebration here in the future
+          }
+        }
+      }
+      
+      // Update stats
+      gameSave.stats.totalQuestionsAnswered++;
+      if (wasCorrect) {
+        gameSave.stats.totalQuestionsCorrect++;
+        gameSave.stats.currentStreak++;
+        gameSave.stats.bestStreak = Math.max(gameSave.stats.bestStreak, gameSave.stats.currentStreak);
+        
+        // Update session stats for quests
+        updateSessionStat('questionsCorrect', (gameSave.sessionStats?.questionsCorrect || 0) + 1);
+        updateSessionStat('bestStreak', Math.max(gameSave.sessionStats?.bestStreak || 0, gameSave.stats.currentStreak));
+      } else {
+        gameSave.stats.currentStreak = 0;
+      }
+      
+      // Auto-save after mastery update
+      saveGame();
+    }
+    
+    // Update lifetime stats (call these when relevant events happen)
+    function recordNightSurvived() {
+      gameSave.stats.totalNightsSurvived++;
+      gameSave.stats.bestNightReached = Math.max(gameSave.stats.bestNightReached, currentNight);
+      
+      // Update session stats for quests
+      updateSessionStat('nightsSurvived', (gameSave.sessionStats?.nightsSurvived || 0) + 1);
+      
+      // Check for perfect night (no damage taken)
+      if (!sessionDamageTaken) {
+        updateSessionStat('perfectNights', (gameSave.sessionStats?.perfectNights || 0) + 1);
+      }
+      // Reset damage tracking for next night
+      sessionDamageTaken = false;
+      
+      // Award XP for surviving the night
+      awardXP(XP_REWARDS.surviveNight, 'Night survived!');
+      
+      saveGame();
+    }
+    
+    function recordWolfDefeated() {
+      gameSave.stats.totalWolvesDefeated++;
+      // Update session stats for quests
+      updateSessionStat('wolvesDefeated', (gameSave.sessionStats?.wolvesDefeated || 0) + 1);
+      saveGame();
+    }
+    
+    function recordTreeChopped() {
+      gameSave.stats.totalTreesChopped++;
+      // Update session stats for quests
+      updateSessionStat('treesChopped', (gameSave.sessionStats?.treesChopped || 0) + 1);
+      saveGame();
+    }
+    
+    function recordCultistDefeated() {
+      gameSave.stats.totalCultistsDefeated++;
+      // Update session stats for quests
+      updateSessionStat('cultistsDefeated', (gameSave.sessionStats?.cultistsDefeated || 0) + 1);
+      saveGame();
+    }
+    
+    function recordGameStart() {
+      gameSave.stats.gamesPlayed++;
+      
+      // Initialize session stats if needed
+      if (!gameSave.sessionStats) {
+        gameSave.sessionStats = {
+          treesChopped: 0,
+          wolvesDefeated: 0,
+          questionsCorrect: 0,
+          bestStreak: 0,
+          nightsSurvived: 0,
+          cultistsDefeated: 0,
+          rareItemsFound: 0,
+          perfectNights: 0
+        };
+      }
+      
+      // Reset damage tracking for "perfect night" quest
+      sessionDamageTaken = false;
+      
+      // Check daily login
+      const today = new Date().toISOString().split('T')[0];
+      if (gameSave.lastLoginDate !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        if (gameSave.lastLoginDate === yesterday) {
+          gameSave.consecutiveLoginDays++;
+        } else {
+          gameSave.consecutiveLoginDays = 1;
+        }
+        gameSave.lastLoginDate = today;
+      }
+      
+      saveGame();
+    }
+    
+    // Track if damage was taken this night (for perfect night quest)
+    let sessionDamageTaken = false;
+    
+    // Update session stat for quest tracking
+    function updateSessionStat(stat, value) {
+      if (!gameSave.sessionStats) {
+        gameSave.sessionStats = {};
+      }
+      gameSave.sessionStats[stat] = value;
+      
+      // Check if any quests are completed
+      checkQuestCompletion();
+    }
+    
+    // Check and mark completed quests
+    function checkQuestCompletion() {
+      if (!gameSave.dailyQuests) return;
+      
+      gameSave.dailyQuests.forEach(quest => {
+        if (!quest.completed) {
+          const progress = gameSave.sessionStats[quest.stat] || 0;
+          quest.progress = Math.min(progress, quest.target);
+          if (quest.progress >= quest.target) {
+            quest.completed = true;
+            showQuestComplete(quest);
+          }
+        }
+      });
+      
+      saveGame();
+    }
+    
+    // Show quest completion notification
+    function showQuestComplete(quest) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 16px;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: "Kalam", cursive;
+        z-index: 10000;
+        text-align: center;
+        animation: questPop 0.5s ease-out;
+        box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4);
+      `;
+      notification.innerHTML = `
+        <div style="font-size: 40px; margin-bottom: 10px;">${quest.icon}</div>
+        <div>Quest Complete!</div>
+        <div style="font-size: 18px; opacity: 0.9;">${quest.name}</div>
+        <div style="font-size: 16px; margin-top: 10px;">+${quest.reward} 💎 (Claim in lobby)</div>
+      `;
+      
+      // Add animation
+      if (!document.getElementById('quest-complete-style')) {
+        const style = document.createElement('style');
+        style.id = 'quest-complete-style';
+        style.textContent = `
+          @keyframes questPop {
+            0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s';
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
+    }
+    
+    // Get problem type ID from current game mode and level
+    function getProblemTypeId(level) {
+      const prefix = gameMode === 'subtraction' ? 'subtract' : 'add';
+      return `${prefix}_level${level}`;
+    }
+    
+    // ============================================
+    // XP & LEVELING SYSTEM
+    // ============================================
+    
+    // Level thresholds - XP required to reach each level
+    const LEVEL_THRESHOLDS = [
+      0,      // Level 1
+      100,    // Level 2
+      250,    // Level 3
+      500,    // Level 4
+      1000,   // Level 5
+      2000,   // Level 6
+      4000,   // Level 7
+      8000,   // Level 8
+      16000,  // Level 9
+      32000   // Level 10
+    ];
+    
+    // XP rewards for various actions
+    const XP_REWARDS = {
+      correctAnswer: 10,
+      correctFirstTry: 5,    // Bonus on top of correctAnswer
+      speedBonus3sec: 5,     // Answer in < 3 seconds
+      speedBonus2sec: 10,    // Answer in < 2 seconds (replaces 3sec bonus)
+      surviveNight: 50,
+      defeatAllCultists: 25,
+      streakBonus: 2         // Per streak level
+    };
+    
+    // Track answer timing for speed bonuses
+    let questionStartTime = 0;
+    
+    // Calculate level from XP
+    function getLevelFromXP(xp) {
+      for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+        if (xp >= LEVEL_THRESHOLDS[i]) {
+          return i + 1;
+        }
+      }
+      return 1;
+    }
+    
+    // Get XP needed for next level
+    function getXPForNextLevel(currentXP) {
+      const currentLevel = getLevelFromXP(currentXP);
+      if (currentLevel >= LEVEL_THRESHOLDS.length) {
+        return null; // Max level reached
+      }
+      return LEVEL_THRESHOLDS[currentLevel];
+    }
+    
+    // Get progress percentage to next level
+    function getLevelProgress(currentXP) {
+      const currentLevel = getLevelFromXP(currentXP);
+      if (currentLevel >= LEVEL_THRESHOLDS.length) {
+        return 100; // Max level
+      }
+      const currentLevelXP = LEVEL_THRESHOLDS[currentLevel - 1];
+      const nextLevelXP = LEVEL_THRESHOLDS[currentLevel];
+      const progress = (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP);
+      return Math.min(100, Math.max(0, progress * 100));
+    }
+    
+    // Award XP and check for level up
+    function awardXP(amount, reason = '') {
+      const oldLevel = getLevelFromXP(gameSave.playerXP);
+      gameSave.playerXP += amount;
+      const newLevel = getLevelFromXP(gameSave.playerXP);
+      
+      // Update UI
+      updateXPDisplay();
+      
+      // Show floating XP indicator
+      showFloatingXP(amount, reason);
+      
+      // Check for level up
+      if (newLevel > oldLevel) {
+        gameSave.playerLevel = newLevel;
+        showLevelUpCelebration(newLevel);
+      }
+      
+      saveGame();
+      return { xpEarned: amount, leveledUp: newLevel > oldLevel, newLevel };
+    }
+    
+    // Award XP for correct answer with bonuses
+    function awardAnswerXP(wasFirstTry, answerTimeMs) {
+      let totalXP = XP_REWARDS.correctAnswer;
+      let reasons = ['+10 correct'];
+      
+      // First try bonus
+      if (wasFirstTry) {
+        totalXP += XP_REWARDS.correctFirstTry;
+        reasons.push('+5 first try');
+      }
+      
+      // Speed bonuses (only if first try)
+      if (wasFirstTry && answerTimeMs > 0) {
+        if (answerTimeMs < 2000) {
+          totalXP += XP_REWARDS.speedBonus2sec;
+          reasons.push('+10 FAST!');
+        } else if (answerTimeMs < 3000) {
+          totalXP += XP_REWARDS.speedBonus3sec;
+          reasons.push('+5 quick');
+        }
+      }
+      
+      // Streak bonus
+      const streak = gameSave.stats.currentStreak;
+      if (streak > 1) {
+        const streakXP = Math.min(streak, 10) * XP_REWARDS.streakBonus; // Cap at 10 streak levels
+        totalXP += streakXP;
+        reasons.push(`+${streakXP} streak`);
+      }
+      
+      // Math Prodigy class bonus (+50% XP)
+      const multiplier = getXPMultiplier();
+      if (multiplier > 1) {
+        totalXP = Math.floor(totalXP * multiplier);
+        reasons.push('🎓 Prodigy!');
+      }
+      
+      return awardXP(totalXP, reasons.join(' '));
+    }
+    
+    // Show floating XP indicator
+    function showFloatingXP(amount, reason) {
+      const gameContainer = document.querySelector('.game-container');
+      if (!gameContainer) return;
+      
+      const floater = document.createElement('div');
+      floater.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffdd00;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: "Kalam", cursive;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255,221,0,0.5);
+        pointer-events: none;
+        z-index: 500;
+        animation: floatUp 1.5s ease-out forwards;
+      `;
+      floater.textContent = `+${amount} XP`;
+      
+      // Add animation keyframes if not already added
+      if (!document.getElementById('xp-float-style')) {
+        const style = document.createElement('style');
+        style.id = 'xp-float-style';
+        style.textContent = `
+          @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -100%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -150%) scale(0.8); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      gameContainer.appendChild(floater);
+      setTimeout(() => floater.remove(), 1500);
+    }
+    
+    // Show level up celebration
+    function showLevelUpCelebration(newLevel) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(255,200,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: levelUpFade 3s ease-out forwards;
+      `;
+      
+      overlay.innerHTML = `
+        <div style="font-size: 32px; color: #ffd700; margin-bottom: 20px; animation: levelUpPulse 0.5s ease-in-out infinite alternate;">
+          ⭐ LEVEL UP! ⭐
+        </div>
+        <div style="font-size: 72px; font-weight: bold; color: white; text-shadow: 0 0 30px #ffd700, 0 4px 8px rgba(0,0,0,0.5); font-family: 'Kalam', cursive;">
+          Level ${newLevel}
+        </div>
+        <div style="font-size: 18px; color: #ccc; margin-top: 20px;">
+          ${getLevelRewardText(newLevel)}
+        </div>
+      `;
+      
+      // Add animation styles
+      if (!document.getElementById('level-up-style')) {
+        const style = document.createElement('style');
+        style.id = 'level-up-style';
+        style.textContent = `
+          @keyframes levelUpFade {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          @keyframes levelUpPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.remove(), 3000);
+    }
+    
+    // Get reward text for a level
+    function getLevelRewardText(level) {
+      const rewards = {
+        2: '🐱 Pet taming unlocked!',
+        3: '🎖️ +1 Class slot!',
+        5: '📋 Daily quests unlocked!',
+        7: '🎖️ +1 Class slot!',
+        10: '👑 Master rank achieved!'
+      };
+      return rewards[level] || 'Keep going!';
+    }
+    
+    // Update XP display in UI
+    function updateXPDisplay() {
+      const xpBar = document.getElementById('xpBar');
+      const xpText = document.getElementById('xpText');
+      const levelText = document.getElementById('levelText');
+      
+      if (!xpBar || !xpText || !levelText) return;
+      
+      const currentXP = gameSave.playerXP;
+      const currentLevel = getLevelFromXP(currentXP);
+      const progress = getLevelProgress(currentXP);
+      const nextLevelXP = getXPForNextLevel(currentXP);
+      
+      xpBar.style.width = `${progress}%`;
+      levelText.textContent = `Lvl ${currentLevel}`;
+      
+      if (nextLevelXP !== null) {
+        xpText.textContent = `${currentXP} / ${nextLevelXP} XP`;
+      } else {
+        xpText.textContent = `${currentXP} XP (MAX)`;
+      }
+    }
+    
+    // Update streak display in UI
+    function updateStreakDisplay() {
+      const streakBadge = document.getElementById('streakBadge');
+      const streakCount = document.getElementById('streakCount');
+      
+      if (!streakBadge || !streakCount) return;
+      
+      const streak = gameSave.stats.currentStreak;
+      
+      if (streak >= 3) {
+        streakBadge.style.display = 'flex';
+        streakCount.textContent = streak;
+      } else {
+        streakBadge.style.display = 'none';
+      }
+    }
+    
+    // ============================================
+    // CLASS EFFECTS
+    // ============================================
+    
+    // Check if player owns a specific class
+    function hasClass(classId) {
+      return gameSave.classes?.[classId]?.purchased === true;
+    }
+    
+    // Get wolf damage (reduced by Thick Skin)
+    function getWolfDamage(baseDamage) {
+      if (hasClass('thick_skin')) {
+        return Math.floor(baseDamage * 0.9); // -10% damage
+      }
+      return baseDamage;
+    }
+    
+    // Check for Lucky Axe bonus wood
+    function getLuckyAxeBonus() {
+      if (hasClass('lucky_axe') && Math.random() < 0.2) {
+        return 1; // 20% chance for +1 bonus wood
+      }
+      return 0;
+    }
+    
+    // Get timer bonus from Quick Thinker
+    function getTimerBonus() {
+      if (hasClass('quick_thinker')) {
+        return 2000; // +2 seconds in ms
+      }
+      return 0;
+    }
+    
+    // Get food healing bonus from Iron Stomach
+    function getFoodHealingMultiplier() {
+      if (hasClass('iron_stomach')) {
+        return 1.25; // +25% healing
+      }
+      return 1;
+    }
+    
+    // Get fire drain multiplier from Fire Master
+    function getFireDrainMultiplier() {
+      if (hasClass('fire_master')) {
+        return 0.8; // Burns 20% slower (80% drain rate)
+      }
+      return 1;
+    }
+    
+    // Get XP multiplier from Math Prodigy
+    function getXPMultiplier() {
+      if (hasClass('math_prodigy')) {
+        return 1.5; // +50% XP
+      }
+      return 1;
+    }
+    
+    // Get movement speed multiplier for Night Walker
+    function getNightMovementMultiplier() {
+      if (isNight && hasClass('night_walker')) {
+        return 1.1; // +10% speed at night
+      }
+      return 1;
     }
     
     // Calculate total diamonds from all sources
@@ -3689,6 +4558,9 @@
     
     // Award a diamond and show notification with animation
     function awardRareItemDiamond(itemName) {
+      // Track rare item for quests
+      updateSessionStat('rareItemsFound', (gameSave.sessionStats?.rareItemsFound || 0) + 1);
+      
       // First show the diamond animation
       animateFlyingDiamond(() => {
         // Then show the notification and update display
@@ -3748,7 +4620,11 @@
     // Player state
     let playerX = 0; // World coordinates
     let playerZ = 0;
-    const playerSpeed = 0.15;
+    const basePlayerSpeed = 0.15;
+    // Get effective player speed (Night Walker bonus at night)
+    function getPlayerSpeed() {
+      return basePlayerSpeed * getNightMovementMultiplier();
+    }
     const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false, e: false, E: false };
     const interactionDistance = 1.5;
     
@@ -4059,7 +4935,7 @@
             let b = pickRandom(numbersB);
             if (a + b > maxSum) continue;
             if (randomizeOrder && Math.random() < 0.5) [a, b] = [b, a];
-            question = { equation: `${a} + ${b}`, answer: a + b };
+            question = { equation: `${a} + ${b}`, answer: a + b, level: levelNum };
             break;
           }
           
@@ -4071,9 +4947,9 @@
             if (c > maxSum) continue;
             
             if (randomizeOrder && Math.random() < 0.5) {
-              question = { equation: `? + ${b} = ${c}`, answer: a, isKeyQuestion: true };
+              question = { equation: `? + ${b} = ${c}`, answer: a, isKeyQuestion: true, level: levelNum };
             } else {
-              question = { equation: `${a} + ? = ${c}`, answer: b, isKeyQuestion: true };
+              question = { equation: `${a} + ? = ${c}`, answer: b, isKeyQuestion: true, level: levelNum };
             }
             break;
           }
@@ -4092,19 +4968,19 @@
             if (pos === 0) {
               answer = a;
               if (answer > maxSum) continue; // Respect maxSum for answer
-              question = { equation: `? + ${b} = ${c} + ${d}`, answer: a, isKeyQuestion: true };
+              question = { equation: `? + ${b} = ${c} + ${d}`, answer: a, isKeyQuestion: true, level: levelNum };
             } else if (pos === 1) {
               answer = b;
               if (answer > maxSum) continue;
-              question = { equation: `${a} + ? = ${c} + ${d}`, answer: b, isKeyQuestion: true };
+              question = { equation: `${a} + ? = ${c} + ${d}`, answer: b, isKeyQuestion: true, level: levelNum };
             } else if (pos === 2) {
               answer = c;
               if (answer > maxSum) continue;
-              question = { equation: `${a} + ${b} = ? + ${d}`, answer: c, isKeyQuestion: true };
+              question = { equation: `${a} + ${b} = ? + ${d}`, answer: c, isKeyQuestion: true, level: levelNum };
             } else {
               answer = d;
               if (answer > maxSum) continue;
-              question = { equation: `${a} + ${b} = ${c} + ?`, answer: d, isKeyQuestion: true };
+              question = { equation: `${a} + ${b} = ${c} + ?`, answer: d, isKeyQuestion: true, level: levelNum };
             }
             break;
           }
@@ -4125,7 +5001,7 @@
             }
             
             if (a + b + c > maxSum) continue;
-            question = { equation: `${a} + ${b} + ${c}`, answer: a + b + c };
+            question = { equation: `${a} + ${b} + ${c}`, answer: a + b + c, level: levelNum };
             break;
           }
           
@@ -4139,11 +5015,11 @@
             
             const pos = Math.floor(Math.random() * 3);
             if (pos === 0) {
-              question = { equation: `? + ${b} + ${c} = ${d}`, answer: a, isKeyQuestion: true };
+              question = { equation: `? + ${b} + ${c} = ${d}`, answer: a, isKeyQuestion: true, level: levelNum };
             } else if (pos === 1) {
-              question = { equation: `${a} + ? + ${c} = ${d}`, answer: b, isKeyQuestion: true };
+              question = { equation: `${a} + ? + ${c} = ${d}`, answer: b, isKeyQuestion: true, level: levelNum };
             } else {
-              question = { equation: `${a} + ${b} + ? = ${d}`, answer: c, isKeyQuestion: true };
+              question = { equation: `${a} + ${b} + ? = ${d}`, answer: c, isKeyQuestion: true, level: levelNum };
             }
             break;
           }
@@ -4156,9 +5032,9 @@
             const answer = target - a;
             
             if (randomizeOrder && Math.random() < 0.5) {
-              question = { equation: `? + ${a} = ${target}`, answer: answer, isKeyQuestion: true };
+              question = { equation: `? + ${a} = ${target}`, answer: answer, isKeyQuestion: true, level: levelNum };
             } else {
-              question = { equation: `${a} + ? = ${target}`, answer: answer, isKeyQuestion: true };
+              question = { equation: `${a} + ? = ${target}`, answer: answer, isKeyQuestion: true, level: levelNum };
             }
             break;
           }
@@ -4172,7 +5048,7 @@
             // Skip if result would be negative and 'no_negative' is set
             if (special === 'no_negative' && result < 0) continue;
             
-            question = { equation: `${a} − ${b}`, answer: result };
+            question = { equation: `${a} − ${b}`, answer: result, level: levelNum };
             break;
           }
           
@@ -4185,7 +5061,7 @@
             // Skip if result would be negative and 'no_negative' is set
             if (special === 'no_negative' && c < 0) continue;
             
-            question = { equation: `${a} − ? = ${c}`, answer: b, isKeyQuestion: true };
+            question = { equation: `${a} − ? = ${c}`, answer: b, isKeyQuestion: true, level: levelNum };
             break;
           }
           
@@ -4196,12 +5072,12 @@
             if (gameMode === 'subtraction') {
               const result = a - b;
               if (result >= 0) {
-                question = { equation: `${a} − ${b}`, answer: result };
+                question = { equation: `${a} − ${b}`, answer: result, level: levelNum };
               } else {
-                question = { equation: `${b} − ${a}`, answer: b - a };
+                question = { equation: `${b} − ${a}`, answer: b - a, level: levelNum };
               }
             } else {
-              question = { equation: `${a} + ${b}`, answer: a + b };
+              question = { equation: `${a} + ${b}`, answer: a + b, level: levelNum };
             }
         }
         
@@ -4210,9 +5086,9 @@
       
       // Fallback if we couldn't generate a valid question
       if (gameMode === 'subtraction') {
-        return { equation: '5 − 2', answer: 3 };
+        return { equation: '5 − 2', answer: 3, level: 1 };
       }
-      return { equation: '1 + 1', answer: 2 };
+      return { equation: '1 + 1', answer: 2, level: 1 };
     }
     
     // Generate question for a specific tier
@@ -4266,6 +5142,47 @@
       }
       
       return questions;
+    }
+    
+    // Generate questions based on admin config for a given action
+    function generateQuestionsFromAdminConfig(actionKey, countOverride = null) {
+      const mapping = gameSave.adminConfig?.mathMappings?.[actionKey];
+      if (!mapping) {
+        // Fallback to tier-based generation if no config
+        return generateUniqueQuestions(generateTierQuestion.bind(null, 1), 1);
+      }
+      
+      const { problemType, questionCount } = mapping;
+      const count = countOverride !== null ? countOverride : questionCount;
+      
+      // Parse problem type to get curriculum and level
+      // Format: "add_level3" or "subtract_level1"
+      const match = problemType.match(/^(add|subtract)_level(\d+)$/);
+      if (!match) {
+        return generateUniqueQuestions(generateTierQuestion.bind(null, 1), count);
+      }
+      
+      const [, type, levelStr] = match;
+      const level = parseInt(levelStr);
+      
+      // Generate questions using the specified level
+      const generator = () => {
+        // Temporarily switch curriculum if needed
+        const targetCurriculum = type === 'subtract' ? SUBTRACTION_CURRICULUM : ADDITION_CURRICULUM;
+        const originalCurriculum = curriculum;
+        curriculum = targetCurriculum;
+        const question = generateQuestionForLevel(level);
+        curriculum = originalCurriculum;
+        return question;
+      };
+      
+      return generateUniqueQuestions(generator, count);
+    }
+    
+    // Get timer duration from admin config
+    function getTimerFromAdminConfig(actionKey) {
+      const mapping = gameSave.adminConfig?.mathMappings?.[actionKey];
+      return mapping?.timerSeconds || 0;
     }
     
     // Initialize curriculum on page load
@@ -4431,69 +5348,58 @@
         document.exitPointerLock();
       }
       
-      if (actionKey === 'fightWolf') {
-        // Spear: 2 harder questions, otherwise 3 normal questions
+      // Get timer setting from admin config
+      const timerSeconds = getTimerFromAdminConfig(actionKey);
+      const hasTimer = timerSeconds > 0;
+      
+      // Action-specific labels and UI
+      const actionLabels = {
+        fightWolf: 'Fight Wolf!',
+        fightCultist: 'Fight Cultist!',
+        chop: 'Chop Tree',
+        collectFuel: 'Collect Fuel',
+        salvageFan: 'Salvage Fan (+2 metal)',
+        salvageBolt: 'Salvage Bolt (+1 metal)',
+        salvageRadio: 'Salvage Radio (+3 metal)',
+        collectKey: entity?.tier ? `🔑 ${entity.tier.charAt(0).toUpperCase() + entity.tier.slice(1)} Key` : '🔑 Key',
+        crafting: 'Crafting',
+        harvestFarm: 'Harvest Farm',
+        makeStew: 'Make Stew'
+      };
+      
+      // Handle weapon upgrades that modify question generation
+      if (actionKey === 'fightWolf' || actionKey === 'fightCultist') {
+        // Spear: 2 questions instead of configured amount
         if (rewardsState.weapons.hasSpear) {
-          currentQuestions = generateUniqueQuestions(generateHarderQuestion, 2);
+          currentQuestions = generateQuestionsFromAdminConfig(actionKey, 2);
         } else {
-          currentQuestions = generateUniqueQuestions(generateWolfQuestion, 3);
+          currentQuestions = generateQuestionsFromAdminConfig(actionKey);
         }
-        mathBubbleLabel.textContent = "Fight Wolf!";
-        mathTimerBar.style.display = 'block';
-        mathQuestionCounter.style.display = 'block';
-      } else if (actionKey === 'fightCultist') {
-        // Spear: 2 harder questions, otherwise 3 normal questions
-        if (rewardsState.weapons.hasSpear) {
-          currentQuestions = generateUniqueQuestions(generateHarderQuestion, 2);
-        } else {
-          currentQuestions = generateUniqueQuestions(generateCultistQuestion, 3);
-        }
-        mathBubbleLabel.textContent = "Fight Cultist!";
-        mathTimerBar.style.display = 'block';
-        mathQuestionCounter.style.display = 'block';
+        mathBubbleLabel.textContent = actionLabels[actionKey];
+        mathTimerBar.style.display = hasTimer ? 'block' : 'none';
+        mathQuestionCounter.style.display = currentQuestions.length > 1 ? 'block' : 'none';
       } else if (actionKey === 'chop') {
-        // Chainsaw: 1 question, Good Axe: 2 harder questions, otherwise 3 normal questions
-        // Note: enchanted trees look normal - surprise diamond at the end!
+        // Chainsaw: 1 question, Good Axe: 2 questions, otherwise use config
         if (rewardsState.weapons.hasChainsaw) {
-          currentQuestions = [generateChainsawQuestion()];
+          currentQuestions = generateQuestionsFromAdminConfig(actionKey, 1);
           mathBubbleLabel.textContent = "⛓️ Chainsaw Tree";
           mathQuestionCounter.style.display = 'none';
         } else if (rewardsState.weapons.hasGoodAxe) {
-          currentQuestions = generateUniqueQuestions(generateHarderQuestion, 2);
+          currentQuestions = generateQuestionsFromAdminConfig(actionKey, 2);
           mathBubbleLabel.textContent = "🪓 Chop Tree";
           mathQuestionCounter.style.display = 'block';
         } else {
-          currentQuestions = generateUniqueQuestions(generateTreeQuestion, 3);
-          mathBubbleLabel.textContent = "Chop Tree";
-          mathQuestionCounter.style.display = 'block';
+          currentQuestions = generateQuestionsFromAdminConfig(actionKey);
+          mathBubbleLabel.textContent = actionLabels[actionKey];
+          mathQuestionCounter.style.display = currentQuestions.length > 1 ? 'block' : 'none';
         }
-        mathTimerBar.style.display = 'none';
-      } else if (actionKey === 'collectFuel') {
-        currentQuestions = [generateCoalOrMetalQuestion()];
-        mathBubbleLabel.textContent = "Collect Fuel";
-        mathTimerBar.style.display = 'none';
-        mathQuestionCounter.style.display = 'none';
-      } else if (actionKey === 'salvageFan') {
-        currentQuestions = [generateCoalOrMetalQuestion()];
-        mathBubbleLabel.textContent = "Salvage Fan (+2 metal)";
-        mathTimerBar.style.display = 'none';
-        mathQuestionCounter.style.display = 'none';
-      } else if (actionKey === 'salvageBolt') {
-        currentQuestions = [generateCoalOrMetalQuestion()];
-        mathBubbleLabel.textContent = "Salvage Bolt (+1 metal)";
-        mathTimerBar.style.display = 'none';
-        mathQuestionCounter.style.display = 'none';
-      } else if (actionKey === 'salvageRadio') {
-        currentQuestions = [generateCoalOrMetalQuestion()];
-        mathBubbleLabel.textContent = "Salvage Radio (+3 metal)";
-        mathTimerBar.style.display = 'none';
-        mathQuestionCounter.style.display = 'none';
-      } else if (actionKey === 'collectKey') {
-        currentQuestions = [generateKeyQuestion(), generateKeyQuestion(), generateKeyQuestion()];
-        const tierName = entity.tier.charAt(0).toUpperCase() + entity.tier.slice(1);
-        mathBubbleLabel.textContent = `🔑 ${tierName} Key`;
-        mathTimerBar.style.display = 'none';
-        mathQuestionCounter.style.display = 'block';
+        mathTimerBar.style.display = hasTimer ? 'block' : 'none';
+      } else {
+        // All other actions - use admin config directly
+        currentQuestions = generateQuestionsFromAdminConfig(actionKey);
+        mathBubbleLabel.textContent = actionLabels[actionKey] || actionKey;
+        mathTimerBar.style.display = hasTimer ? 'block' : 'none';
+        mathQuestionCounter.style.display = currentQuestions.length > 1 ? 'block' : 'none';
       }
       
       // Stop player movement
@@ -4522,8 +5428,13 @@
       currentQuestionTimedOut = false;
       currentQuestionAttempts = 0;
       
-      // Start timer for wolf and cultist encounters
-      if (currentAction === 'fightWolf' || currentAction === 'fightCultist') {
+      // Start timing for speed bonus
+      questionStartTime = Date.now();
+      
+      // Start timer if configured for this action
+      const actionTimer = getTimerFromAdminConfig(currentAction);
+      if (actionTimer > 0) {
+        timerDuration = actionTimer * 1000 + getTimerBonus(); // Convert to ms + Quick Thinker bonus
         startTimer();
       }
     }
@@ -4532,14 +5443,14 @@
       if (timerInterval) clearInterval(timerInterval);
       
       if (!resume) {
-        timeRemaining = 7000; // 7 seconds in ms
+        timeRemaining = timerDuration;
         mathTimerFill.style.width = "100%";
         mathTimerFill.classList.remove("danger");
       }
       
       timerInterval = setInterval(() => {
         timeRemaining -= 100;
-        const percentage = (timeRemaining / 7000) * 100;
+        const percentage = (timeRemaining / timerDuration) * 100;
         mathTimerFill.style.width = `${percentage}%`;
         
         if (percentage < 30) {
@@ -4553,13 +5464,14 @@
           currentQuestionTimedOut = true;
           currentQuestionAttempts++; // Count timeout as an attempt
           
-          // Time's up! Damage player health
-          damagePlayer(20);
+          // Time's up! Damage player health (reduced by Thick Skin for wolves)
+          const timeoutDamage = currentAction === 'fightWolf' ? getWolfDamage(20) : 20;
+          damagePlayer(timeoutDamage);
           
           // Flash red screen for timeout
           flashRedScreen();
           
-          mathBubbleFeedback.textContent = "⏱ Time's up! -20% health";
+          mathBubbleFeedback.textContent = `⏱ Time's up! -${timeoutDamage}% health`;
           mathBubbleFeedback.classList.add("bad");
           
           // Check if player died
@@ -4628,7 +5540,8 @@
       }
       
       const userAnswer = parseInt(mathAnswerInput.value, 10);
-      const correctAnswer = currentQuestions[currentQuestionIndex].answer;
+      const currentQuestion = currentQuestions[currentQuestionIndex];
+      const correctAnswer = currentQuestion.answer;
       
       // Stop timer immediately on any answer (correct or wrong)
       if (timerInterval) {
@@ -4636,12 +5549,24 @@
         timerInterval = null;
       }
       
+      // Get problem type ID for mastery tracking
+      const problemTypeId = getProblemTypeId(currentQuestion.level || 1);
+      
       if (userAnswer === correctAnswer) {
+        // Track mastery for correct answer
+        updateMastery(problemTypeId, true);
         // Check if this was first try (no previous attempts and not timed out)
         const isFirstTry = (currentQuestionAttempts === 0 && !currentQuestionTimedOut);
         
         // Record whether this question was answered correctly on first try
         questionsCorrectFirstTry[currentQuestionIndex] = isFirstTry;
+        
+        // Calculate answer time and award XP
+        const answerTime = Date.now() - questionStartTime;
+        awardAnswerXP(isFirstTry, answerTime);
+        
+        // Update streak display
+        updateStreakDisplay();
         
         // Provide appropriate feedback
         if (isFirstTry) {
@@ -4671,11 +5596,19 @@
         // Wrong answer - increment attempts and let them retry
         currentQuestionAttempts++;
         
+        // Track mastery for wrong answer
+        updateMastery(problemTypeId, false);
+        
+        // Update streak display (streak is reset in updateMastery)
+        updateStreakDisplay();
+        
         // Damage health for wrong answers in wolf/cultist encounters
         if (currentAction === 'fightWolf' || currentAction === 'fightCultist') {
-          damagePlayer(20);
+          // Thick Skin reduces wolf damage
+          const wrongDamage = currentAction === 'fightWolf' ? getWolfDamage(20) : 20;
+          damagePlayer(wrongDamage);
           
-          mathBubbleFeedback.textContent = `✗ Wrong! -20% health. Try again.`;
+          mathBubbleFeedback.textContent = `✗ Wrong! -${wrongDamage}% health. Try again.`;
           
           // Check if player died
           if (playerHealth <= 0) {
@@ -4764,6 +5697,12 @@
         }
         
         if (woodEarned > 0) {
+          // Lucky Axe bonus - 20% chance for extra wood
+          const luckyBonus = getLuckyAxeBonus();
+          if (luckyBonus > 0) {
+            woodEarned += luckyBonus;
+            feedbackText += ' 🍀+1 Lucky!';
+          }
           woodCount.textContent = parseInt(woodCount.textContent, 10) + woodEarned;
         }
         mathBubbleFeedback.textContent = feedbackText;
@@ -4799,6 +5738,9 @@
           if (index > -1) entities.splice(index, 1);
         }
         
+        // Record tree chopped for persistence
+        recordTreeChopped();
+        
         // Check if we need to respawn trees
         checkTreeCount();
       } else if (actionKey === 'fightCultist') {
@@ -4811,10 +5753,17 @@
         
         cultistsDefeated++;
         mathBubbleFeedback.textContent = `✓ Cultist defeated! (${cultistsDefeated}/3)`;
+        
+        // Record cultist defeated for persistence
+        recordCultistDefeated();
 
         // Check if all 3 cultists defeated (and reward not yet given)
         if (cultistsDefeated === 3 && !cultistRewardGiven) {
           cultistRewardGiven = true;
+          
+          // Award XP for defeating all cultists
+          awardXP(XP_REWARDS.defeatAllCultists, 'All cultists defeated!');
+          
           setTimeout(() => {
             scrapCount.textContent = parseInt(scrapCount.textContent, 10) + 3;
             showCultistVictoryNotification();
@@ -4857,6 +5806,9 @@
           const index = entities.indexOf(currentInteractable);
           if (index > -1) entities.splice(index, 1);
         }
+        
+        // Record wolf defeated for persistence
+        recordWolfDefeated();
       } else if (actionKey === 'collectFuel') {
         // Fuel: only get reward if correct on first try
         const gotReward = questionsCorrectFirstTry[0] === true;
@@ -5294,6 +6246,11 @@
       playerHealth = Math.max(0, Math.floor(playerHealth - amount));
       updateHealthBar();
       
+      // Track damage for perfect night quest
+      if (isNight) {
+        sessionDamageTaken = true;
+      }
+      
       // Immediate death check after any damage
       if (playerHealth <= 0 && !isGameOver) {
         showGameOver();
@@ -5325,7 +6282,9 @@
     // ============================================
     
     function updateFire() {
-      const decayRate = FIRE_DECAY_RATES[currentFireLevel] || FIRE_DECAY_RATES[1];
+      const baseDecayRate = FIRE_DECAY_RATES[currentFireLevel] || FIRE_DECAY_RATES[1];
+      // Fire Master reduces fire drain by 20%
+      const decayRate = baseDecayRate * getFireDrainMultiplier();
       fireStrength = Math.max(0, fireStrength - decayRate);
       fireBar.style.width = `${fireStrength}%`;
       
@@ -5796,6 +6755,9 @@
         if (isNight) {
           // Night ended, new day
           
+          // Record night survived for persistence
+          recordNightSurvived();
+          
           // Award diamond for surviving the night with flashy animation
           awardNightSurvivalDiamond();
           
@@ -5928,6 +6890,9 @@
     
     function endNightEarly() {
       if (!isNight) return; // Only end if it's actually night
+      
+      // Record night survived for persistence
+      recordNightSurvived();
       
       // Award diamond for surviving the night with flashy animation
       awardNightSurvivalDiamond();
@@ -6629,13 +7594,14 @@
       }
     }
     
-    // Carrots: Restore 3% hunger
+    // Carrots: Restore 3% hunger (Iron Stomach: +25%)
     carrotItem.addEventListener('click', (e) => {
       e.stopPropagation();
       if (carrots > 0) {
         carrots--;
         carrotCount.textContent = carrots;
-        playerHunger = Math.min(100, playerHunger + 3);
+        const hungerRestore = Math.floor(3 * getFoodHealingMultiplier());
+        playerHunger = Math.min(100, playerHunger + hungerRestore);
         hungerBar.style.width = `${playerHunger}%`;
         updateHungerBarAppearance();
         updateInventoryDisplay();
@@ -6644,13 +7610,14 @@
       }
     });
     
-    // Meat: Restore 10% hunger
+    // Meat: Restore 10% hunger (Iron Stomach: +25%)
     meatItem.addEventListener('click', (e) => {
       e.stopPropagation();
       const currentMeat = parseInt(meatCount.textContent, 10);
       if (currentMeat > 0) {
         meatCount.textContent = currentMeat - 1;
-        playerHunger = Math.min(100, playerHunger + 10);
+        const hungerRestore = Math.floor(10 * getFoodHealingMultiplier());
+        playerHunger = Math.min(100, playerHunger + hungerRestore);
         hungerBar.style.width = `${playerHunger}%`;
         updateHungerBarAppearance();
         updateInventoryDisplay();
@@ -6659,13 +7626,14 @@
       }
     });
     
-    // Stew: Restore 30% hunger
+    // Stew: Restore 30% hunger (Iron Stomach: +25%)
     stewItem.addEventListener('click', (e) => {
       e.stopPropagation();
       if (stew > 0) {
         stew--;
         stewCount.textContent = stew;
-        playerHunger = Math.min(100, playerHunger + 30);
+        const hungerRestore = Math.floor(30 * getFoodHealingMultiplier());
+        playerHunger = Math.min(100, playerHunger + hungerRestore);
         hungerBar.style.width = `${playerHunger}%`;
         updateHungerBarAppearance();
         updateInventoryDisplay();
@@ -7587,41 +8555,46 @@
             const cosYaw = Math.cos(fpYaw);
             
             if (forward) {
-              playerX -= sinYaw * playerSpeed;
-              playerZ -= cosYaw * playerSpeed;
+              const speed = getPlayerSpeed();
+              playerX -= sinYaw * speed;
+              playerZ -= cosYaw * speed;
             }
             if (backward) {
-              playerX += sinYaw * playerSpeed;
-              playerZ += cosYaw * playerSpeed;
+              const speed = getPlayerSpeed();
+              playerX += sinYaw * speed;
+              playerZ += cosYaw * speed;
             }
             if (left) {
-              playerX -= cosYaw * playerSpeed;
-              playerZ += sinYaw * playerSpeed;
+              const speed = getPlayerSpeed();
+              playerX -= cosYaw * speed;
+              playerZ += sinYaw * speed;
             }
             if (right) {
-              playerX += cosYaw * playerSpeed;
-              playerZ -= sinYaw * playerSpeed;
+              const speed = getPlayerSpeed();
+              playerX += cosYaw * speed;
+              playerZ -= sinYaw * speed;
             }
           }
         } else {
           // Third-person: original world-relative movement
+          const speed = getPlayerSpeed();
           if (keys.w || keys.ArrowUp) {
-            playerZ -= playerSpeed;
+            playerZ -= speed;
             moveZ -= 1;
             moved = true;
           }
           if (keys.s || keys.ArrowDown) {
-            playerZ += playerSpeed;
+            playerZ += speed;
             moveZ += 1;
             moved = true;
           }
           if (keys.a || keys.ArrowLeft) {
-            playerX -= playerSpeed;
+            playerX -= speed;
             moveX -= 1;
             moved = true;
           }
           if (keys.d || keys.ArrowRight) {
-            playerX += playerSpeed;
+            playerX += speed;
             moveX += 1;
             moved = true;
           }
@@ -7812,6 +8785,15 @@
     // ============================================
     
     function init() {
+      // Load saved game data
+      loadGame();
+      recordGameStart();
+      console.log('Game initialized with save:', gameSave);
+      
+      // Initialize XP and streak display
+      updateXPDisplay();
+      updateStreakDisplay();
+      
       // Create ground
       groundMesh = createGround(worldRadius);
       scene.add(groundMesh);
