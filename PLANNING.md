@@ -141,7 +141,7 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 | Task | Status | Branch | Notes |
 |------|--------|--------|-------|
 | 3.1 Pet System | ✅ Complete | `phase3-pets` | Tameable cats, pigs, bees with abilities |
-| 3.2 Structures | Not Started | `phase3-structures` | Explorable houses, caves |
+| 3.2 Structures | ✅ Complete | `phase3-structures` | 9 explorable structure types with chests |
 | 3.3 New Creatures | Not Started | `phase3-creatures` | Alpha wolf, bear, snake, owl, ram |
 | 3.4 First-Person Items | Not Started | `phase3-items` | Visible held items (await screenshot) |
 
@@ -153,8 +153,9 @@ Make the game so engaging that the child *wants* to play, thereby practicing mat
 | 4.1 Boss Nights | Not Started | `phase4-bosses` | Special challenge every 10th night |
 | 4.2 Daily Login Rewards | ✅ Complete | `phase4-daily-rewards` | 7-day reward cycle with streak bonuses |
 | 4.3 Speed Bonuses | Not Started | `phase4-speed` | Reward fast answers |
-| 4.4 Close Call Feedback | Not Started | `phase4-polish` | Screen effects, sounds |
-| 4.5 Bug Fixes | Not Started | `phase4-fixes` | Address issues from testing |
+| 4.4 Movement Enhancements | Not Started | `phase4-movement` | Add jumping (spacebar) and running (shift) |
+| 4.5 Close Call Feedback | Not Started | `phase4-polish` | Screen effects, sounds |
+| 4.6 Bug Fixes | Not Started | `phase4-fixes` | Address issues from testing |
 
 ---
 
@@ -470,6 +471,34 @@ pet: {
 
 ---
 
+### 4.4 Movement Enhancements
+
+**Jumping (Spacebar):**
+- Press spacebar to jump
+- Smooth arc animation (rise and fall)
+- Jump height: ~2 units
+- Can jump while moving (momentum preserved)
+- Cooldown: Cannot jump again until landed
+- Use cases: Hopping over obstacles, feeling of freedom/fun
+
+**Running (Shift):**
+- Hold shift to run (sprint)
+- Speed multiplier: 1.5x - 2x normal walking speed
+- Stamina system (optional): 
+  - Stamina bar that depletes while running
+  - Regenerates when walking or standing still
+  - OR unlimited running (simpler, more kid-friendly)
+- Visual feedback: Slight camera bob or FOV change when running
+- Sound: Faster footstep sounds (if audio added)
+
+**Implementation Notes:**
+- Modify player movement in `animate()` function (around line 611 in index.html / lobby)
+- Modify game.html movement controls similarly
+- Add `playerY` variable for vertical position during jumps
+- Use physics-like calculation: `velocityY -= gravity * deltaTime`
+
+---
+
 ## User Preferences
 
 ### Math Curriculum
@@ -537,6 +566,18 @@ pet: {
 - [ ] Pet abilities work
 - [ ] Pet happiness decreases over time
 - [ ] Pet can be fed
+
+### Phase 4 Testing
+- [ ] Boss appears on night 10, 20, etc.
+- [ ] Daily login reward shows on first login of day
+- [ ] Consecutive login streak tracks correctly
+- [ ] Speed bonus appears for fast answers
+- [ ] Jumping works with spacebar (smooth arc)
+- [ ] Cannot double-jump while in air
+- [ ] Running works with shift (faster movement)
+- [ ] Running feels responsive and fun
+- [ ] Low health triggers visual/audio feedback
+- [ ] All reported bugs addressed
 
 *(Add more as phases are developed)*
 
@@ -865,6 +906,66 @@ pet: {
   5. Identified throttle placement bug
 
 **Lesson learned:** Always put throttle/rate-limit checks at the very beginning of frequently-called functions, before any other logic.
+
+---
+
+### Session 11 - Explorable Structures
+**Date:** 2026-01-30
+**Branch:** `phase3-structures`
+**What was done:**
+- Implemented complete explorable structures system with 9 different structure types:
+  - **Wooden Shack** (Fire L2+) - Small, simple structure
+  - **Cozy Cabin** (Fire L2+) - Medium with bed, table, chairs
+  - **Abandoned Tent** (Fire L2+) - Canvas tent structure
+  - **Watchtower** (Fire L3+) - Tall with windows
+  - **Old Barn** (Fire L3+) - Large red barn with hay bales
+  - **Abandoned Mine** (Fire L3+) - Cave entrance with mine cart
+  - **Ruined Chapel** (Fire L4+) - Large stone church with pews, altar
+  - **Witch's Hut** (Fire L4+) - Spooky with cauldron and shelves
+  - **Treehouse** (Fire L4+) - Elevated structure
+
+- **Key features:**
+  - Player can walk inside structures through door opening
+  - Roof disappears in third-person (birds-eye) view when player enters
+  - Roof remains visible in first-person view (you're inside looking at walls)
+  - Wall collision prevents walking through walls
+  - One chest per structure (no keys needed, math problem to open)
+  - Random scrap metal spawns inside structures
+  - Interior furniture based on structure type
+
+- **Spawning logic:**
+  - Fire Level 1: 0 structures
+  - Fire Level 2: 2 structures
+  - Fire Level 3: 3 structures
+  - Fire Level 4: 4 structures
+
+- **Chest loot system:**
+  - Common tier (L1-2): wood, scrap, cloth, coal, carrots
+  - Uncommon tier (L3): above + meat, diamonds
+  - Rare tier (L4): above + stew, potions
+
+- **Minimap integration:**
+  - Structures shown as colored rectangles
+  - Door indicator (white dot)
+  - Pulsing gold dot indicates chest not yet looted
+
+**Structure Data Model:**
+```javascript
+structureEntity = {
+  type: 'structure',
+  structureType: 'cabin',
+  config: STRUCTURE_TYPES[type],
+  worldX, worldZ, rotation,
+  mesh: THREE.Group,
+  roofVisible: true,
+  chestLooted: false,
+  scrapCollected: false
+}
+```
+
+**Next steps:**
+- Phase 3.3: New Creatures (alpha wolf, bear, snake, owl, ram)
+- Phase 4.1: Boss Nights
 
 ---
 
