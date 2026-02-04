@@ -2095,46 +2095,144 @@
     scene.add(directionalLight);
     
     // ============================================
-    // VOXEL MODEL BUILDERS
+    // LOW-POLY MODEL BUILDERS
     // ============================================
+    
+    // Tree variants for visual variety
+    const TREE_VARIANTS = [
+      { type: 'pine', trunkHeight: 2.5, layers: 4, baseRadius: 2.2, topRadius: 0.3 },
+      { type: 'pine_tall', trunkHeight: 3, layers: 5, baseRadius: 2.0, topRadius: 0.2 },
+      { type: 'pine_short', trunkHeight: 1.8, layers: 3, baseRadius: 2.5, topRadius: 0.4 },
+      { type: 'oak', trunkHeight: 2, layers: 2, baseRadius: 3, topRadius: 1.5, isRound: true },
+    ];
     
     function createTree(x, z, isEnchanted = false) {
       const group = new THREE.Group();
       
-      // Trunk (2 cubes) - looks normal even if enchanted (surprise!)
-      const trunkGeometry = new THREE.BoxGeometry(1, 1, 1);
-      const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      // Pick a random tree variant based on position (deterministic)
+      const variantIndex = Math.abs(Math.floor(x * 7 + z * 13)) % TREE_VARIANTS.length;
+      const variant = TREE_VARIANTS[variantIndex];
       
-      const trunk1 = new THREE.Mesh(trunkGeometry, trunkMaterial);
-      trunk1.position.y = 0.5;
-      trunk1.castShadow = true;
-      trunk1.receiveShadow = true;
-      group.add(trunk1);
+      // Slight random variations for natural look
+      const seed = Math.abs(x * 31 + z * 17);
+      const heightMult = 0.85 + (seed % 30) / 100; // 0.85 to 1.15
+      const leanX = ((seed % 20) - 10) / 200; // Slight lean
+      const leanZ = ((seed % 17) - 8) / 200;
       
-      const trunk2 = new THREE.Mesh(trunkGeometry, trunkMaterial);
-      trunk2.position.y = 1.5;
-      trunk2.castShadow = true;
-      trunk2.receiveShadow = true;
-      group.add(trunk2);
+      // Color variations
+      const trunkShade = 0x5D4037 + (seed % 20) * 0x010101;
+      const greenBase = isEnchanted ? 0x50FF70 : 0x2D5A27;
+      const greenVariation = (seed % 30) * 0x000100;
+      const foliageColor = greenBase + greenVariation;
       
-      // Leaves (3x3x3 cube cluster) - looks normal even if enchanted
-      const leavesGeometry = new THREE.BoxGeometry(1, 1, 1);
-      const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+      // Trunk - cylinder with slight taper
+      const trunkHeight = variant.trunkHeight * heightMult;
+      const trunkGeometry = new THREE.CylinderGeometry(0.25, 0.4, trunkHeight, 8);
+      const trunkMaterial = new THREE.MeshLambertMaterial({ color: trunkShade });
+      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+      trunk.position.y = trunkHeight / 2;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      group.add(trunk);
       
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = 0; dy <= 2; dy++) {
-          for (let dz = -1; dz <= 1; dz++) {
-            // Skip some blocks to make it look more tree-like
-            if (dy === 0 && Math.abs(dx) + Math.abs(dz) > 1) continue;
-            if (dy === 2 && (Math.abs(dx) === 1 || Math.abs(dz) === 1)) continue;
-            
-            const leaf = new THREE.Mesh(leavesGeometry, leavesMaterial);
-            leaf.position.set(dx, 2.5 + dy, dz);
-            leaf.castShadow = true;
-            leaf.receiveShadow = true;
-            group.add(leaf);
-          }
+      // Add some roots at base
+      const rootMaterial = new THREE.MeshLambertMaterial({ color: trunkShade - 0x101010 });
+      for (let i = 0; i < 4; i++) {
+        const rootGeometry = new THREE.CylinderGeometry(0.08, 0.15, 0.6, 4);
+        const root = new THREE.Mesh(rootGeometry, rootMaterial);
+        const angle = (i / 4) * Math.PI * 2 + (seed % 100) / 100;
+        root.position.set(Math.cos(angle) * 0.35, 0.15, Math.sin(angle) * 0.35);
+        root.rotation.z = Math.cos(angle) * 0.5;
+        root.rotation.x = Math.sin(angle) * 0.5;
+        root.castShadow = true;
+        group.add(root);
+      }
+      
+      // Foliage
+      const foliageMaterial = new THREE.MeshLambertMaterial({ color: foliageColor });
+      const foliageMaterialDark = new THREE.MeshLambertMaterial({ color: foliageColor - 0x101008 });
+      
+      if (variant.isRound) {
+        // Oak-style: round layered foliage
+        const layers = [
+          { y: trunkHeight + 1.2, radius: variant.baseRadius * 0.9, height: 2 },
+          { y: trunkHeight + 2.5, radius: variant.baseRadius * 0.7, height: 1.5 },
+          { y: trunkHeight + 3.5, radius: variant.baseRadius * 0.4, height: 1 },
+        ];
+        
+        layers.forEach((layer, i) => {
+          const geometry = new THREE.DodecahedronGeometry(layer.radius * heightMult, 1);
+          const material = i % 2 === 0 ? foliageMaterial : foliageMaterialDark;
+          const foliage = new THREE.Mesh(geometry, material);
+          foliage.position.y = layer.y * heightMult;
+          foliage.scale.y = 0.7;
+          foliage.rotation.y = seed + i;
+          foliage.castShadow = true;
+          foliage.receiveShadow = true;
+          group.add(foliage);
+        });
+      } else {
+        // Pine-style: stacked cones
+        const layerHeight = (5 * heightMult) / variant.layers;
+        
+        for (let i = 0; i < variant.layers; i++) {
+          const t = i / (variant.layers - 1);
+          const radius = variant.baseRadius * (1 - t * 0.6) * heightMult;
+          const coneHeight = layerHeight * (1.3 - t * 0.3);
+          const y = trunkHeight + i * layerHeight * 0.75;
+          
+          const coneGeometry = new THREE.ConeGeometry(radius, coneHeight, 8);
+          const material = i % 2 === 0 ? foliageMaterial : foliageMaterialDark;
+          const cone = new THREE.Mesh(coneGeometry, material);
+          cone.position.y = y + coneHeight / 2;
+          cone.castShadow = true;
+          cone.receiveShadow = true;
+          group.add(cone);
         }
+        
+        // Add a small tip
+        const tipGeometry = new THREE.ConeGeometry(0.3 * heightMult, 1 * heightMult, 6);
+        const tip = new THREE.Mesh(tipGeometry, foliageMaterial);
+        tip.position.y = trunkHeight + variant.layers * layerHeight * 0.75 + 0.5;
+        tip.castShadow = true;
+        group.add(tip);
+      }
+      
+      // Apply lean
+      group.rotation.x = leanZ;
+      group.rotation.z = leanX;
+      
+      // Enchanted effect - add glow
+      if (isEnchanted) {
+        const glowGeometry = new THREE.SphereGeometry(3.5 * heightMult, 8, 8);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x50FF70,
+          transparent: true,
+          opacity: 0.2,
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = trunkHeight + 2;
+        group.add(glow);
+        
+        // Add sparkle particles for enchanted trees
+        const sparkleGroup = new THREE.Group();
+        for (let i = 0; i < 8; i++) {
+          const sparkle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 4, 4),
+            new THREE.MeshBasicMaterial({ color: 0xAAFFAA })
+          );
+          const angle = (i / 8) * Math.PI * 2;
+          const radius = 1.5 + Math.random();
+          sparkle.position.set(
+            Math.cos(angle) * radius,
+            trunkHeight + 1 + Math.random() * 3,
+            Math.sin(angle) * radius
+          );
+          sparkle.userData.sparkleIndex = i;
+          sparkleGroup.add(sparkle);
+        }
+        sparkleGroup.name = 'sparkles';
+        group.add(sparkleGroup);
       }
       
       group.position.set(x, 0, z);
@@ -3060,68 +3158,95 @@
     function createCampfire(x, z) {
       const group = new THREE.Group();
       
-      // Rocks arranged in a circle around the fire
-      const rockGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.4);
-      const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 }); // Gray rocks
+      // Rocks arranged in a circle around the fire - using dodecahedrons for natural look
+      const rockColors = [0x6B6B6B, 0x7A7A7A, 0x5C5C5C, 0x686868];
+      const numRocks = 12;
       
-      const rockPositions = [
-        [1.2, 0, 0],
-        [-1.2, 0, 0],
-        [0, 0, 1.2],
-        [0, 0, -1.2],
-        [0.85, 0, 0.85],
-        [-0.85, 0, 0.85],
-        [0.85, 0, -0.85],
-        [-0.85, 0, -0.85]
-      ];
-      
-      rockPositions.forEach(pos => {
+      for (let i = 0; i < numRocks; i++) {
+        const angle = (i / numRocks) * Math.PI * 2;
+        const radius = 1.1 + Math.sin(i * 3) * 0.15;
+        const rockSize = 0.25 + Math.cos(i * 5) * 0.08;
+        
+        const rockGeometry = new THREE.DodecahedronGeometry(rockSize, 0);
+        const rockMaterial = new THREE.MeshLambertMaterial({ 
+          color: rockColors[i % rockColors.length] 
+        });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        rock.position.set(pos[0], 0.15, pos[2]);
+        rock.position.set(
+          Math.cos(angle) * radius, 
+          rockSize * 0.7, 
+          Math.sin(angle) * radius
+        );
+        rock.rotation.set(i * 0.5, i * 0.7, i * 0.3);
+        rock.scale.y = 0.6; // Flatten slightly
         rock.castShadow = true;
         rock.receiveShadow = true;
         group.add(rock);
-      });
+      }
       
-      // Logs arranged in a cross in the center
-      const logGeometry = new THREE.BoxGeometry(1.5, 0.25, 0.25);
-      const logMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown logs
+      // Charred ground beneath fire
+      const charGeometry = new THREE.CircleGeometry(1.3, 16);
+      const charMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A1A });
+      const char = new THREE.Mesh(charGeometry, charMaterial);
+      char.rotation.x = -Math.PI / 2;
+      char.position.y = 0.01;
+      group.add(char);
       
-      const log1 = new THREE.Mesh(logGeometry, logMaterial);
-      log1.position.y = 0.125;
-      log1.castShadow = true;
-      log1.receiveShadow = true;
-      group.add(log1);
+      // Logs arranged in teepee style - cylinders instead of boxes
+      const logMaterial = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
+      const burntLogMaterial = new THREE.MeshLambertMaterial({ color: 0x2D2018 });
       
-      const log2 = new THREE.Mesh(logGeometry, logMaterial);
-      log2.position.y = 0.125;
-      log2.rotation.y = Math.PI / 2;
-      log2.castShadow = true;
-      log2.receiveShadow = true;
-      group.add(log2);
+      // Standing logs in teepee formation
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2;
+        const logGeometry = new THREE.CylinderGeometry(0.08, 0.12, 1.4, 6);
+        const log = new THREE.Mesh(logGeometry, i % 2 === 0 ? logMaterial : burntLogMaterial);
+        log.position.set(Math.cos(angle) * 0.35, 0.6, Math.sin(angle) * 0.35);
+        log.rotation.z = Math.cos(angle) * 0.4;
+        log.rotation.x = Math.sin(angle) * 0.4;
+        log.castShadow = true;
+        log.receiveShadow = true;
+        group.add(log);
+      }
       
-      // Three logs arranged in a triangle around the campfire (like seating)
-      const sittingLogGeometry = new THREE.BoxGeometry(2.5, 0.3, 0.3);
+      // Fallen logs at base
+      for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2 + 0.5;
+        const logGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.2, 6);
+        const log = new THREE.Mesh(logGeometry, burntLogMaterial);
+        log.position.set(Math.cos(angle) * 0.5, 0.1, Math.sin(angle) * 0.5);
+        log.rotation.z = Math.PI / 2;
+        log.rotation.y = angle;
+        log.castShadow = true;
+        group.add(log);
+      }
       
-      // Log 1 - bottom (horizontal)
-      const sittingLog1 = new THREE.Mesh(sittingLogGeometry, logMaterial);
-      sittingLog1.position.set(0, 0.15, 4.5);
+      // Three sitting logs arranged in a triangle around the campfire
+      const sittingLogMaterial = new THREE.MeshLambertMaterial({ color: 0x6B4423 });
+      
+      // Log 1 - bottom
+      const sittingLog1Geo = new THREE.CylinderGeometry(0.2, 0.25, 2.8, 8);
+      const sittingLog1 = new THREE.Mesh(sittingLog1Geo, sittingLogMaterial);
+      sittingLog1.position.set(0, 0.22, 4.5);
+      sittingLog1.rotation.z = Math.PI / 2;
       sittingLog1.castShadow = true;
       sittingLog1.receiveShadow = true;
       group.add(sittingLog1);
       
-      // Log 2 - top left (angled)
-      const sittingLog2 = new THREE.Mesh(sittingLogGeometry, logMaterial);
-      sittingLog2.position.set(-3.9, 0.15, -2.25);
-      sittingLog2.rotation.y = Math.PI / 3; // 60 degrees
+      // Log 2 - top left
+      const sittingLog2 = new THREE.Mesh(sittingLog1Geo, sittingLogMaterial);
+      sittingLog2.position.set(-3.9, 0.22, -2.25);
+      sittingLog2.rotation.z = Math.PI / 2;
+      sittingLog2.rotation.y = Math.PI / 3;
       sittingLog2.castShadow = true;
       sittingLog2.receiveShadow = true;
       group.add(sittingLog2);
       
-      // Log 3 - top right (angled)
-      const sittingLog3 = new THREE.Mesh(sittingLogGeometry, logMaterial);
-      sittingLog3.position.set(3.9, 0.15, -2.25);
-      sittingLog3.rotation.y = -Math.PI / 3; // -60 degrees
+      // Log 3 - top right
+      const sittingLog3 = new THREE.Mesh(sittingLog1Geo, sittingLogMaterial);
+      sittingLog3.position.set(3.9, 0.22, -2.25);
+      sittingLog3.rotation.z = Math.PI / 2;
+      sittingLog3.rotation.y = -Math.PI / 3;
       sittingLog3.castShadow = true;
       sittingLog3.receiveShadow = true;
       group.add(sittingLog3);
@@ -3130,32 +3255,78 @@
       const flamesGroup = new THREE.Group();
       flamesGroup.name = 'flames';
       
-      // Fire (orange/yellow cubes with emissive glow)
-      const fireGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4);
-      const fireMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xFFAA00, 
-        emissive: 0xFF6600, 
-        emissiveIntensity: 0.8 
+      // Main fire - multiple cone shapes for dynamic look
+      const fireMaterialOrange = new THREE.MeshBasicMaterial({ 
+        color: 0xFF6600,
+        transparent: true,
+        opacity: 0.9
+      });
+      const fireMaterialYellow = new THREE.MeshBasicMaterial({ 
+        color: 0xFFAA00,
+        transparent: true,
+        opacity: 0.85
+      });
+      const fireMaterialRed = new THREE.MeshBasicMaterial({ 
+        color: 0xFF3300,
+        transparent: true,
+        opacity: 0.7
       });
       
-      const fire1 = new THREE.Mesh(fireGeometry, fireMaterial);
-      fire1.position.set(0, 0.8, 0);
-      flamesGroup.add(fire1);
+      // Create multiple flame cones
+      const flameData = [
+        { x: 0, z: 0, height: 1.6, radius: 0.4, material: fireMaterialOrange },
+        { x: 0.2, z: 0.1, height: 1.3, radius: 0.3, material: fireMaterialYellow },
+        { x: -0.15, z: 0.15, height: 1.4, radius: 0.28, material: fireMaterialOrange },
+        { x: 0.1, z: -0.2, height: 1.2, radius: 0.25, material: fireMaterialYellow },
+        { x: -0.2, z: -0.1, height: 1.1, radius: 0.22, material: fireMaterialRed },
+        { x: 0, z: 0, height: 1.9, radius: 0.2, material: fireMaterialYellow },
+      ];
       
-      const fire2 = new THREE.Mesh(fireGeometry, fireMaterial);
-      fire2.position.set(0.25, 1.1, 0.15);
-      fire2.scale.set(0.6, 0.8, 0.6);
-      flamesGroup.add(fire2);
+      flameData.forEach((flame, i) => {
+        const flameGeometry = new THREE.ConeGeometry(flame.radius, flame.height, 6);
+        const flameMesh = new THREE.Mesh(flameGeometry, flame.material);
+        flameMesh.position.set(flame.x, 0.3 + flame.height / 2, flame.z);
+        flameMesh.userData.flameIndex = i;
+        flameMesh.userData.baseHeight = flame.height;
+        flameMesh.userData.baseY = 0.3 + flame.height / 2;
+        flamesGroup.add(flameMesh);
+      });
       
-      const fire3 = new THREE.Mesh(fireGeometry, fireMaterial);
-      fire3.position.set(-0.25, 1.1, -0.15);
-      fire3.scale.set(0.6, 0.8, 0.6);
-      flamesGroup.add(fire3);
+      // Inner glow sphere
+      const glowGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+      const glowMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xFFDD00,
+        transparent: true,
+        opacity: 0.4
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.position.y = 0.8;
+      flamesGroup.add(glow);
       
-      // Point light for fire glow (inside flames group so it hides with flames)
-      const fireLight = new THREE.PointLight(0xFF6600, 1.5, 25);
-      fireLight.position.set(0, 1, 0);
+      // Embers at the base
+      const emberGeometry = new THREE.SphereGeometry(0.05, 4, 4);
+      const emberMaterial = new THREE.MeshBasicMaterial({ color: 0xFF4400 });
+      for (let i = 0; i < 15; i++) {
+        const ember = new THREE.Mesh(emberGeometry, emberMaterial);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 0.5;
+        ember.position.set(
+          Math.cos(angle) * dist,
+          0.15 + Math.random() * 0.2,
+          Math.sin(angle) * dist
+        );
+        flamesGroup.add(ember);
+      }
+      
+      // Point light for fire glow
+      const fireLight = new THREE.PointLight(0xFF6600, 2, 30);
+      fireLight.position.set(0, 1.2, 0);
       flamesGroup.add(fireLight);
+      
+      // Secondary warm light
+      const warmLight = new THREE.PointLight(0xFFAA44, 0.8, 15);
+      warmLight.position.set(0, 0.5, 0);
+      flamesGroup.add(warmLight);
       
       group.add(flamesGroup);
       
@@ -12518,10 +12689,57 @@
       checkBeeHoneyProduction();
     }
     
+    // Animate campfire flames for realistic flickering effect
+    function animateCampfireFlames() {
+      if (!campfireMesh || !campfireMesh.userData.flamesGroup) return;
+      
+      const flamesGroup = campfireMesh.userData.flamesGroup;
+      if (!flamesGroup.visible) return;
+      
+      const time = Date.now() * 0.003;
+      
+      // Animate each flame cone
+      flamesGroup.children.forEach((child, i) => {
+        if (child.userData && child.userData.flameIndex !== undefined) {
+          const idx = child.userData.flameIndex;
+          const baseHeight = child.userData.baseHeight || 1;
+          const baseY = child.userData.baseY || 1;
+          
+          // Flicker height
+          const flickerH = 1 + Math.sin(time * 3 + idx * 2) * 0.15 + Math.sin(time * 7 + idx) * 0.1;
+          child.scale.y = flickerH;
+          child.position.y = baseY * flickerH;
+          
+          // Slight sway
+          child.rotation.x = Math.sin(time * 2 + idx * 1.5) * 0.1;
+          child.rotation.z = Math.cos(time * 2.5 + idx) * 0.1;
+          
+          // Flicker width slightly
+          const flickerW = 1 + Math.sin(time * 5 + idx * 3) * 0.08;
+          child.scale.x = flickerW;
+          child.scale.z = flickerW;
+        }
+        
+        // Animate glow sphere
+        if (child.geometry && child.geometry.type === 'SphereGeometry' && child.material.opacity) {
+          child.scale.setScalar(1 + Math.sin(time * 4) * 0.15);
+          child.material.opacity = 0.3 + Math.sin(time * 6) * 0.1;
+        }
+        
+        // Animate point lights
+        if (child.isPointLight) {
+          child.intensity = child.userData.baseIntensity || child.intensity;
+          if (!child.userData.baseIntensity) child.userData.baseIntensity = child.intensity;
+          child.intensity = child.userData.baseIntensity * (0.85 + Math.sin(time * 8) * 0.15 + Math.random() * 0.1);
+        }
+      });
+    }
+    
     function animate() {
       requestAnimationFrame(animate);
       updatePlayer();
       updatePetPosition();
+      animateCampfireFlames();
       renderer.render(scene, camera);
     }
     
