@@ -2938,27 +2938,44 @@
       nose.position.set(0, 2.75, 0.85);
       group.add(nose);
       
-      // Eyes (large, creepy white rings with black centers)
+      // Eyes (large, creepy glowing red with dark rings)
       const eyeRingGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.1);
       const eyeCenterGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.12);
+      const eyeGlowColor = 0xFF2200; // Glowing red
+      const eyeGlowMaterial = new THREE.MeshBasicMaterial({ color: eyeGlowColor });
+      const eyeGlowAuraMaterial = new THREE.MeshBasicMaterial({ 
+        color: eyeGlowColor, 
+        transparent: true, 
+        opacity: 0.3 
+      });
       
       // Left eye
       const leftEyeRing = new THREE.Mesh(eyeRingGeometry, eyeWhiteMaterial);
       leftEyeRing.position.set(-0.25, 3.2, 0.4);
       group.add(leftEyeRing);
       
-      const leftEyeCenter = new THREE.Mesh(eyeCenterGeometry, eyeMaterial);
+      const leftEyeCenter = new THREE.Mesh(eyeCenterGeometry, eyeGlowMaterial);
       leftEyeCenter.position.set(-0.25, 3.2, 0.46);
       group.add(leftEyeCenter);
+      
+      // Left eye glow
+      const leftEyeGlow = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.15), eyeGlowAuraMaterial);
+      leftEyeGlow.position.set(-0.25, 3.2, 0.48);
+      group.add(leftEyeGlow);
       
       // Right eye
       const rightEyeRing = new THREE.Mesh(eyeRingGeometry, eyeWhiteMaterial);
       rightEyeRing.position.set(0.25, 3.2, 0.4);
       group.add(rightEyeRing);
       
-      const rightEyeCenter = new THREE.Mesh(eyeCenterGeometry, eyeMaterial);
+      const rightEyeCenter = new THREE.Mesh(eyeCenterGeometry, eyeGlowMaterial);
       rightEyeCenter.position.set(0.25, 3.2, 0.46);
       group.add(rightEyeCenter);
+      
+      // Right eye glow
+      const rightEyeGlow = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.15), eyeGlowAuraMaterial);
+      rightEyeGlow.position.set(0.25, 3.2, 0.48);
+      group.add(rightEyeGlow);
       
       // Ears (pink inside)
       const earGeometry = new THREE.BoxGeometry(0.15, 0.4, 0.3);
@@ -3093,17 +3110,45 @@
       head.receiveShadow = true;
       group.add(head);
       
-      // Eyes (dark)
-      const eyeGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.12);
-      const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x2C2C1C });
+      // Eyes (glowing red behind mask holes)
+      const eyeHoleGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.1);
+      const eyeHoleMaterial = new THREE.MeshLambertMaterial({ color: 0x1C1C1C }); // Dark holes
+      const eyeGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xFF3300 }); // Glowing red
+      const eyeGlowAuraMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xFF3300, 
+        transparent: true, 
+        opacity: 0.4 
+      });
       
-      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      leftEye.position.set(-0.15, 2.15, 0.36);
+      // Left eye hole
+      const leftEyeHole = new THREE.Mesh(eyeHoleGeometry, eyeHoleMaterial);
+      leftEyeHole.position.set(-0.15, 2.15, 0.35);
+      group.add(leftEyeHole);
+      
+      // Left glowing eye behind hole
+      const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.08), eyeGlowMaterial);
+      leftEye.position.set(-0.15, 2.15, 0.38);
       group.add(leftEye);
       
-      const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      rightEye.position.set(0.15, 2.15, 0.36);
+      // Left eye glow aura
+      const leftEyeGlow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.1), eyeGlowAuraMaterial);
+      leftEyeGlow.position.set(-0.15, 2.15, 0.4);
+      group.add(leftEyeGlow);
+      
+      // Right eye hole
+      const rightEyeHole = new THREE.Mesh(eyeHoleGeometry, eyeHoleMaterial);
+      rightEyeHole.position.set(0.15, 2.15, 0.35);
+      group.add(rightEyeHole);
+      
+      // Right glowing eye behind hole
+      const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.08), eyeGlowMaterial);
+      rightEye.position.set(0.15, 2.15, 0.38);
       group.add(rightEye);
+      
+      // Right eye glow aura
+      const rightEyeGlow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.1), eyeGlowAuraMaterial);
+      rightEyeGlow.position.set(0.15, 2.15, 0.4);
+      group.add(rightEyeGlow);
       
       // Nose/beak (protruding)
       const noseGeometry = new THREE.BoxGeometry(0.2, 0.3, 0.3);
@@ -7314,97 +7359,202 @@
       petModel = new THREE.Group();
       
       if (petType === 'cat') {
+        // Cat colors
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x707070 }); // Grey
+        const darkMat = new THREE.MeshLambertMaterial({ color: 0x505050 });
+        const noseMat = new THREE.MeshLambertMaterial({ color: 0xFFAAAA }); // Pink nose
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x44FF44 }); // Green eyes
+        
         // Cat body
-        const bodyGeo = new THREE.BoxGeometry(0.6, 0.4, 0.8);
-        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const bodyGeo = new THREE.BoxGeometry(0.5, 0.35, 0.7);
         const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.position.y = 0.3;
+        body.position.y = 0.35;
         petModel.add(body);
         
         // Cat head
-        const headGeo = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+        const headGeo = new THREE.BoxGeometry(0.4, 0.35, 0.35);
         const head = new THREE.Mesh(headGeo, bodyMat);
-        head.position.set(0, 0.5, 0.5);
+        head.position.set(0, 0.5, 0.45);
         petModel.add(head);
         
-        // Cat ears
-        const earGeo = new THREE.ConeGeometry(0.1, 0.2, 4);
+        // Cat ears (triangular)
+        const earGeo = new THREE.ConeGeometry(0.08, 0.18, 4);
         const ear1 = new THREE.Mesh(earGeo, bodyMat);
-        ear1.position.set(-0.15, 0.8, 0.5);
+        ear1.position.set(-0.12, 0.75, 0.45);
         petModel.add(ear1);
         const ear2 = new THREE.Mesh(earGeo, bodyMat);
-        ear2.position.set(0.15, 0.8, 0.5);
+        ear2.position.set(0.12, 0.75, 0.45);
         petModel.add(ear2);
         
-        // Cat tail
-        const tailGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.6);
+        // Cat eyes (glowing green)
+        const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.05), eyeMat);
+        leftEye.position.set(-0.1, 0.55, 0.63);
+        petModel.add(leftEye);
+        const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.05), eyeMat);
+        rightEye.position.set(0.1, 0.55, 0.63);
+        petModel.add(rightEye);
+        
+        // Cat nose
+        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.04), noseMat);
+        nose.position.set(0, 0.48, 0.64);
+        petModel.add(nose);
+        
+        // Cat legs (4)
+        const legGeo = new THREE.BoxGeometry(0.1, 0.25, 0.1);
+        const legPositions = [[0.15, 0.3], [-0.15, 0.3], [0.15, -0.25], [-0.15, -0.25]];
+        legPositions.forEach(pos => {
+          const leg = new THREE.Mesh(legGeo, darkMat);
+          leg.position.set(pos[0], 0.12, pos[1]);
+          petModel.add(leg);
+        });
+        
+        // Cat tail (curved up)
+        const tailGeo = new THREE.BoxGeometry(0.08, 0.08, 0.35);
         const tail = new THREE.Mesh(tailGeo, bodyMat);
-        tail.position.set(0, 0.5, -0.5);
-        tail.rotation.x = Math.PI / 4;
+        tail.position.set(0, 0.45, -0.45);
+        tail.rotation.x = -0.5;
         petModel.add(tail);
+        const tailTip = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.15), darkMat);
+        tailTip.position.set(0, 0.55, -0.6);
+        tailTip.rotation.x = -0.8;
+        petModel.add(tailTip);
         
       } else if (petType === 'pig') {
-        // Pig body
-        const bodyGeo = new THREE.BoxGeometry(0.7, 0.5, 0.9);
-        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+        // Pig colors
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 }); // Pink
+        const darkMat = new THREE.MeshLambertMaterial({ color: 0xFFA0B0 }); // Darker pink
+        const snoutMat = new THREE.MeshLambertMaterial({ color: 0xFF9090 });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+        
+        // Pig body (chubby)
+        const bodyGeo = new THREE.BoxGeometry(0.6, 0.45, 0.75);
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 0.35;
         petModel.add(body);
         
         // Pig head
-        const headGeo = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+        const headGeo = new THREE.BoxGeometry(0.4, 0.35, 0.35);
         const head = new THREE.Mesh(headGeo, bodyMat);
-        head.position.set(0, 0.45, 0.55);
+        head.position.set(0, 0.45, 0.5);
         petModel.add(head);
         
-        // Pig snout
-        const snoutGeo = new THREE.BoxGeometry(0.25, 0.2, 0.15);
-        const snoutMat = new THREE.MeshLambertMaterial({ color: 0xFFA0B0 });
+        // Pig snout (protruding)
+        const snoutGeo = new THREE.BoxGeometry(0.22, 0.18, 0.12);
         const snout = new THREE.Mesh(snoutGeo, snoutMat);
-        snout.position.set(0, 0.4, 0.8);
+        snout.position.set(0, 0.4, 0.72);
         petModel.add(snout);
         
-        // Pig ears
-        const earGeo = new THREE.BoxGeometry(0.15, 0.15, 0.05);
-        const ear1 = new THREE.Mesh(earGeo, bodyMat);
-        ear1.position.set(-0.2, 0.7, 0.5);
-        ear1.rotation.z = -0.3;
+        // Pig nostrils
+        const nostrilMat = new THREE.MeshLambertMaterial({ color: 0xDD7070 });
+        const nostril1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.03), nostrilMat);
+        nostril1.position.set(-0.05, 0.4, 0.78);
+        petModel.add(nostril1);
+        const nostril2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.03), nostrilMat);
+        nostril2.position.set(0.05, 0.4, 0.78);
+        petModel.add(nostril2);
+        
+        // Pig eyes
+        const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), eyeMat);
+        leftEye.position.set(-0.1, 0.52, 0.68);
+        petModel.add(leftEye);
+        const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), eyeMat);
+        rightEye.position.set(0.1, 0.52, 0.68);
+        petModel.add(rightEye);
+        
+        // Pig ears (floppy)
+        const earGeo = new THREE.BoxGeometry(0.12, 0.12, 0.04);
+        const ear1 = new THREE.Mesh(earGeo, darkMat);
+        ear1.position.set(-0.18, 0.6, 0.45);
+        ear1.rotation.z = -0.4;
+        ear1.rotation.x = 0.2;
         petModel.add(ear1);
-        const ear2 = new THREE.Mesh(earGeo, bodyMat);
-        ear2.position.set(0.2, 0.7, 0.5);
-        ear2.rotation.z = 0.3;
+        const ear2 = new THREE.Mesh(earGeo, darkMat);
+        ear2.position.set(0.18, 0.6, 0.45);
+        ear2.rotation.z = 0.4;
+        ear2.rotation.x = 0.2;
         petModel.add(ear2);
         
+        // Pig legs (4 stubby)
+        const legGeo = new THREE.BoxGeometry(0.12, 0.2, 0.12);
+        const legPositions = [[0.18, 0.28], [-0.18, 0.28], [0.18, -0.28], [-0.18, -0.28]];
+        legPositions.forEach(pos => {
+          const leg = new THREE.Mesh(legGeo, darkMat);
+          leg.position.set(pos[0], 0.1, pos[1]);
+          petModel.add(leg);
+        });
+        
+        // Pig curly tail
+        const tailGeo = new THREE.BoxGeometry(0.06, 0.06, 0.15);
+        const tail = new THREE.Mesh(tailGeo, darkMat);
+        tail.position.set(0, 0.4, -0.45);
+        tail.rotation.x = 0.5;
+        petModel.add(tail);
+        
       } else if (petType === 'bee') {
-        // Bee body (striped)
-        const bodyGeo = new THREE.SphereGeometry(0.3, 8, 8);
-        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.position.y = 0.8; // Float in air
-        body.scale.set(1, 0.8, 1.2);
+        // Bee colors
+        const yellowMat = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const blackMat = new THREE.MeshLambertMaterial({ color: 0x1A1A1A });
+        const wingMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+        
+        // Bee body (blocky striped)
+        const bodyGeo = new THREE.BoxGeometry(0.25, 0.22, 0.4);
+        const body = new THREE.Mesh(bodyGeo, yellowMat);
+        body.position.y = 0.8;
         petModel.add(body);
         
-        // Bee stripes
-        const stripeMat = new THREE.MeshLambertMaterial({ color: 0x000000 });
+        // Bee stripes (black bands)
         for (let i = -1; i <= 1; i++) {
-          const stripeGeo = new THREE.TorusGeometry(0.25, 0.03, 8, 16);
-          const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-          stripe.position.set(0, 0.8, i * 0.15);
-          stripe.rotation.x = Math.PI / 2;
+          const stripeGeo = new THREE.BoxGeometry(0.26, 0.06, 0.23);
+          const stripe = new THREE.Mesh(stripeGeo, blackMat);
+          stripe.position.set(0, 0.8, i * 0.12);
           petModel.add(stripe);
         }
         
-        // Bee wings
-        const wingGeo = new THREE.PlaneGeometry(0.3, 0.2);
-        const wingMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        // Bee head
+        const headGeo = new THREE.BoxGeometry(0.18, 0.15, 0.15);
+        const head = new THREE.Mesh(headGeo, yellowMat);
+        head.position.set(0, 0.82, 0.28);
+        petModel.add(head);
+        
+        // Bee eyes (big and cute)
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+        const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), eyeMat);
+        leftEye.position.set(-0.06, 0.85, 0.36);
+        petModel.add(leftEye);
+        const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), eyeMat);
+        rightEye.position.set(0.06, 0.85, 0.36);
+        petModel.add(rightEye);
+        
+        // Bee antennae
+        const antennaGeo = new THREE.BoxGeometry(0.02, 0.12, 0.02);
+        const antenna1 = new THREE.Mesh(antennaGeo, blackMat);
+        antenna1.position.set(-0.05, 0.95, 0.3);
+        antenna1.rotation.x = -0.3;
+        petModel.add(antenna1);
+        const antenna2 = new THREE.Mesh(antennaGeo, blackMat);
+        antenna2.position.set(0.05, 0.95, 0.3);
+        antenna2.rotation.x = -0.3;
+        petModel.add(antenna2);
+        
+        // Bee wings (transparent)
+        const wingGeo = new THREE.BoxGeometry(0.02, 0.2, 0.18);
         const wing1 = new THREE.Mesh(wingGeo, wingMat);
-        wing1.position.set(-0.25, 1, 0);
-        wing1.rotation.z = 0.3;
+        wing1.position.set(-0.15, 0.95, 0);
+        wing1.rotation.z = 0.4;
+        wing1.name = 'leftWing';
         petModel.add(wing1);
         const wing2 = new THREE.Mesh(wingGeo, wingMat);
-        wing2.position.set(0.25, 1, 0);
-        wing2.rotation.z = -0.3;
+        wing2.position.set(0.15, 0.95, 0);
+        wing2.rotation.z = -0.4;
+        wing2.name = 'rightWing';
         petModel.add(wing2);
+        
+        // Bee stinger
+        const stingerGeo = new THREE.ConeGeometry(0.03, 0.1, 4);
+        const stinger = new THREE.Mesh(stingerGeo, blackMat);
+        stinger.position.set(0, 0.78, -0.25);
+        stinger.rotation.x = Math.PI / 2;
+        petModel.add(stinger);
       }
       
       scene.add(petModel);
