@@ -2064,6 +2064,10 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // Sky blue
     
+    // Add fog for atmosphere and to limit visibility (especially in first-person)
+    // Fog starts at 30 units and becomes fully opaque at 80 units
+    scene.fog = new THREE.Fog(0x87ceeb, 30, 80);
+    
     // Camera - top-down isometric view
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
     camera.position.set(0, 30, 30);
@@ -3730,6 +3734,1565 @@
       group.position.set(x, 0, z);
       group.userData = { type: 'sapling' };
       return group;
+    }
+    
+    // ============================================
+    // EXPLORABLE STRUCTURES
+    // ============================================
+    
+    // Structure types configuration (sizes increased for better gameplay)
+    const STRUCTURE_TYPES = {
+      shack: {
+        name: 'Wooden Shack',
+        width: 10,
+        depth: 8,
+        height: 4,
+        roofHeight: 2.5,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: false,
+        wallColor: 0x8B4513,
+        roofColor: 0x654321,
+        floorColor: 0x5D4037,
+        doorColor: 0x5D3A1A,
+        minFireLevel: 2,
+        lootTable: ['wood', 'scrap', 'cloth'],
+        description: 'A small wooden shack',
+        lootSpot: { x: -3, z: 2 } // Left of door, near entrance
+      },
+      cabin: {
+        name: 'Cozy Cabin',
+        width: 14,
+        depth: 12,
+        height: 5,
+        roofHeight: 3,
+        doorWidth: 3,
+        doorHeight: 4,
+        hasWindows: true,
+        wallColor: 0xA0522D,
+        roofColor: 0x4A3728,
+        floorColor: 0x6B4423,
+        doorColor: 0x5D3A1A,
+        minFireLevel: 2,
+        furniture: ['bed', 'table', 'chair'],
+        lootTable: ['food', 'cloth', 'tools', 'potion'],
+        description: 'A warm cabin with furniture',
+        lootSpot: { x: 5, z: 0, y: 0.7 } // On the bed (right side)
+      },
+      watchtower: {
+        name: 'Watchtower',
+        width: 8,
+        depth: 8,
+        height: 10,
+        roofHeight: 2,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: true,
+        hasPlatform: true,
+        wallColor: 0xDEB887,
+        roofColor: 0xB8860B,
+        floorColor: 0xD2B48C,
+        doorColor: 0x8B7355,
+        minFireLevel: 3,
+        lootTable: ['rope', 'binoculars', 'scrap'],
+        description: 'A tall watchtower'
+      },
+      barn: {
+        name: 'Old Barn',
+        width: 16,
+        depth: 14,
+        height: 7,
+        roofHeight: 5,
+        doorWidth: 5,
+        doorHeight: 6,
+        hasWindows: false,
+        hasBigDoor: true,
+        wallColor: 0x8B0000,
+        roofColor: 0x5C4033,
+        floorColor: 0x8B7355,
+        doorColor: 0x654321,
+        minFireLevel: 3,
+        furniture: ['haybale', 'haybale', 'haybale'],
+        lootTable: ['wheat', 'carrots', 'seeds', 'tools'],
+        description: 'A big red barn'
+      },
+      tent: {
+        name: 'Abandoned Tent',
+        width: 8,
+        depth: 8,
+        height: 4,
+        roofHeight: 0,
+        doorWidth: 3,
+        doorHeight: 3,
+        isTent: true,
+        wallColor: 0x556B2F,
+        roofColor: 0x556B2F,
+        floorColor: 0x3B5323,
+        doorColor: 0x556B2F,
+        minFireLevel: 2,
+        lootTable: ['cloth', 'rope', 'food'],
+        description: 'A canvas tent',
+        noLoot: true // Too small, just chest
+      },
+      ruinedChurch: {
+        name: 'Ruined Chapel',
+        width: 18,
+        depth: 24,
+        height: 9,
+        roofHeight: 5,
+        doorWidth: 4,
+        doorHeight: 7,
+        hasWindows: true,
+        isRuined: true,
+        wallColor: 0x808080,
+        roofColor: 0x505050,
+        floorColor: 0x696969,
+        doorColor: 0x4A4A4A,
+        minFireLevel: 4,
+        furniture: ['pew', 'pew', 'altar'],
+        lootTable: ['holywater', 'candle', 'keys', 'diamonds'],
+        description: 'An ancient chapel'
+      },
+      witchHut: {
+        name: "Witch's Hut",
+        width: 10,
+        depth: 10,
+        height: 5,
+        roofHeight: 4,
+        doorWidth: 2.5,
+        doorHeight: 4,
+        hasWindows: true,
+        isSpooky: true,
+        wallColor: 0x2F4F4F,
+        roofColor: 0x1C1C1C,
+        floorColor: 0x3D3D3D,
+        doorColor: 0x1C1C1C,
+        minFireLevel: 4,
+        furniture: ['cauldron', 'shelf'],
+        lootTable: ['potion', 'potion', 'recipe', 'mushrooms'],
+        description: 'A mysterious hut'
+      },
+      treehouse: {
+        name: 'Treehouse',
+        width: 8,
+        depth: 8,
+        height: 4,
+        roofHeight: 2,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: true,
+        elevated: 8,
+        hasLadder: true,
+        wallColor: 0xCD853F,
+        roofColor: 0x8B7355,
+        floorColor: 0xA0522D,
+        doorColor: 0x8B7355,
+        minFireLevel: 4,
+        lootTable: ['feathers', 'honey', 'seeds', 'nest'],
+        description: 'A cozy treehouse'
+      },
+      mine: {
+        name: 'Abandoned Mine',
+        width: 8,
+        depth: 12,
+        height: 5,
+        roofHeight: 0,
+        doorWidth: 4,
+        doorHeight: 4.5,
+        isCave: true,
+        wallColor: 0x4A4A4A,
+        roofColor: 0x3A3A3A,
+        floorColor: 0x2A2A2A,
+        doorColor: 0x3A3A3A,
+        minFireLevel: 3,
+        furniture: ['minecart', 'supports'],
+        lootTable: ['gems', 'metal', 'coal', 'scrap'],
+        description: 'A dark mine entrance'
+      }
+    };
+    
+    // Chest loot tables for structures (no keys needed)
+    const STRUCTURE_CHEST_LOOT = {
+      common: [
+        { type: 'wood', amount: [3, 6], chance: 0.25 },
+        { type: 'scrap', amount: [2, 4], chance: 0.25 },
+        { type: 'cloth', amount: [1, 3], chance: 0.2 },
+        { type: 'coal', amount: [1, 2], chance: 0.2 },
+        { type: 'carrots', amount: [1, 3], chance: 0.1 }
+      ],
+      uncommon: [
+        { type: 'wood', amount: [4, 8], chance: 0.15 },
+        { type: 'scrap', amount: [3, 6], chance: 0.2 },
+        { type: 'coal', amount: [2, 4], chance: 0.2 },
+        { type: 'meat', amount: [1, 2], chance: 0.15 },
+        { type: 'carrots', amount: [2, 4], chance: 0.15 },
+        { type: 'diamond', amount: [1, 1], chance: 0.15 }
+      ],
+      rare: [
+        { type: 'scrap', amount: [4, 8], chance: 0.15 },
+        { type: 'coal', amount: [3, 5], chance: 0.15 },
+        { type: 'meat', amount: [2, 3], chance: 0.15 },
+        { type: 'diamond', amount: [1, 2], chance: 0.25 },
+        { type: 'stew', amount: [1, 2], chance: 0.15 },
+        { type: 'potion', amount: [1, 1], chance: 0.15 }
+      ]
+    };
+    
+    // Structure entities storage
+    const structureEntities = [];
+    let playerInsideStructure = null; // Track which structure player is in
+    let nearStructureDoor = null; // Track which structure door player is near
+    let structureTooltipElement = null; // Tooltip for "Press E to enter/exit"
+    
+    // Create a wooden structure (shack, cabin, etc.)
+    function createStructure(x, z, structureType, rotation = 0) {
+      const config = STRUCTURE_TYPES[structureType];
+      if (!config) {
+        console.error('Unknown structure type:', structureType);
+        return null;
+      }
+      
+      const group = new THREE.Group();
+      const { width, depth, height, roofHeight, doorWidth, wallColor, roofColor, floorColor } = config;
+      
+      // Materials
+      const wallMaterial = new THREE.MeshLambertMaterial({ color: wallColor });
+      const roofMaterial = new THREE.MeshLambertMaterial({ color: roofColor });
+      const floorMaterial = new THREE.MeshLambertMaterial({ color: floorColor });
+      const windowMaterial = new THREE.MeshLambertMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.5 });
+      const doorFrameMaterial = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+      
+      // Create roof group (will be hidden when player inside)
+      const roofGroup = new THREE.Group();
+      roofGroup.name = 'roof';
+      
+      // Floor
+      const floorGeometry = new THREE.BoxGeometry(width - 0.4, 0.2, depth - 0.4);
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.position.set(0, 0.1, 0);
+      floor.receiveShadow = true;
+      group.add(floor);
+      
+      // Wall thickness
+      const wallThickness = 0.4;
+      
+      // Handle tent structure (triangular)
+      if (config.isTent) {
+        // Tent is triangular - create two angled canvas panels
+        const tentMaterial = new THREE.MeshLambertMaterial({ color: wallColor, side: THREE.DoubleSide });
+        const tentSlope = Math.sqrt((width/2) * (width/2) + height * height);
+        const tentAngle = Math.atan2(height, width/2);
+        
+        // Left tent panel
+        const leftPanelGeo = new THREE.BoxGeometry(tentSlope, 0.1, depth);
+        const leftPanel = new THREE.Mesh(leftPanelGeo, tentMaterial);
+        leftPanel.rotation.z = tentAngle;
+        leftPanel.position.set(-width/4, height/2, 0);
+        leftPanel.castShadow = true;
+        roofGroup.add(leftPanel);
+        
+        // Right tent panel
+        const rightPanelGeo = new THREE.BoxGeometry(tentSlope, 0.1, depth);
+        const rightPanel = new THREE.Mesh(rightPanelGeo, tentMaterial);
+        rightPanel.rotation.z = -tentAngle;
+        rightPanel.position.set(width/4, height/2, 0);
+        rightPanel.castShadow = true;
+        roofGroup.add(rightPanel);
+        
+        // Front triangular end
+        const frontShape = new THREE.Shape();
+        frontShape.moveTo(-width/2, 0);
+        frontShape.lineTo(0, height);
+        frontShape.lineTo(width/2, 0);
+        frontShape.closePath();
+        
+        const frontGeo = new THREE.ShapeGeometry(frontShape);
+        const frontEnd = new THREE.Mesh(frontGeo, tentMaterial);
+        frontEnd.position.set(0, 0, depth/2);
+        roofGroup.add(frontEnd);
+        
+        // Back triangular end
+        const backEnd = new THREE.Mesh(frontGeo, tentMaterial);
+        backEnd.rotation.y = Math.PI;
+        backEnd.position.set(0, 0, -depth/2);
+        roofGroup.add(backEnd);
+      } else if (config.isCave) {
+        // Mine entrance - archway into darkness
+        const archHeight = height;
+        const archWidth = doorWidth + 1;
+        
+        // Stone frame around entrance
+        const frameColor = 0x5A5A5A;
+        const frameMaterial = new THREE.MeshLambertMaterial({ color: frameColor });
+        
+        // Left pillar
+        const pillarGeo = new THREE.BoxGeometry(1, archHeight, 1);
+        const leftPillar = new THREE.Mesh(pillarGeo, frameMaterial);
+        leftPillar.position.set(-archWidth/2 - 0.5, archHeight/2, 0);
+        leftPillar.castShadow = true;
+        group.add(leftPillar);
+        
+        // Right pillar
+        const rightPillar = new THREE.Mesh(pillarGeo, frameMaterial);
+        rightPillar.position.set(archWidth/2 + 0.5, archHeight/2, 0);
+        rightPillar.castShadow = true;
+        group.add(rightPillar);
+        
+        // Top beam
+        const topBeam = new THREE.Mesh(new THREE.BoxGeometry(archWidth + 2, 1, 1.5), frameMaterial);
+        topBeam.position.set(0, archHeight + 0.5, 0);
+        topBeam.castShadow = true;
+        group.add(topBeam);
+        
+        // Dark interior
+        const darkInterior = new THREE.Mesh(
+          new THREE.BoxGeometry(archWidth, archHeight, depth),
+          new THREE.MeshLambertMaterial({ color: 0x0A0A0A })
+        );
+        darkInterior.position.set(0, archHeight/2, -depth/2);
+        group.add(darkInterior);
+        
+        // Interior floor
+        const mineFloor = new THREE.Mesh(
+          new THREE.BoxGeometry(archWidth + 1, 0.1, depth + 2),
+          new THREE.MeshLambertMaterial({ color: 0x3A3A2A })
+        );
+        mineFloor.position.set(0, 0.05, -depth/2);
+        mineFloor.receiveShadow = true;
+        group.add(mineFloor);
+      } else {
+        // Standard building with 4 walls and roof
+        
+        // Back wall (solid)
+        const backWall = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, wallThickness),
+          wallMaterial
+        );
+        backWall.position.set(0, height/2, -depth/2 + wallThickness/2);
+        backWall.castShadow = true;
+        backWall.receiveShadow = true;
+        group.add(backWall);
+        
+        // Front wall with door opening
+        const frontWallLeft = new THREE.Mesh(
+          new THREE.BoxGeometry((width - doorWidth) / 2, height, wallThickness),
+          wallMaterial
+        );
+        frontWallLeft.position.set(-(width + doorWidth) / 4, height/2, depth/2 - wallThickness/2);
+        frontWallLeft.castShadow = true;
+        group.add(frontWallLeft);
+        
+        const frontWallRight = new THREE.Mesh(
+          new THREE.BoxGeometry((width - doorWidth) / 2, height, wallThickness),
+          wallMaterial
+        );
+        frontWallRight.position.set((width + doorWidth) / 4, height/2, depth/2 - wallThickness/2);
+        frontWallRight.castShadow = true;
+        group.add(frontWallRight);
+        
+        // Door height (use config or default to 85% of wall height)
+        const doorH = config.doorHeight || height * 0.85;
+        
+        // Door frame
+        const doorFrameColor = 0x3D2817;
+        const frameMat = new THREE.MeshLambertMaterial({ color: doorFrameColor });
+        
+        // Door frame - left side
+        const frameLeft = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, doorH, 0.3),
+          frameMat
+        );
+        frameLeft.position.set(-doorWidth/2 - 0.1, doorH/2, depth/2 - wallThickness/2);
+        group.add(frameLeft);
+        
+        // Door frame - right side
+        const frameRight = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, doorH, 0.3),
+          frameMat
+        );
+        frameRight.position.set(doorWidth/2 + 0.1, doorH/2, depth/2 - wallThickness/2);
+        group.add(frameRight);
+        
+        // Door frame - top
+        const frameTop = new THREE.Mesh(
+          new THREE.BoxGeometry(doorWidth + 0.4, 0.2, 0.3),
+          frameMat
+        );
+        frameTop.position.set(0, doorH + 0.1, depth/2 - wallThickness/2);
+        group.add(frameTop);
+        
+        // Above door wall segment (fill gap between door and ceiling)
+        if (doorH < height) {
+          const aboveDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(doorWidth, height - doorH, wallThickness),
+            wallMaterial
+          );
+          aboveDoor.position.set(0, height - (height - doorH)/2, depth/2 - wallThickness/2);
+          aboveDoor.castShadow = true;
+          group.add(aboveDoor);
+        }
+        
+        // ACTUAL DOOR (visible, wooden door with planks)
+        const doorColor = config.doorColor || 0x5D3A1A;
+        const doorMat = new THREE.MeshLambertMaterial({ color: doorColor });
+        
+        // Door panel
+        const doorPanel = new THREE.Mesh(
+          new THREE.BoxGeometry(doorWidth - 0.2, doorH - 0.2, 0.15),
+          doorMat
+        );
+        doorPanel.position.set(0, doorH/2, depth/2 + 0.1);
+        doorPanel.name = 'door';
+        doorPanel.castShadow = true;
+        group.add(doorPanel);
+        
+        // Door planks (vertical lines for detail)
+        const plankMat = new THREE.MeshLambertMaterial({ color: 0x4A3520 });
+        const numPlanks = Math.floor(doorWidth / 0.8);
+        for (let i = 0; i < numPlanks; i++) {
+          const plankX = -doorWidth/2 + 0.5 + i * (doorWidth - 0.6) / (numPlanks - 1);
+          const plank = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, doorH - 0.4, 0.02),
+            plankMat
+          );
+          plank.position.set(plankX, doorH/2, depth/2 + 0.2);
+          group.add(plank);
+        }
+        
+        // Door handle
+        const handleMat = new THREE.MeshLambertMaterial({ color: 0xB8860B });
+        const handle = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.4, 0.1),
+          handleMat
+        );
+        handle.position.set(doorWidth/2 - 0.4, doorH * 0.5, depth/2 + 0.25);
+        group.add(handle);
+        
+        // Door crossbar (horizontal detail)
+        const crossbar = new THREE.Mesh(
+          new THREE.BoxGeometry(doorWidth - 0.4, 0.15, 0.08),
+          plankMat
+        );
+        crossbar.position.set(0, doorH * 0.3, depth/2 + 0.2);
+        group.add(crossbar);
+        
+        const crossbar2 = new THREE.Mesh(
+          new THREE.BoxGeometry(doorWidth - 0.4, 0.15, 0.08),
+          plankMat
+        );
+        crossbar2.position.set(0, doorH * 0.7, depth/2 + 0.2);
+        group.add(crossbar2);
+        
+        // Side walls
+        const leftWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThickness, height, depth),
+          wallMaterial
+        );
+        leftWall.position.set(-width/2 + wallThickness/2, height/2, 0);
+        leftWall.castShadow = true;
+        leftWall.receiveShadow = true;
+        group.add(leftWall);
+        
+        const rightWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThickness, height, depth),
+          wallMaterial
+        );
+        rightWall.position.set(width/2 - wallThickness/2, height/2, 0);
+        rightWall.castShadow = true;
+        rightWall.receiveShadow = true;
+        group.add(rightWall);
+        
+        // Windows (if enabled)
+        if (config.hasWindows) {
+          const windowSize = 1.2;
+          const windowHeight = height * 0.5;
+          
+          // Side windows
+          const leftWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness + 0.1, windowSize, windowSize),
+            windowMaterial
+          );
+          leftWindow.position.set(-width/2 + wallThickness/2, windowHeight, 0);
+          group.add(leftWindow);
+          
+          const rightWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness + 0.1, windowSize, windowSize),
+            windowMaterial
+          );
+          rightWindow.position.set(width/2 - wallThickness/2, windowHeight, 0);
+          group.add(rightWindow);
+          
+          // Back window
+          const backWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(windowSize, windowSize, wallThickness + 0.1),
+            windowMaterial
+          );
+          backWindow.position.set(0, windowHeight, -depth/2 + wallThickness/2);
+          group.add(backWindow);
+        }
+        
+        // Roof (peaked for most structures)
+        if (roofHeight > 0) {
+          // Create peaked roof using two angled panels
+          const roofOverhang = 0.8;
+          const roofWidth = (width / 2) + roofOverhang;
+          const roofDepth = depth + roofOverhang * 2;
+          const roofSlope = Math.sqrt(roofWidth * roofWidth + roofHeight * roofHeight);
+          const roofAngle = Math.atan2(roofHeight, roofWidth);
+          const roofThickness = 0.3;
+          
+          // Left roof panel
+          const leftRoofGeo = new THREE.BoxGeometry(roofSlope, roofThickness, roofDepth);
+          const leftRoof = new THREE.Mesh(leftRoofGeo, roofMaterial);
+          leftRoof.rotation.z = roofAngle;
+          leftRoof.position.set(-roofWidth/2 + 0.1, height + roofHeight/2, 0);
+          leftRoof.castShadow = true;
+          roofGroup.add(leftRoof);
+          
+          // Right roof panel
+          const rightRoofGeo = new THREE.BoxGeometry(roofSlope, roofThickness, roofDepth);
+          const rightRoof = new THREE.Mesh(rightRoofGeo, roofMaterial);
+          rightRoof.rotation.z = -roofAngle;
+          rightRoof.position.set(roofWidth/2 - 0.1, height + roofHeight/2, 0);
+          rightRoof.castShadow = true;
+          roofGroup.add(rightRoof);
+          
+          // Gable ends (triangular pieces at front and back)
+          const gableShape = new THREE.Shape();
+          gableShape.moveTo(-width/2, 0);
+          gableShape.lineTo(0, roofHeight);
+          gableShape.lineTo(width/2, 0);
+          gableShape.closePath();
+          
+          const gableGeo = new THREE.ShapeGeometry(gableShape);
+          
+          // Front gable
+          const frontGable = new THREE.Mesh(gableGeo, wallMaterial);
+          frontGable.position.set(0, height, depth/2);
+          roofGroup.add(frontGable);
+          
+          // Back gable
+          const backGable = new THREE.Mesh(gableGeo, wallMaterial);
+          backGable.rotation.y = Math.PI;
+          backGable.position.set(0, height, -depth/2);
+          roofGroup.add(backGable);
+        } else {
+          // Flat roof
+          const flatRoof = new THREE.Mesh(
+            new THREE.BoxGeometry(width + 0.5, 0.3, depth + 0.5),
+            roofMaterial
+          );
+          flatRoof.position.set(0, height, 0);
+          flatRoof.castShadow = true;
+          roofGroup.add(flatRoof);
+        }
+      }
+      
+      group.add(roofGroup);
+      
+      // Add interior furniture based on config
+      if (config.furniture) {
+        addStructureFurniture(group, config);
+      }
+      
+      // Add interior chest - on table if there's a table, otherwise at back
+      let chestX, chestZ, chestY = 0;
+      const hasTable = config.furniture && config.furniture.includes('table');
+      const hasBed = config.furniture && config.furniture.includes('bed');
+      
+      if (hasTable) {
+        // Put chest ON the table (left side)
+        chestX = -width/2 + 1.5;
+        chestZ = -depth/4;
+        chestY = 1.1; // On top of table
+      } else {
+        // Put chest at the back wall
+        chestX = 0;
+        chestZ = -depth/2 + 2;
+      }
+      
+      const structureChest = createStructureChest(chestX, chestZ, structureType);
+      structureChest.position.y = chestY;
+      if (hasTable) {
+        structureChest.scale.set(0.7, 0.7, 0.7); // Smaller to fit on table
+      }
+      structureChest.name = 'structureChest';
+      group.add(structureChest);
+      
+      // Add loot item unless noLoot is set
+      if (!config.noLoot) {
+        const rand = Math.random();
+        const defaultFloorY = 0.2;
+        
+        let itemX, itemZ, itemY;
+        if (config.lootSpot) {
+          itemX = config.lootSpot.x;
+          itemZ = config.lootSpot.z;
+          itemY = config.lootSpot.y !== undefined ? config.lootSpot.y : defaultFloorY;
+        } else {
+          itemX = width/2 - 2;
+          itemZ = 0;
+          itemY = defaultFloorY;
+        }
+        
+        let itemMesh;
+        if (rand < 0.25) {
+          itemMesh = createScrapMetal(itemX, itemZ, 'bolt');
+          itemMesh.name = 'structureScrap';
+        } else if (rand < 0.5) {
+          itemMesh = createScrapMetal(itemX, itemZ, 'fan');
+          itemMesh.name = 'structureScrap';
+        } else if (rand < 0.75) {
+          itemMesh = createBrokenMicrowave(itemX, itemZ);
+          itemMesh.rotation.y = Math.random() * Math.PI * 2;
+          itemMesh.name = 'structureScrap';
+        } else {
+          itemMesh = createWoodPile(itemX, itemZ);
+          itemMesh.rotation.y = Math.random() * Math.PI;
+          itemMesh.name = 'structureWood';
+        }
+        
+        itemMesh.position.y = itemY;
+        group.add(itemMesh);
+      }
+      
+      // Position and rotate
+      group.position.set(x, config.elevated || 0, z);
+      group.rotation.y = rotation;
+      
+      // Store metadata
+      group.userData = {
+        type: 'structure',
+        structureType: structureType,
+        config: config,
+        width: width,
+        depth: depth,
+        height: height,
+        worldX: x,
+        worldZ: z,
+        rotation: rotation,
+        roofVisible: true,
+        chestLooted: false,
+        scrapCollected: false
+      };
+      
+      return group;
+    }
+    
+    // Create furniture inside structures with intentional placement
+    function addStructureFurniture(group, config) {
+      const { width, depth, furniture } = config;
+      
+      furniture.forEach((item, index) => {
+        let mesh;
+        let fx = 0, fz = 0;
+        
+        switch (item) {
+          case 'bed':
+            // Bed on right side against wall
+            fx = width/2 - 1.8;
+            fz = 0;
+            mesh = createSimpleBed(fx, fz);
+            if (mesh) mesh.rotation.y = Math.PI / 2;
+            break;
+          case 'table':
+            // Table on left wall
+            fx = -width/2 + 1.5;
+            fz = -depth/4;
+            mesh = createSimpleTable(fx, fz);
+            break;
+          case 'chair':
+            // Chair next to table on left side, facing the table
+            fx = -width/2 + 1.5;
+            fz = -depth/4 + 1.5;
+            mesh = createSimpleChair(fx, fz);
+            if (mesh) mesh.rotation.y = Math.PI; // Face the table
+            break;
+          case 'haybale':
+            // Haybales scattered in middle
+            fx = (Math.random() - 0.5) * (width - 4);
+            fz = (Math.random() - 0.5) * (depth - 4);
+            mesh = createHaybale(fx, fz);
+            break;
+          case 'pew':
+            // Pews in rows
+            fx = 0;
+            fz = depth/4 - index * 3;
+            mesh = createPew(fx, fz);
+            break;
+          case 'altar':
+            // Altar at the back
+            fx = 0;
+            fz = -depth/2 + 2;
+            mesh = createAltar(fx, fz);
+            break;
+          case 'cauldron':
+            // Cauldron in center
+            fx = 0;
+            fz = 0;
+            mesh = createCauldron(fx, fz);
+            break;
+          case 'shelf':
+            // Shelf on left back wall
+            fx = -width/2 + 1.5;
+            fz = -depth/2 + 1;
+            mesh = createShelf(fx, fz);
+            break;
+          case 'minecart':
+            // Minecart in middle
+            fx = 0;
+            fz = -depth/4;
+            mesh = createMinecart(fx, fz);
+            break;
+        }
+        
+        if (mesh) {
+          mesh.position.set(fx, 0, fz);
+          mesh.name = 'furniture';
+          group.add(mesh);
+        }
+      });
+    }
+    
+    // Simple furniture creation functions
+    function createSimpleBed(x, z) {
+      const bed = new THREE.Group();
+      // Frame
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.4, 3),
+        new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+      );
+      frame.position.y = 0.2;
+      frame.castShadow = true;
+      bed.add(frame);
+      // Mattress
+      const mattress = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.3, 2.6),
+        new THREE.MeshLambertMaterial({ color: 0xB22222 })
+      );
+      mattress.position.y = 0.55;
+      bed.add(mattress);
+      // Pillow
+      const pillow = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.2, 0.5),
+        new THREE.MeshLambertMaterial({ color: 0xFFF8DC })
+      );
+      pillow.position.set(0, 0.75, -1);
+      bed.add(pillow);
+      return bed;
+    }
+    
+    function createSimpleTable(x, z) {
+      const table = new THREE.Group();
+      // Top
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.15, 1.5),
+        new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+      );
+      top.position.y = 1;
+      top.castShadow = true;
+      table.add(top);
+      // Legs
+      const legGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+      [[-0.8, -0.6], [0.8, -0.6], [-0.8, 0.6], [0.8, 0.6]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, 0.5, lz);
+        leg.castShadow = true;
+        table.add(leg);
+      });
+      return table;
+    }
+    
+    function createSimpleChair(x, z) {
+      const chair = new THREE.Group();
+      // Seat
+      const seat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.1, 0.8),
+        new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+      );
+      seat.position.y = 0.6;
+      seat.castShadow = true;
+      chair.add(seat);
+      // Back
+      const back = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.8, 0.1),
+        new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+      );
+      back.position.set(0, 1, -0.35);
+      back.castShadow = true;
+      chair.add(back);
+      // Legs
+      const legGeo = new THREE.BoxGeometry(0.1, 0.6, 0.1);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+      [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, 0.3, lz);
+        chair.add(leg);
+      });
+      return chair;
+    }
+    
+    function createHaybale(x, z) {
+      const hay = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 1, 2),
+        new THREE.MeshLambertMaterial({ color: 0xDAA520 })
+      );
+      hay.position.y = 0.5;
+      hay.rotation.y = Math.random() * Math.PI;
+      hay.castShadow = true;
+      return hay;
+    }
+    
+    function createPew(x, z) {
+      const pew = new THREE.Group();
+      const bench = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 0.1, 0.6),
+        new THREE.MeshLambertMaterial({ color: 0x654321 })
+      );
+      bench.position.y = 0.5;
+      bench.castShadow = true;
+      pew.add(bench);
+      const back = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 0.8, 0.1),
+        new THREE.MeshLambertMaterial({ color: 0x654321 })
+      );
+      back.position.set(0, 0.9, -0.25);
+      back.castShadow = true;
+      pew.add(back);
+      return pew;
+    }
+    
+    function createAltar(x, z) {
+      const altar = new THREE.Group();
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(3, 1, 1.5),
+        new THREE.MeshLambertMaterial({ color: 0x808080 })
+      );
+      base.position.y = 0.5;
+      base.castShadow = true;
+      altar.add(base);
+      // Candles
+      for (let i = -1; i <= 1; i++) {
+        const candle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0xFFFACD })
+        );
+        candle.position.set(i * 0.8, 1.2, 0);
+        altar.add(candle);
+        // Flame
+        const flame = new THREE.Mesh(
+          new THREE.ConeGeometry(0.08, 0.15),
+          new THREE.MeshBasicMaterial({ color: 0xFFA500 })
+        );
+        flame.position.set(i * 0.8, 1.5, 0);
+        altar.add(flame);
+      }
+      return altar;
+    }
+    
+    function createCauldron(x, z) {
+      const cauldron = new THREE.Group();
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.8, 0.6, 1, 16),
+        new THREE.MeshLambertMaterial({ color: 0x1C1C1C })
+      );
+      pot.position.y = 0.5;
+      pot.castShadow = true;
+      cauldron.add(pot);
+      // Green liquid
+      const liquid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.7, 0.7, 0.1, 16),
+        new THREE.MeshBasicMaterial({ color: 0x00FF00, transparent: true, opacity: 0.7 })
+      );
+      liquid.position.y = 0.9;
+      cauldron.add(liquid);
+      return cauldron;
+    }
+    
+    function createShelf(x, z) {
+      const shelf = new THREE.Group();
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.1, 0.5),
+        new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+      );
+      board.position.y = 1.5;
+      board.castShadow = true;
+      shelf.add(board);
+      // Bottles/jars
+      for (let i = -0.6; i <= 0.6; i += 0.4) {
+        const bottle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, 0.3),
+          new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0x800080 : 0x008000, transparent: true, opacity: 0.7 })
+        );
+        bottle.position.set(i, 1.7, 0);
+        shelf.add(bottle);
+      }
+      return shelf;
+    }
+    
+    function createMinecart(x, z) {
+      const cart = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.8, 2),
+        new THREE.MeshLambertMaterial({ color: 0x505050 })
+      );
+      body.position.y = 0.6;
+      body.castShadow = true;
+      cart.add(body);
+      // Wheels
+      const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.1, 8);
+      const wheelMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+      [[-0.6, -0.7], [0.6, -0.7], [-0.6, 0.7], [0.6, 0.7]].forEach(([wx, wz]) => {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.25, wz);
+        cart.add(wheel);
+      });
+      return cart;
+    }
+    
+    // Create a chest inside a structure (with openable lid)
+    function createStructureChest(x, z, structureType) {
+      const group = new THREE.Group();
+      
+      // Wooden chest appearance
+      const mainMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const trimMaterial = new THREE.MeshLambertMaterial({ color: 0x5D3A1A });
+      const innerMaterial = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+      
+      // Base (the box part)
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 1, 1.3),
+        mainMaterial
+      );
+      base.position.y = 0.5;
+      base.castShadow = true;
+      base.name = 'chestBase';
+      group.add(base);
+      
+      // Inner dark part (visible when open)
+      const inner = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.8, 1.1),
+        innerMaterial
+      );
+      inner.position.y = 0.6;
+      inner.name = 'chestInner';
+      group.add(inner);
+      
+      // Lid (pivots on back edge)
+      const lidGroup = new THREE.Group();
+      lidGroup.name = 'chestLid';
+      
+      const lid = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.25, 1.3),
+        mainMaterial
+      );
+      lid.position.set(0, 0.125, 0.65); // Offset so it pivots from back
+      lid.castShadow = true;
+      lidGroup.add(lid);
+      
+      // Lid curved top
+      const lidTop = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.2, 1.1),
+        mainMaterial
+      );
+      lidTop.position.set(0, 0.3, 0.65);
+      lidGroup.add(lidTop);
+      
+      // Position lid group at top-back of chest
+      lidGroup.position.set(0, 1, -0.65);
+      group.add(lidGroup);
+      
+      // Metal bands on base
+      const band1 = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.12, 0.15),
+        trimMaterial
+      );
+      band1.position.set(0, 0.7, 0.6);
+      group.add(band1);
+      
+      const band2 = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.12, 0.15),
+        trimMaterial
+      );
+      band2.position.set(0, 0.7, -0.6);
+      group.add(band2);
+      
+      // Metal band on lid
+      const lidBand = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.1, 0.1),
+        trimMaterial
+      );
+      lidBand.position.set(0, 0.2, 0.65);
+      lidGroup.add(lidBand);
+      
+      // Lock plate on front
+      const lockPlate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 0.5, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0xB8860B })
+      );
+      lockPlate.position.set(0, 0.9, 0.7);
+      lockPlate.name = 'chestLock';
+      group.add(lockPlate);
+      
+      // Lock keyhole
+      const keyhole = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.15, 0.02),
+        new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+      );
+      keyhole.position.set(0, 0.85, 0.75);
+      group.add(keyhole);
+      
+      group.position.set(x, 0, z);
+      group.userData = { 
+        type: 'structureChest', 
+        structureType: structureType,
+        looted: false
+      };
+      
+      return group;
+    }
+    
+    // Open a chest visually (rotate lid open)
+    function openChestVisually(chestGroup) {
+      const lidGroup = chestGroup.getObjectByName('chestLid');
+      if (lidGroup) {
+        // Rotate lid open (pivot from back edge)
+        lidGroup.rotation.x = -Math.PI * 0.7; // Open about 126 degrees
+      }
+      // Hide the lock
+      const lock = chestGroup.getObjectByName('chestLock');
+      if (lock) {
+        lock.visible = false;
+      }
+    }
+    
+    // Create scrap metal (bolt or fan blade) that can be found inside structures
+    function createScrapMetal(x, z, type) {
+      const group = new THREE.Group();
+      const metalMat = new THREE.MeshLambertMaterial({ color: 0x808080 });
+      const darkMat = new THREE.MeshLambertMaterial({ color: 0x404040 });
+      
+      // Use provided type or random
+      const scrapType = type || (Math.random() > 0.5 ? 'bolt' : 'fan');
+      
+      if (scrapType === 'bolt') {
+        // BOLT - hex head with threaded shaft (laying on side)
+        const boltGroup = new THREE.Group();
+        
+        const headGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 6);
+        const head = new THREE.Mesh(headGeo, metalMat);
+        head.position.y = 0.35;
+        head.castShadow = true;
+        boltGroup.add(head);
+        
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5), darkMat);
+        shaft.position.y = 0.1;
+        shaft.castShadow = true;
+        boltGroup.add(shaft);
+        
+        // Thread lines
+        for (let i = 0; i < 5; i++) {
+          const thread = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.015, 4, 16), metalMat);
+          thread.position.y = 0.05 + i * 0.07;
+          thread.rotation.x = Math.PI / 2;
+          boltGroup.add(thread);
+        }
+        
+        // Lay bolt on its side
+        boltGroup.rotation.z = Math.PI / 2;
+        boltGroup.position.y = 0.15;
+        group.add(boltGroup);
+        
+      } else if (scrapType === 'fan') {
+        // Rusty 3-blade propeller fan standing upright
+        const rustyMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+        const darkRustyMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const hubMat = new THREE.MeshLambertMaterial({ color: 0x505050 });
+        const baseMat = new THREE.MeshLambertMaterial({ color: 0x7B8B6F });
+        
+        // Base/stand
+        const base = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 8), baseMat);
+        base.position.y = 0.2;
+        base.castShadow = true;
+        group.add(base);
+        
+        // Neck
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.25), baseMat);
+        neck.position.y = 0.5;
+        neck.castShadow = true;
+        group.add(neck);
+        
+        // Hub
+        const hub = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), hubMat);
+        hub.position.y = 0.7;
+        hub.castShadow = true;
+        group.add(hub);
+        
+        // 3 oval blades
+        for (let i = 0; i < 3; i++) {
+          const bladeGroup = new THREE.Group();
+          const bladeGeo = new THREE.SphereGeometry(0.25, 12, 8);
+          const blade = new THREE.Mesh(bladeGeo, i % 2 === 0 ? rustyMat : darkRustyMat);
+          blade.scale.set(0.12, 1, 0.4);
+          blade.position.y = 0.3;
+          blade.castShadow = true;
+          bladeGroup.add(blade);
+          bladeGroup.rotation.z = (i * Math.PI * 2 / 3);
+          bladeGroup.position.y = 0.7;
+          group.add(bladeGroup);
+        }
+      }
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'structureScrap', collected: false };
+      
+      return group;
+    }
+    
+    // Create broken microwave that can be found inside structures
+    function createBrokenMicrowave(x, z) {
+      const group = new THREE.Group();
+      const bodyMat = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+      const doorMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+      const glassMat = new THREE.MeshLambertMaterial({ color: 0x4a6a7a, transparent: true, opacity: 0.5 });
+      const innerMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+      
+      // Main body
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.8), bodyMat);
+      body.position.y = 0.35;
+      body.castShadow = true;
+      group.add(body);
+      
+      // Door frame
+      const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.05), doorMat);
+      doorFrame.position.set(-0.1, 0.35, 0.43);
+      group.add(doorFrame);
+      
+      // Glass window
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.02), glassMat);
+      glass.position.set(-0.1, 0.35, 0.45);
+      group.add(glass);
+      
+      // Control panel
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.02), innerMat);
+      panel.position.set(0.35, 0.35, 0.43);
+      group.add(panel);
+      
+      // Buttons
+      for (let i = 0; i < 3; i++) {
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), new THREE.MeshLambertMaterial({ color: 0x666666 }));
+        btn.position.set(0.35, 0.5 - i * 0.12, 0.45);
+        group.add(btn);
+      }
+      
+      // Damage dent
+      const dent = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), innerMat);
+      dent.position.set(0.2, 0.65, 0);
+      group.add(dent);
+      
+      // Hanging wire
+      const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+      wire.position.set(-0.5, 0.2, 0.3);
+      wire.rotation.z = 0.5;
+      group.add(wire);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'structureScrap', collected: false };
+      
+      return group;
+    }
+    
+    // Create wood pile (stacked logs)
+    function createWoodPile(x, z) {
+      const group = new THREE.Group();
+      const logMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const endMat = new THREE.MeshLambertMaterial({ color: 0xD2B48C });
+      
+      const logRadius = 0.18;
+      const logLength = 1.2;
+      
+      // Bottom row - 3 logs
+      for (let i = 0; i < 3; i++) {
+        const log = new THREE.Mesh(
+          new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+          logMat
+        );
+        log.rotation.z = Math.PI / 2;
+        log.position.set(0, logRadius, (i - 1) * logRadius * 2.2);
+        log.castShadow = true;
+        group.add(log);
+        
+        // Log end caps
+        const endCap1 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+        endCap1.position.set(logLength/2 + 0.01, logRadius, (i - 1) * logRadius * 2.2);
+        endCap1.rotation.y = Math.PI / 2;
+        group.add(endCap1);
+        
+        const endCap2 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+        endCap2.position.set(-logLength/2 - 0.01, logRadius, (i - 1) * logRadius * 2.2);
+        endCap2.rotation.y = -Math.PI / 2;
+        group.add(endCap2);
+      }
+      
+      // Top row - 2 logs
+      for (let i = 0; i < 2; i++) {
+        const log = new THREE.Mesh(
+          new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+          logMat
+        );
+        log.rotation.z = Math.PI / 2;
+        log.position.set(0, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        log.castShadow = true;
+        group.add(log);
+        
+        const endCap1 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+        endCap1.position.set(logLength/2 + 0.01, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        endCap1.rotation.y = Math.PI / 2;
+        group.add(endCap1);
+        
+        const endCap2 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+        endCap2.position.set(-logLength/2 - 0.01, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        endCap2.rotation.y = -Math.PI / 2;
+        group.add(endCap2);
+      }
+      
+      // Top - 1 log
+      const topLog = new THREE.Mesh(
+        new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+        logMat
+      );
+      topLog.rotation.z = Math.PI / 2;
+      topLog.position.set(0, logRadius * 4.4, 0);
+      topLog.castShadow = true;
+      group.add(topLog);
+      
+      const topEnd1 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+      topEnd1.position.set(logLength/2 + 0.01, logRadius * 4.4, 0);
+      topEnd1.rotation.y = Math.PI / 2;
+      group.add(topEnd1);
+      
+      const topEnd2 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+      topEnd2.position.set(-logLength/2 - 0.01, logRadius * 4.4, 0);
+      topEnd2.rotation.y = -Math.PI / 2;
+      group.add(topEnd2);
+      
+      group.position.set(x, 0, z);
+      group.userData = { type: 'structureWood', collected: false };
+      
+      return group;
+    }
+    
+    // Check if player is inside a structure
+    function isPlayerInsideStructure(px, pz) {
+      for (const struct of structureEntities) {
+        const config = struct.config;
+        const wx = struct.worldX;
+        const wz = struct.worldZ;
+        const halfW = config.width / 2 + 0.5;
+        const halfD = config.depth / 2 + 0.5;
+        
+        // Rotate player position relative to structure
+        const rot = struct.rotation || 0;
+        const cos = Math.cos(-rot);
+        const sin = Math.sin(-rot);
+        const relX = px - wx;
+        const relZ = pz - wz;
+        const localX = relX * cos - relZ * sin;
+        const localZ = relX * sin + relZ * cos;
+        
+        // Check if inside bounds
+        if (Math.abs(localX) < halfW && Math.abs(localZ) < halfD) {
+          return struct;
+        }
+      }
+      return null;
+    }
+    
+    // Update roof visibility based on player position
+    function updateStructureRoofs() {
+      for (const struct of structureEntities) {
+        if (!struct.mesh) continue;
+        
+        const roofGroup = struct.mesh.getObjectByName('roof');
+        if (!roofGroup) continue;
+        
+        // In third-person (birds-eye), hide roof when player inside
+        // In first-person, always show roof (you're inside looking at walls)
+        const shouldHideRoof = (cameraMode === 'third-person') && (playerInsideStructure === struct);
+        
+        if (shouldHideRoof && struct.roofVisible) {
+          roofGroup.visible = false;
+          struct.roofVisible = false;
+        } else if (!shouldHideRoof && !struct.roofVisible) {
+          roofGroup.visible = true;
+          struct.roofVisible = true;
+        }
+      }
+    }
+    
+    // Check if player is near a structure door (for entering)
+    function checkStructureDoorProximity() {
+      // If inside a structure, check if near the exit
+      if (playerInsideStructure) {
+        const struct = playerInsideStructure;
+        const config = struct.config;
+        
+        // Door is at the front of the structure (positive Z in local coords)
+        const rot = struct.rotation || 0;
+        const cos = Math.cos(-rot);
+        const sin = Math.sin(-rot);
+        const relX = playerX - struct.worldX;
+        const relZ = playerZ - struct.worldZ;
+        const localX = relX * cos - relZ * sin;
+        const localZ = relX * sin + relZ * cos;
+        
+        // Near door inside = near front wall (high local Z)
+        const nearDoorInside = Math.abs(localX) < config.doorWidth && localZ > config.depth / 2 - 2;
+        
+        if (nearDoorInside) {
+          nearStructureDoor = struct;
+          showStructureTooltip('🚪 Press E to exit');
+          return;
+        }
+      }
+      
+      // Check if near any structure door from outside
+      for (const struct of structureEntities) {
+        if (playerInsideStructure === struct) continue; // Skip if inside this one
+        
+        const config = struct.config;
+        const rot = struct.rotation || 0;
+        
+        // Calculate door position in world coordinates
+        // Door is at front of structure (positive local Z)
+        const doorLocalZ = config.depth / 2 + 1.5;
+        const doorWorldX = struct.worldX + Math.sin(rot) * doorLocalZ;
+        const doorWorldZ = struct.worldZ + Math.cos(rot) * doorLocalZ;
+        
+        const dx = playerX - doorWorldX;
+        const dz = playerZ - doorWorldZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        
+        if (dist < 3) {
+          nearStructureDoor = struct;
+          showStructureTooltip(`🚪 Press E to enter ${config.name}`);
+          return;
+        }
+      }
+      
+      // Not near any door
+      nearStructureDoor = null;
+      hideStructureTooltip();
+    }
+    
+    // Enter a structure (teleport inside)
+    function enterStructure(struct) {
+      const config = struct.config;
+      
+      // Teleport to center of structure
+      playerInsideStructure = struct;
+      playerX = struct.worldX;
+      playerZ = struct.worldZ;
+      
+      // Face toward the door (to exit direction)
+      playerFacingAngle = struct.rotation || 0;
+      fpYaw = struct.rotation || 0;
+      
+      showCraftNotification(`🏠 Entered ${config.name}`);
+      hideStructureTooltip();
+      nearStructureDoor = null;
+    }
+    
+    // Exit a structure (teleport outside door)
+    function exitStructure(struct) {
+      const config = struct.config;
+      const rot = struct.rotation || 0;
+      
+      // Teleport outside the door
+      const exitZ = config.depth / 2 + 3;
+      playerX = struct.worldX + Math.sin(rot) * exitZ;
+      playerZ = struct.worldZ + Math.cos(rot) * exitZ;
+      
+      // Face away from structure
+      playerFacingAngle = rot;
+      fpYaw = rot;
+      
+      playerInsideStructure = null;
+      showCraftNotification(`🚶 Exited ${config.name}`);
+      hideStructureTooltip();
+      nearStructureDoor = null;
+    }
+    
+    // Show structure tooltip
+    function showStructureTooltip(text) {
+      if (structureTooltipElement) {
+        structureTooltipElement.textContent = text;
+        return;
+      }
+      
+      structureTooltipElement = document.createElement('div');
+      structureTooltipElement.className = 'crafting-tooltip';
+      structureTooltipElement.textContent = text;
+      document.body.appendChild(structureTooltipElement);
+    }
+    
+    // Hide structure tooltip
+    function hideStructureTooltip() {
+      if (structureTooltipElement) {
+        structureTooltipElement.remove();
+        structureTooltipElement = null;
+      }
+    }
+    
+    // Check if position is blocked by structure walls
+    function isPositionBlockedByStructure(px, pz) {
+      for (const struct of structureEntities) {
+        // If player is inside this structure, use interior collision
+        if (playerInsideStructure === struct) {
+          const config = struct.config;
+          const halfW = config.width / 2 - 0.5;
+          const halfD = config.depth / 2 - 0.5;
+          
+          // Rotate position relative to structure
+          const rot = struct.rotation || 0;
+          const cos = Math.cos(-rot);
+          const sin = Math.sin(-rot);
+          const relX = px - struct.worldX;
+          const relZ = pz - struct.worldZ;
+          const localX = relX * cos - relZ * sin;
+          const localZ = relX * sin + relZ * cos;
+          
+          // Keep player inside the structure walls
+          if (Math.abs(localX) > halfW || Math.abs(localZ) > halfD) {
+            return true;
+          }
+          continue;
+        }
+        
+        // If player is outside, block entire structure (can't walk through)
+        const config = struct.config;
+        const halfW = config.width / 2 + 1;
+        const halfD = config.depth / 2 + 1;
+        
+        // Rotate position relative to structure
+        const rot = struct.rotation || 0;
+        const cos = Math.cos(-rot);
+        const sin = Math.sin(-rot);
+        const relX = px - struct.worldX;
+        const relZ = pz - struct.worldZ;
+        const localX = relX * cos - relZ * sin;
+        const localZ = relX * sin + relZ * cos;
+        
+        // Block if inside structure bounds (from outside, structure is solid)
+        if (Math.abs(localX) < halfW && Math.abs(localZ) < halfD) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    // Spawn structures based on fire level (CUMULATIVE - keeps existing, adds new)
+    function spawnStructures() {
+      // Number of NEW structures to add per fire level: 0, 2, 3, 4
+      // L1: 0, L2: +2 (total 2), L3: +3 (total 5), L4: +4 (total 9)
+      const newStructureCounts = [0, 2, 3, 4];
+      const count = newStructureCounts[Math.min(currentFireLevel - 1, newStructureCounts.length - 1)] || 0;
+      
+      if (count === 0) return;
+      
+      // Get available structure types for current fire level
+      const availableTypes = Object.keys(STRUCTURE_TYPES).filter(type => 
+        STRUCTURE_TYPES[type].minFireLevel <= currentFireLevel
+      );
+      
+      if (availableTypes.length === 0) return;
+      
+      // Place structures
+      const minDistFromCampfire = safeZoneRadius + 10;
+      const minDistBetween = 20;
+      const placedPositions = [];
+      
+      for (let i = 0; i < count; i++) {
+        let placed = false;
+        let attempts = 0;
+        
+        while (!placed && attempts < 50) {
+          attempts++;
+          
+          // Random position in world
+          const angle = Math.random() * Math.PI * 2;
+          const radius = minDistFromCampfire + Math.random() * (worldRadius - minDistFromCampfire - 10);
+          const x = Math.cos(angle) * radius;
+          const z = Math.sin(angle) * radius;
+          
+          // Check world bounds
+          const maxCoord = worldSize / 2 - 10;
+          if (Math.abs(x) > maxCoord || Math.abs(z) > maxCoord) continue;
+          
+          // Check distance from other structures
+          let tooClose = false;
+          for (const pos of placedPositions) {
+            const dx = x - pos.x;
+            const dz = z - pos.z;
+            if (Math.sqrt(dx * dx + dz * dz) < minDistBetween) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) continue;
+          
+          // Check distance from entities (trees, etc.)
+          for (const entity of entities) {
+            const dx = x - entity.x;
+            const dz = z - entity.z;
+            if (Math.sqrt(dx * dx + dz * dz) < 8) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) continue;
+          
+          // Pick a random structure type
+          const structType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          const config = STRUCTURE_TYPES[structType];
+          
+          // Random rotation (face random direction)
+          const rotation = Math.random() * Math.PI * 2;
+          
+          // Create and place structure
+          const mesh = createStructure(x, z, structType, rotation);
+          if (mesh) {
+            scene.add(mesh);
+            
+            const structEntity = {
+              type: 'structure',
+              structureType: structType,
+              config: config,
+              x: x,
+              z: z,
+              worldX: x,
+              worldZ: z,
+              rotation: rotation,
+              mesh: mesh,
+              roofVisible: true,
+              chestLooted: false,
+              scrapCollected: false
+            };
+            
+            structureEntities.push(structEntity);
+            placedPositions.push({ x, z });
+            placed = true;
+            
+            console.log(`Spawned ${config.name} at (${x.toFixed(1)}, ${z.toFixed(1)})`);
+          }
+        }
+        
+        if (!placed) {
+          console.warn(`Failed to place structure ${i + 1}/${count}`);
+        }
+      }
     }
     
     // ============================================
@@ -6452,7 +8015,7 @@
     const interactionDistance = 1.5;
     
     // Camera state
-    let cameraMode = 'third-person'; // 'third-person' or 'first-person'
+    let cameraMode = 'first-person'; // 'third-person' or 'first-person' (default: first-person)
     let playerFacingAngle = 0; // Angle in radians, 0 = looking toward negative Z (up on screen)
     let fpYaw = 0; // First-person horizontal rotation (yaw)
     let fpPitch = 0; // First-person vertical rotation (pitch)
@@ -6464,7 +8027,7 @@
     // Safe zone radius grows with fire level: L1=7.5, L2=10, L3=13 (includes farm plot), L4=16
     const SAFE_ZONE_RADII = [7.5, 10, 13, 16];
     let safeZoneRadius = SAFE_ZONE_RADII[0]; // Current safe zone radius (grows with fire level)
-    let worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * 3; // Start at 3R = 22.5
+    let worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * 4; // Start at 4R = 30 (increased for structures)
     let worldSize = worldRadius * 2; // Diameter of the world
     let playerMesh = null;
     let campfireMesh = null;
@@ -7797,6 +9360,15 @@
             pendingCraftItem = null;
           }, 500);
         }
+      } else if (actionKey === 'openStructureChest') {
+        // Structure chest opened - award loot
+        if (currentActionEntity && currentActionEntity.struct && currentActionEntity.chestObj) {
+          mathBubbleFeedback.textContent = "✓ Chest unlocked!";
+          setTimeout(() => {
+            awardStructureChestLoot(currentActionEntity.struct, currentActionEntity.chestObj);
+            currentActionEntity = null;
+          }, 500);
+        }
       }
     }
     
@@ -7854,6 +9426,174 @@
           return;
         }
       }
+      
+      // Check proximity to structure chests and scrap
+      checkStructureInteractions();
+    }
+    
+    // Check for interactions with items inside structures
+    function checkStructureInteractions() {
+      const insideStruct = playerInsideStructure;
+      if (!insideStruct || !insideStruct.mesh) return;
+      
+      // Get player position relative to structure
+      const struct = insideStruct;
+      const rot = struct.rotation || 0;
+      const cos = Math.cos(-rot);
+      const sin = Math.sin(-rot);
+      const relX = playerX - struct.worldX;
+      const relZ = playerZ - struct.worldZ;
+      const localX = relX * cos - relZ * sin;
+      const localZ = relX * sin + relZ * cos;
+      
+      // Check chest
+      struct.mesh.traverse((child) => {
+        if (child.name === 'structureChest' && child.userData && !child.userData.looted) {
+          const dx = localX - child.position.x;
+          const dz = localZ - child.position.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          
+          if (dist < 2) {
+            openStructureChest(struct, child);
+          }
+        }
+        
+        if (child.name === 'structureScrap' && child.userData && !child.userData.collected) {
+          const dx = localX - child.position.x;
+          const dz = localZ - child.position.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          
+          if (dist < 1.5) {
+            collectStructureScrap(struct, child);
+          }
+        }
+      });
+    }
+    
+    // Open a structure chest (no keys needed, math problem to open)
+    function openStructureChest(struct, chestObj) {
+      if (chestObj.userData.looted || isDialogOpen) return;
+      
+      const structType = struct.structureType;
+      const config = STRUCTURE_TYPES[structType];
+      
+      // Generate a math problem to open the chest
+      currentAction = 'openStructureChest';
+      currentActionEntity = { struct, chestObj };
+      isDialogOpen = true;
+      
+      // Generate 1 question based on admin config for 'chop' (or use default)
+      const questions = generateQuestionsFromAdminConfig('chop', 1);
+      currentQuestions = questions;
+      currentQuestionIndex = 0;
+      questionsCorrectFirstTry = [];
+      currentQuestionAttempts = 0;
+      
+      // Release pointer lock
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+      
+      mathBubbleLabel.textContent = `📦 ${config.name} Chest`;
+      mathQuestionCounter.textContent = '';
+      mathTimerBar.style.display = 'none';
+      mathQuestion.textContent = currentQuestions[0].equation;
+      mathBubbleFeedback.textContent = '';
+      mathAnswerInput.value = '';
+      mathBubble.classList.add('active');
+      mathAnswerInput.focus();
+    }
+    
+    // Award loot from structure chest
+    function awardStructureChestLoot(struct, chestObj) {
+      chestObj.userData.looted = true;
+      struct.chestLooted = true;
+      
+      // Open the chest visually (lid opens up)
+      openChestVisually(chestObj);
+      
+      // Determine loot tier based on fire level
+      let lootTier = 'common';
+      if (currentFireLevel >= 4) lootTier = 'rare';
+      else if (currentFireLevel >= 3) lootTier = 'uncommon';
+      
+      const lootTable = STRUCTURE_CHEST_LOOT[lootTier];
+      
+      // Roll for loot (1-3 items)
+      const numItems = 1 + Math.floor(Math.random() * 3);
+      const lootGained = [];
+      
+      for (let i = 0; i < numItems; i++) {
+        const roll = Math.random();
+        let cumulative = 0;
+        
+        for (const item of lootTable) {
+          cumulative += item.chance;
+          if (roll < cumulative) {
+            const amount = item.amount[0] + Math.floor(Math.random() * (item.amount[1] - item.amount[0] + 1));
+            lootGained.push({ type: item.type, amount });
+            
+            // Add to inventory
+            switch (item.type) {
+              case 'wood':
+                woodCount.textContent = parseInt(woodCount.textContent) + amount;
+                break;
+              case 'scrap':
+                scrapCount.textContent = parseInt(scrapCount.textContent) + amount;
+                break;
+              case 'coal':
+                coalCount.textContent = parseInt(coalCount.textContent) + amount;
+                break;
+              case 'meat':
+                meatCount.textContent = parseInt(meatCount.textContent) + amount;
+                break;
+              case 'carrots':
+                carrots += amount;
+                carrotCount.textContent = carrots;
+                break;
+              case 'stew':
+                stew += amount;
+                stewCount.textContent = stew;
+                break;
+              case 'diamond':
+                awardDiamonds(amount);
+                break;
+              case 'potion':
+                // Heal player
+                playerHealth = Math.min(100, playerHealth + 30 * amount);
+                healthBar.style.width = `${playerHealth}%`;
+                break;
+            }
+            break;
+          }
+        }
+      }
+      
+      // Show loot notification
+      const lootText = lootGained.map(l => `+${l.amount} ${l.type}`).join(', ');
+      showCraftNotification(`📦 Chest opened! ${lootText}`);
+      
+      updateInventoryDisplay();
+      saveGame();
+    }
+    
+    // Collect scrap metal from structure
+    function collectStructureScrap(struct, scrapObj) {
+      if (scrapObj.userData.collected) return;
+      
+      scrapObj.userData.collected = true;
+      struct.scrapCollected = true;
+      
+      // Hide scrap
+      scrapObj.visible = false;
+      
+      // Award 1-2 scrap
+      const amount = 1 + Math.floor(Math.random() * 2);
+      scrapCount.textContent = parseInt(scrapCount.textContent) + amount;
+      
+      showCraftNotification(`🔩 Found ${amount} scrap metal!`);
+      updateInventoryDisplay();
+      saveGame();
     }
     
     // Open a chest and award the reward
@@ -8146,9 +9886,10 @@
       fireBar.style.width = `${fireStrength}%`;
       
       // Expand the world size based on campfire circle radius (R = 7.5)
-      // Level 1: 3R = 22.5, Level 2: 6R = 45, Level 3: 8R = 60, Level 4: 10R = 75
-      const radiusMultipliers = [3, 6, 8, 10]; // For levels 1-4
-      const multiplier = radiusMultipliers[currentFireLevel - 1] || 10; // Default to 10R for level 5+
+      // Level 1: 4R = 30, Level 2: 12R = 90, Level 3: 25R = 187, Level 4: 40R = 300
+      // (L3 and L4 much bigger for more structures and exploration)
+      const radiusMultipliers = [4, 12, 25, 40]; // For levels 1-4
+      const multiplier = radiusMultipliers[currentFireLevel - 1] || 40; // Default to 40R for level 5+
       worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * multiplier;
       worldSize = worldRadius * 2;
       
@@ -8167,6 +9908,9 @@
       // Expand the map with new entities
       expandMap();
       
+      // Spawn explorable structures based on fire level
+      spawnStructures();
+      
       // Start key spawning at Fire Level 2
       if (currentFireLevel === 2 && rewardsState.currentKeyTier === null) {
         rewardsState.currentKeyTier = 'wooden';
@@ -8177,6 +9921,41 @@
       // Show notification
       showMapExpansionNotification();
     }
+    
+    // DEBUG: Jump to a specific fire level (call from console: jumpToFireLevel(4))
+    window.jumpToFireLevel = function(targetLevel) {
+      targetLevel = Math.min(4, Math.max(1, targetLevel)); // Clamp between 1-4
+      
+      while (currentFireLevel < targetLevel) {
+        currentFireLevel++;
+        fireLevel.textContent = currentFireLevel;
+        
+        // Expand world (larger map sizes for structures)
+        // L1: tiny, L2: medium, L3: big, L4: huge
+        const radiusMultipliers = [4, 12, 25, 40];
+        const multiplier = radiusMultipliers[currentFireLevel - 1] || 40;
+        worldRadius = BASE_CAMPFIRE_CIRCLE_RADIUS * multiplier;
+        worldSize = worldRadius * 2;
+        
+        updateSafeZoneRadius();
+        
+        if (groundMesh) scene.remove(groundMesh);
+        groundMesh = createGround(worldRadius);
+        scene.add(groundMesh);
+        
+        expandMap();
+        
+        // Spawn structures at EACH level (cumulative)
+        spawnStructures();
+      }
+      
+      // Set fire to 50% so it doesn't go out immediately
+      fireStrength = 50;
+      fireBar.style.width = '50%';
+      
+      console.log(`🔥 Jumped to Fire Level ${currentFireLevel}! Map size: ${worldSize.toFixed(0)} units. Structures: ${structureEntities.length}`);
+      showCraftNotification(`🔥 DEBUG: Jumped to Fire Level ${currentFireLevel}! ${structureEntities.length} structures.`);
+    };
     
     // Update the safe zone radius and reposition the dotted circle
     function updateSafeZoneRadius() {
@@ -9353,6 +11132,62 @@
           minimapCtx.fillRect(chestMinimapX - pulseSize/2, chestMinimapY - pulseSize/2, pulseSize, pulseSize);
       }
       
+      // Draw structures on minimap
+      minimapCtx.globalAlpha = 1;
+      for (const struct of structureEntities) {
+        const structMinimapX = ((struct.worldX / worldSize) + 0.5) * 150;
+        const structMinimapY = ((struct.worldZ / worldSize) + 0.5) * 150;
+        
+        // Calculate structure size on minimap
+        const config = struct.config;
+        const structWidth = (config.width / worldSize) * 150;
+        const structDepth = (config.depth / worldSize) * 150;
+        
+        // Draw structure outline (house icon)
+        minimapCtx.save();
+        minimapCtx.translate(structMinimapX, structMinimapY);
+        minimapCtx.rotate(struct.rotation || 0);
+        
+        // Structure color based on type
+        const structColors = {
+          shack: '#8B4513',
+          cabin: '#A0522D',
+          watchtower: '#DEB887',
+          barn: '#8B0000',
+          tent: '#556B2F',
+          ruinedChurch: '#808080',
+          witchHut: '#2F4F4F',
+          treehouse: '#CD853F',
+          mine: '#4A4A4A'
+        };
+        const structColor = structColors[struct.structureType] || '#8B4513';
+        
+        // Draw filled rectangle for structure
+        minimapCtx.fillStyle = structColor;
+        minimapCtx.fillRect(-structWidth/2, -structDepth/2, Math.max(4, structWidth), Math.max(4, structDepth));
+        
+        // Draw border
+        minimapCtx.strokeStyle = '#FFD700';
+        minimapCtx.lineWidth = 1;
+        minimapCtx.strokeRect(-structWidth/2, -structDepth/2, Math.max(4, structWidth), Math.max(4, structDepth));
+        
+        // Draw door indicator (bright spot)
+        minimapCtx.fillStyle = '#FFFFFF';
+        minimapCtx.fillRect(-1, structDepth/2 - 1, 2, 2);
+        
+        minimapCtx.restore();
+        
+        // Draw chest icon if not looted
+        if (!struct.chestLooted) {
+          minimapCtx.fillStyle = '#FFD700';
+          minimapCtx.globalAlpha = 0.5 + Math.sin(Date.now() / 300) * 0.3;
+          minimapCtx.beginPath();
+          minimapCtx.arc(structMinimapX, structMinimapY, 2, 0, Math.PI * 2);
+          minimapCtx.fill();
+          minimapCtx.globalAlpha = 1;
+        }
+      }
+      
       // Draw player
       const playerMinimapX = ((playerX / worldSize) + 0.5) * 150;
       const playerMinimapY = ((playerZ / worldSize) + 0.5) * 150;
@@ -10165,6 +12000,13 @@
             // Process biofuel instantly (no math required)
             processBiofuelInstant();
           }
+        } else if (nearStructureDoor) {
+          // Enter or exit structure
+          if (playerInsideStructure === nearStructureDoor) {
+            exitStructure(nearStructureDoor);
+          } else {
+            enterStructure(nearStructureDoor);
+          }
         }
       }
       
@@ -10520,6 +12362,12 @@
           return true;
         }
       }
+      
+      // Also check structure walls
+      if (isPositionBlockedByStructure(x, z)) {
+        return true;
+      }
+      
       return false;
     }
     
@@ -10661,6 +12509,8 @@
       updateCultists(); // Update cultist AI
       updateDeerMonster(); // Update deer monster AI
       updateMinimap();
+      updateStructureRoofs(); // Show/hide roofs based on player position
+      checkStructureDoorProximity(); // Check if near structure doors
       
       // Pet abilities (throttled internally)
       checkCatWolfAlert();
@@ -10816,6 +12666,15 @@
       // Create player
       playerMesh = createPlayer(playerX, playerZ);
       scene.add(playerMesh);
+      
+      // Initialize first-person mode as default
+      cameraToggleBtn.classList.add('first-person');
+      cameraToggleBtn.innerHTML = '👤';
+      cameraToggleBtn.title = 'Switch to Third Person View';
+      camera.fov = FP_FOV;
+      camera.updateProjectionMatrix();
+      playerMesh.visible = false; // Hide player mesh in first-person
+      fpCrosshair.style.display = 'block'; // Show crosshair
       
       // Initialize pet if player has one
       if (gameSave.pet) {

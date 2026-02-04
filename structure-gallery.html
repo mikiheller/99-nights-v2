@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structure Gallery - 99 Nights Math</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: white;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #FFD700;
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 30px;
+    }
+    
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .structure-card {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #333;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    
+    .structure-card:hover {
+      border-color: #FFD700;
+      transform: scale(1.02);
+    }
+    
+    /* Exploration Mode */
+    #exploreOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 1000;
+    }
+    
+    #exploreOverlay.active {
+      display: block;
+    }
+    
+    #exploreCanvas {
+      width: 100%;
+      height: 100%;
+    }
+    
+    #exploreUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1001;
+    }
+    
+    #backBtn {
+      background: rgba(0, 0, 0, 0.7);
+      color: #FFD700;
+      border: 2px solid #FFD700;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    #backBtn:hover {
+      background: rgba(255, 215, 0, 0.2);
+    }
+    
+    #structureTitle {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #FFD700;
+      padding: 10px 30px;
+      border-radius: 8px;
+      font-size: 1.5em;
+      font-weight: bold;
+      z-index: 1001;
+    }
+    
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      z-index: 1001;
+      text-align: center;
+    }
+    
+    #controls kbd {
+      background: #333;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin: 0 2px;
+    }
+    
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      z-index: 1001;
+      pointer-events: none;
+    }
+    
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.7);
+    }
+    
+    #crosshair::before {
+      width: 2px;
+      height: 20px;
+      left: 9px;
+      top: 0;
+    }
+    
+    #crosshair::after {
+      width: 20px;
+      height: 2px;
+      top: 9px;
+      left: 0;
+    }
+    
+    .canvas-container {
+      width: 100%;
+      height: 300px;
+      position: relative;
+    }
+    
+    .canvas-container canvas {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .structure-info {
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .structure-name {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #FFD700;
+      margin-bottom: 5px;
+    }
+    
+    .structure-level {
+      font-size: 0.9em;
+      color: #ff6b35;
+      margin-bottom: 8px;
+    }
+    
+    .structure-desc {
+      font-size: 0.85em;
+      color: #ccc;
+      margin-bottom: 8px;
+    }
+    
+    .structure-details {
+      font-size: 0.8em;
+      color: #888;
+    }
+    
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: #FFD700;
+      text-decoration: none;
+      font-size: 1.1em;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 1200px) {
+      .gallery {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 800px) {
+      .gallery {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🏠 Structure Gallery</h1>
+  <p class="subtitle">Click any structure to explore inside! All 9 explorable structures shown below.</p>
+  
+  <div class="gallery" id="gallery"></div>
+  
+  <a href="game.html" class="back-link">← Back to Game</a>
+  
+  <!-- Exploration Mode Overlay -->
+  <div id="exploreOverlay">
+    <canvas id="exploreCanvas"></canvas>
+    <div id="exploreUI">
+      <button id="backBtn">← Back to Gallery (ESC)</button>
+    </div>
+    <div id="structureTitle"></div>
+    <div id="crosshair"></div>
+    <div id="controls">
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move | 
+      <kbd>Mouse</kbd> Look | 
+      <kbd>ESC</kbd> Exit
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Structure types configuration (copied from game - updated sizes)
+    const STRUCTURE_TYPES = {
+      shack: {
+        name: 'Wooden Shack',
+        width: 10,
+        depth: 8,
+        height: 4,
+        roofHeight: 2.5,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: false,
+        wallColor: 0x8B4513,
+        roofColor: 0x654321,
+        floorColor: 0x5D4037,
+        doorColor: 0x5D3A1A,
+        minFireLevel: 2,
+        lootTable: ['wood', 'scrap', 'cloth'],
+        description: 'A small wooden shack - simple shelter',
+        lootSpot: { x: -3, z: 2 } // Left of door, near entrance
+      },
+      cabin: {
+        name: 'Cozy Cabin',
+        width: 14,
+        depth: 12,
+        height: 5,
+        roofHeight: 3,
+        doorWidth: 3,
+        doorHeight: 4,
+        hasWindows: true,
+        wallColor: 0xA0522D,
+        roofColor: 0x4A3728,
+        floorColor: 0x6B4423,
+        doorColor: 0x5D3A1A,
+        minFireLevel: 2,
+        furniture: ['bed', 'table', 'chair'],
+        lootTable: ['food', 'cloth', 'tools', 'potion'],
+        description: 'A warm cabin with furniture inside',
+        lootSpot: { x: 5, z: 0, y: 0.7 } // On the bed (right side)
+      },
+      tent: {
+        name: 'Abandoned Tent',
+        width: 8,
+        depth: 8,
+        height: 4,
+        roofHeight: 0,
+        doorWidth: 3,
+        doorHeight: 3,
+        isTent: true,
+        wallColor: 0x556B2F,
+        roofColor: 0x556B2F,
+        floorColor: 0x3B5323,
+        doorColor: 0x556B2F,
+        minFireLevel: 2,
+        lootTable: ['cloth', 'rope', 'food'],
+        description: 'A canvas tent - quick shelter',
+        noLoot: true // Too small, just chest
+      },
+      watchtower: {
+        name: 'Watchtower',
+        width: 8,
+        depth: 8,
+        height: 10,
+        roofHeight: 2,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: true,
+        hasPlatform: true,
+        wallColor: 0xDEB887,
+        roofColor: 0xB8860B,
+        floorColor: 0xD2B48C,
+        doorColor: 0x8B7355,
+        minFireLevel: 3,
+        lootTable: ['rope', 'binoculars', 'scrap'],
+        description: 'A tall watchtower with observation deck'
+      },
+      barn: {
+        name: 'Old Barn',
+        width: 16,
+        depth: 14,
+        height: 7,
+        roofHeight: 5,
+        doorWidth: 5,
+        doorHeight: 6,
+        hasWindows: false,
+        hasBigDoor: true,
+        wallColor: 0x8B0000,
+        roofColor: 0x5C4033,
+        floorColor: 0x8B7355,
+        doorColor: 0x654321,
+        minFireLevel: 3,
+        furniture: ['haybale', 'haybale', 'haybale'],
+        lootTable: ['wheat', 'carrots', 'seeds', 'tools'],
+        description: 'A big red barn with hay inside'
+      },
+      mine: {
+        name: 'Abandoned Mine',
+        width: 8,
+        depth: 12,
+        height: 5,
+        roofHeight: 0,
+        doorWidth: 4,
+        doorHeight: 4.5,
+        isCave: true,
+        wallColor: 0x4A4A4A,
+        roofColor: 0x3A3A3A,
+        floorColor: 0x2A2A2A,
+        doorColor: 0x3A3A3A,
+        minFireLevel: 3,
+        furniture: ['minecart', 'supports'],
+        lootTable: ['gems', 'metal', 'coal', 'scrap'],
+        description: 'A dark mine entrance'
+      },
+      ruinedChurch: {
+        name: 'Ruined Chapel',
+        width: 18,
+        depth: 24,
+        height: 9,
+        roofHeight: 5,
+        doorWidth: 4,
+        doorHeight: 7,
+        hasWindows: true,
+        isRuined: true,
+        wallColor: 0x808080,
+        roofColor: 0x505050,
+        floorColor: 0x696969,
+        doorColor: 0x4A4A4A,
+        minFireLevel: 4,
+        furniture: ['pew', 'pew', 'pew', 'pew', 'pew', 'pew', 'altar'],
+        lootTable: ['holywater', 'candle', 'keys', 'diamonds'],
+        description: 'An ancient stone chapel'
+      },
+      witchHut: {
+        name: "Witch's Hut",
+        width: 10,
+        depth: 10,
+        height: 5,
+        roofHeight: 4,
+        doorWidth: 2.5,
+        doorHeight: 4,
+        hasWindows: true,
+        isSpooky: true,
+        wallColor: 0x2F4F4F,
+        roofColor: 0x1C1C1C,
+        floorColor: 0x3D3D3D,
+        doorColor: 0x1C1C1C,
+        minFireLevel: 4,
+        furniture: ['cauldron', 'shelf'],
+        lootTable: ['potion', 'potion', 'recipe', 'mushrooms'],
+        description: 'A mysterious dark hut'
+      },
+      treehouse: {
+        name: 'Treehouse',
+        width: 8,
+        depth: 8,
+        height: 4,
+        roofHeight: 2,
+        doorWidth: 2.5,
+        doorHeight: 3.5,
+        hasWindows: true,
+        elevated: 8,
+        hasLadder: true,
+        wallColor: 0xCD853F,
+        roofColor: 0x8B7355,
+        floorColor: 0xA0522D,
+        doorColor: 0x8B7355,
+        minFireLevel: 4,
+        lootTable: ['feathers', 'honey', 'seeds', 'nest'],
+        description: 'A cozy elevated treehouse'
+      }
+    };
+
+    // Create a structure (simplified version from game)
+    function createStructure(structureType) {
+      const config = STRUCTURE_TYPES[structureType];
+      if (!config) return null;
+      
+      const group = new THREE.Group();
+      const { width, depth, height, roofHeight, doorWidth, wallColor, roofColor, floorColor } = config;
+      
+      const wallMaterial = new THREE.MeshLambertMaterial({ color: wallColor });
+      const roofMaterial = new THREE.MeshLambertMaterial({ color: roofColor });
+      const floorMaterial = new THREE.MeshLambertMaterial({ color: floorColor });
+      const windowMaterial = new THREE.MeshLambertMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.5 });
+      const doorFrameMaterial = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+      
+      const roofGroup = new THREE.Group();
+      roofGroup.name = 'roof';
+      
+      // Floor
+      const floorGeometry = new THREE.BoxGeometry(width - 0.4, 0.2, depth - 0.4);
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.position.set(0, 0.1, 0);
+      group.add(floor);
+      
+      const wallThickness = 0.4;
+      
+      if (config.isTent) {
+        // Tent is triangular - create two angled canvas panels
+        const tentMaterial = new THREE.MeshLambertMaterial({ color: wallColor, side: THREE.DoubleSide });
+        const tentSlope = Math.sqrt((width/2) * (width/2) + height * height);
+        const tentAngle = Math.atan2(height, width/2);
+        
+        // Ground cloth/floor mat
+        const floorMat = new THREE.Mesh(
+          new THREE.BoxGeometry(width - 0.5, 0.1, depth - 0.5),
+          new THREE.MeshLambertMaterial({ color: 0x3B5323 })
+        );
+        floorMat.position.y = 0.05;
+        group.add(floorMat);
+        
+        // Central support pole
+        const poleMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const centerPole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, height + 0.5, 8), poleMat);
+        centerPole.position.set(0, height/2, 0);
+        group.add(centerPole);
+        
+        // Left tent panel
+        const leftPanelGeo = new THREE.BoxGeometry(tentSlope, 0.15, depth);
+        const leftPanel = new THREE.Mesh(leftPanelGeo, tentMaterial);
+        leftPanel.rotation.z = tentAngle;
+        leftPanel.position.set(-width/4, height/2, 0);
+        roofGroup.add(leftPanel);
+        
+        // Right tent panel
+        const rightPanelGeo = new THREE.BoxGeometry(tentSlope, 0.15, depth);
+        const rightPanel = new THREE.Mesh(rightPanelGeo, tentMaterial);
+        rightPanel.rotation.z = -tentAngle;
+        rightPanel.position.set(width/4, height/2, 0);
+        roofGroup.add(rightPanel);
+        
+        // Front triangular end
+        const frontShape = new THREE.Shape();
+        frontShape.moveTo(-width/2, 0);
+        frontShape.lineTo(0, height);
+        frontShape.lineTo(width/2, 0);
+        frontShape.closePath();
+        
+        const frontGeo = new THREE.ShapeGeometry(frontShape);
+        const frontEnd = new THREE.Mesh(frontGeo, tentMaterial);
+        frontEnd.position.set(0, 0, depth/2);
+        roofGroup.add(frontEnd);
+        
+        // Back triangular end
+        const backEnd = new THREE.Mesh(frontGeo, tentMaterial);
+        backEnd.rotation.y = Math.PI;
+        backEnd.position.set(0, 0, -depth/2);
+        roofGroup.add(backEnd);
+        
+      } else if (config.isCave) {
+        // Mine entrance
+        const archHeight = height;
+        const archWidth = doorWidth + 1;
+        const frameColor = 0x5A5A5A;
+        const frameMaterial = new THREE.MeshLambertMaterial({ color: frameColor });
+        const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const rockMat = new THREE.MeshLambertMaterial({ color: 0x696969 });
+        
+        // Stone frame pillars
+        const pillarGeo = new THREE.BoxGeometry(1.2, archHeight, 1.2);
+        const leftPillar = new THREE.Mesh(pillarGeo, frameMaterial);
+        leftPillar.position.set(-archWidth/2 - 0.6, archHeight/2, 0);
+        group.add(leftPillar);
+        
+        const rightPillar = new THREE.Mesh(pillarGeo, frameMaterial);
+        rightPillar.position.set(archWidth/2 + 0.6, archHeight/2, 0);
+        group.add(rightPillar);
+        
+        // Wooden support beams
+        const topBeam = new THREE.Mesh(new THREE.BoxGeometry(archWidth + 3, 0.8, 1), woodMat);
+        topBeam.position.set(0, archHeight + 0.4, 0);
+        group.add(topBeam);
+        
+        // Cross beam
+        const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(archWidth + 2, 0.5, 0.5), woodMat);
+        crossBeam.position.set(0, archHeight - 1, 0.5);
+        group.add(crossBeam);
+        
+        // Rock pile on left
+        const rock1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1.2), rockMat);
+        rock1.position.set(-archWidth/2 - 2, 0.4, 1);
+        rock1.rotation.y = 0.3;
+        group.add(rock1);
+        const rock2 = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, 0.8), rockMat);
+        rock2.position.set(-archWidth/2 - 1.5, 0.3, 1.8);
+        group.add(rock2);
+        
+        // Rock pile on right  
+        const rock3 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 1), rockMat);
+        rock3.position.set(archWidth/2 + 1.8, 0.35, 1.5);
+        rock3.rotation.y = -0.2;
+        group.add(rock3);
+        
+        // Mine cart tracks leading in
+        const trackMat = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+        const track1 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, depth), trackMat);
+        track1.position.set(-0.5, 0.05, -depth/4);
+        group.add(track1);
+        const track2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, depth), trackMat);
+        track2.position.set(0.5, 0.05, -depth/4);
+        group.add(track2);
+        
+        // Wooden ties
+        for (let i = 0; i < 5; i++) {
+          const tie = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 0.2), woodMat);
+          tie.position.set(0, 0.04, 1 - i * 1.5);
+          group.add(tie);
+        }
+        
+        const darkInterior = new THREE.Mesh(
+          new THREE.BoxGeometry(archWidth, archHeight, depth),
+          new THREE.MeshLambertMaterial({ color: 0x0A0A0A })
+        );
+        darkInterior.position.set(0, archHeight/2, -depth/2);
+        group.add(darkInterior);
+        
+      } else {
+        // Standard building
+        
+        // Back wall
+        const backWall = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, wallThickness),
+          wallMaterial
+        );
+        backWall.position.set(0, height/2, -depth/2 + wallThickness/2);
+        group.add(backWall);
+        
+        // Front wall with door
+        const frontWallLeft = new THREE.Mesh(
+          new THREE.BoxGeometry((width - doorWidth) / 2, height, wallThickness),
+          wallMaterial
+        );
+        frontWallLeft.position.set(-(width + doorWidth) / 4, height/2, depth/2 - wallThickness/2);
+        group.add(frontWallLeft);
+        
+        const frontWallRight = new THREE.Mesh(
+          new THREE.BoxGeometry((width - doorWidth) / 2, height, wallThickness),
+          wallMaterial
+        );
+        frontWallRight.position.set((width + doorWidth) / 4, height/2, depth/2 - wallThickness/2);
+        group.add(frontWallRight);
+        
+        // Door height
+        const doorH = config.doorHeight || height * 0.85;
+        
+        // Door frame
+        const frameMat = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+        
+        const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, doorH, 0.3), frameMat);
+        frameLeft.position.set(-doorWidth/2 - 0.1, doorH/2, depth/2 - wallThickness/2);
+        group.add(frameLeft);
+        
+        const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, doorH, 0.3), frameMat);
+        frameRight.position.set(doorWidth/2 + 0.1, doorH/2, depth/2 - wallThickness/2);
+        group.add(frameRight);
+        
+        const frameTop = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.4, 0.2, 0.3), frameMat);
+        frameTop.position.set(0, doorH + 0.1, depth/2 - wallThickness/2);
+        group.add(frameTop);
+        
+        // Above door fill
+        if (doorH < height) {
+          const aboveDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(doorWidth, height - doorH, wallThickness),
+            wallMaterial
+          );
+          aboveDoor.position.set(0, height - (height - doorH)/2, depth/2 - wallThickness/2);
+          group.add(aboveDoor);
+        }
+        
+        // VISIBLE DOOR
+        const doorColor = config.doorColor || 0x5D3A1A;
+        const doorMat = new THREE.MeshLambertMaterial({ color: doorColor });
+        
+        const doorPanel = new THREE.Mesh(
+          new THREE.BoxGeometry(doorWidth - 0.2, doorH - 0.2, 0.15),
+          doorMat
+        );
+        doorPanel.position.set(0, doorH/2, depth/2 + 0.1);
+        group.add(doorPanel);
+        
+        // Door planks
+        const plankMat = new THREE.MeshLambertMaterial({ color: 0x4A3520 });
+        const numPlanks = Math.floor(doorWidth / 0.8);
+        for (let i = 0; i < numPlanks; i++) {
+          const plankX = -doorWidth/2 + 0.5 + i * (doorWidth - 0.6) / Math.max(1, numPlanks - 1);
+          const plank = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, doorH - 0.4, 0.02),
+            plankMat
+          );
+          plank.position.set(plankX, doorH/2, depth/2 + 0.2);
+          group.add(plank);
+        }
+        
+        // Door handle
+        const handleMat = new THREE.MeshLambertMaterial({ color: 0xB8860B });
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.1), handleMat);
+        handle.position.set(doorWidth/2 - 0.4, doorH * 0.5, depth/2 + 0.25);
+        group.add(handle);
+        
+        // Crossbars
+        const crossbar1 = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 0.4, 0.15, 0.08), plankMat);
+        crossbar1.position.set(0, doorH * 0.3, depth/2 + 0.2);
+        group.add(crossbar1);
+        
+        const crossbar2 = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 0.4, 0.15, 0.08), plankMat);
+        crossbar2.position.set(0, doorH * 0.7, depth/2 + 0.2);
+        group.add(crossbar2);
+        
+        // Side walls
+        const leftWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThickness, height, depth),
+          wallMaterial
+        );
+        leftWall.position.set(-width/2 + wallThickness/2, height/2, 0);
+        group.add(leftWall);
+        
+        const rightWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThickness, height, depth),
+          wallMaterial
+        );
+        rightWall.position.set(width/2 - wallThickness/2, height/2, 0);
+        group.add(rightWall);
+        
+        // Windows
+        if (config.hasWindows) {
+          const windowSize = 1.2;
+          const windowHeight = height * 0.5;
+          
+          const leftWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness + 0.1, windowSize, windowSize),
+            windowMaterial
+          );
+          leftWindow.position.set(-width/2 + wallThickness/2, windowHeight, 0);
+          group.add(leftWindow);
+          
+          const rightWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness + 0.1, windowSize, windowSize),
+            windowMaterial
+          );
+          rightWindow.position.set(width/2 - wallThickness/2, windowHeight, 0);
+          group.add(rightWindow);
+          
+          const backWindow = new THREE.Mesh(
+            new THREE.BoxGeometry(windowSize, windowSize, wallThickness + 0.1),
+            windowMaterial
+          );
+          backWindow.position.set(0, windowHeight, -depth/2 + wallThickness/2);
+          group.add(backWindow);
+        }
+        
+        // Roof
+        if (roofHeight > 0) {
+          // Create peaked roof using two angled panels
+          const roofOverhang = 0.8;
+          const roofWidth = (width / 2) + roofOverhang;
+          const roofDepth = depth + roofOverhang * 2;
+          const roofSlope = Math.sqrt(roofWidth * roofWidth + roofHeight * roofHeight);
+          const roofAngle = Math.atan2(roofHeight, roofWidth);
+          const roofThickness = 0.3;
+          
+          // Left roof panel
+          const leftRoofGeo = new THREE.BoxGeometry(roofSlope, roofThickness, roofDepth);
+          const leftRoof = new THREE.Mesh(leftRoofGeo, roofMaterial);
+          leftRoof.rotation.z = roofAngle;
+          leftRoof.position.set(-roofWidth/2 + 0.1, height + roofHeight/2, 0);
+          roofGroup.add(leftRoof);
+          
+          // Right roof panel
+          const rightRoofGeo = new THREE.BoxGeometry(roofSlope, roofThickness, roofDepth);
+          const rightRoof = new THREE.Mesh(rightRoofGeo, roofMaterial);
+          rightRoof.rotation.z = -roofAngle;
+          rightRoof.position.set(roofWidth/2 - 0.1, height + roofHeight/2, 0);
+          roofGroup.add(rightRoof);
+          
+          // Gable ends (triangular pieces at front and back)
+          const gableShape = new THREE.Shape();
+          gableShape.moveTo(-width/2, 0);
+          gableShape.lineTo(0, roofHeight);
+          gableShape.lineTo(width/2, 0);
+          gableShape.closePath();
+          
+          const gableGeo = new THREE.ShapeGeometry(gableShape);
+          
+          // Front gable
+          const frontGable = new THREE.Mesh(gableGeo, wallMaterial);
+          frontGable.position.set(0, height, depth/2);
+          roofGroup.add(frontGable);
+          
+          // Back gable
+          const backGable = new THREE.Mesh(gableGeo, wallMaterial);
+          backGable.rotation.y = Math.PI;
+          backGable.position.set(0, height, -depth/2);
+          roofGroup.add(backGable);
+        } else {
+          const flatRoof = new THREE.Mesh(
+            new THREE.BoxGeometry(width + 0.5, 0.3, depth + 0.5),
+            roofMaterial
+          );
+          flatRoof.position.set(0, height, 0);
+          roofGroup.add(flatRoof);
+        }
+      }
+      
+      group.add(roofGroup);
+      
+      // Add furniture
+      if (config.furniture) {
+        addFurniture(group, config);
+      }
+      
+      // Position elevated structures (treehouse)
+      if (config.elevated) {
+        group.position.y = config.elevated;
+        
+        // Add large tree trunk
+        const trunkGeo = new THREE.CylinderGeometry(1.2, 1.8, config.elevated + 4, 12);
+        const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.set(0, -config.elevated/2 - 2, 0);
+        group.add(trunk);
+        
+        // Tree branches for support
+        const branchMat = new THREE.MeshLambertMaterial({ color: 0x6D5037 });
+        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 4, 8), branchMat);
+        branch1.rotation.z = 0.6;
+        branch1.position.set(-2, -2, 0);
+        group.add(branch1);
+        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 4, 8), branchMat);
+        branch2.rotation.z = -0.6;
+        branch2.position.set(2, -2, 1);
+        group.add(branch2);
+        
+        // Tree foliage above
+        const leavesMat = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const leaves1 = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 6), leavesMat);
+        leaves1.position.set(0, height + 3, 0);
+        group.add(leaves1);
+        const leaves2 = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 4), leavesMat);
+        leaves2.position.set(0, height + 5.5, 0);
+        group.add(leaves2);
+        
+        // Platform floor supports
+        const supportMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const support1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), supportMat);
+        support1.position.set(-width/2 + 0.5, -0.5, -depth/2 + 0.5);
+        group.add(support1);
+        const support2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), supportMat);
+        support2.position.set(width/2 - 0.5, -0.5, -depth/2 + 0.5);
+        group.add(support2);
+        const support3 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), supportMat);
+        support3.position.set(-width/2 + 0.5, -0.5, depth/2 - 0.5);
+        group.add(support3);
+        const support4 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), supportMat);
+        support4.position.set(width/2 - 0.5, -0.5, depth/2 - 0.5);
+        group.add(support4);
+        
+        // Add sturdy ladder
+        const ladderMat = new THREE.MeshLambertMaterial({ color: 0xDEB887 });
+        const ladderHeight = config.elevated + 1;
+        
+        // Ladder sides (thicker)
+        const side1 = new THREE.Mesh(new THREE.BoxGeometry(0.15, ladderHeight, 0.15), ladderMat);
+        side1.position.set(width/2 + 0.3, -config.elevated/2 + 0.5, depth/4);
+        group.add(side1);
+        const side2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, ladderHeight, 0.15), ladderMat);
+        side2.position.set(width/2 + 1.0, -config.elevated/2 + 0.5, depth/4);
+        group.add(side2);
+        
+        // Ladder rungs
+        for (let i = 0; i < ladderHeight; i += 0.6) {
+          const rung = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.12, 0.15), ladderMat);
+          rung.position.set(width/2 + 0.65, -config.elevated + i + 0.3, depth/4);
+          group.add(rung);
+        }
+        
+        // Ground platform at base of ladder
+        const groundPlatform = new THREE.Mesh(new THREE.BoxGeometry(2, 0.15, 2), supportMat);
+        groundPlatform.position.set(width/2 + 0.5, -config.elevated + 0.08, depth/4);
+        group.add(groundPlatform);
+      }
+      
+      return group;
+    }
+    
+    // Add furniture with intentional placement
+    function addFurniture(group, config) {
+      const { width, depth, furniture } = config;
+      
+      // Track what we've placed
+      let hasBed = false;
+      let hasTable = false;
+      let hasChair = false;
+      
+      furniture.forEach((item, index) => {
+        let mesh;
+        let fx = 0, fz = 0;
+        
+        switch (item) {
+          case 'bed':
+            mesh = createBed();
+            // Bed on right side, against wall
+            fx = width/2 - 1.8;
+            fz = 0;
+            mesh.rotation.y = Math.PI / 2; // Rotate to fit against wall
+            hasBed = true;
+            break;
+          case 'table':
+            mesh = createTable();
+            // Table on left wall
+            fx = -width/2 + 1.5;
+            fz = -depth/4;
+            hasTable = true;
+            break;
+          case 'chair':
+            mesh = createChair();
+            // Chair next to table on left side, facing the table
+            fx = -width/2 + 1.5;
+            fz = -depth/4 + 1.5;
+            mesh.rotation.y = Math.PI; // Rotate to face the table
+            hasChair = true;
+            break;
+          case 'haybale':
+            mesh = createHaybale();
+            // Haybales scattered
+            fx = (Math.random() - 0.5) * (width - 4);
+            fz = (Math.random() - 0.5) * (depth - 4);
+            break;
+          case 'pew':
+            mesh = createPew();
+            // Arrange pews in rows on left and right sides, facing altar
+            const pewRow = Math.floor(index / 2);
+            const pewSide = index % 2 === 0 ? -1 : 1; // Left or right
+            fx = pewSide * 4; // 4 units from center
+            fz = depth/4 - pewRow * 4; // Space rows 4 apart going back
+            mesh.rotation.y = Math.PI; // Rotate 180 to face altar
+            break;
+          case 'altar':
+            mesh = createAltar();
+            fx = 0; 
+            fz = -depth/2 + 4; // Push altar further back
+            break;
+          case 'cauldron':
+            mesh = createCauldron();
+            fx = 0; 
+            fz = 0;
+            break;
+          case 'shelf':
+            mesh = createShelf();
+            fx = -width/2 + 1.5;
+            fz = -depth/2 + 1;
+            break;
+          case 'minecart':
+            mesh = createMinecart();
+            fx = 0;
+            fz = -depth/4;
+            break;
+        }
+        
+        if (mesh) {
+          mesh.position.set(fx, 0, fz);
+          group.add(mesh);
+        }
+      });
+    }
+    
+    // Simple furniture functions
+    function createBed() {
+      const bed = new THREE.Group();
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 3), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      frame.position.y = 0.2;
+      bed.add(frame);
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.3, 2.6), new THREE.MeshLambertMaterial({ color: 0xB22222 }));
+      mattress.position.y = 0.55;
+      bed.add(mattress);
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 0.5), new THREE.MeshLambertMaterial({ color: 0xFFF8DC }));
+      pillow.position.set(0, 0.75, -1);
+      bed.add(pillow);
+      return bed;
+    }
+    
+    function createTable() {
+      const table = new THREE.Group();
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2, 0.15, 1.5), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      top.position.y = 1;
+      table.add(top);
+      const legGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+      [[-0.8, -0.6], [0.8, -0.6], [-0.8, 0.6], [0.8, 0.6]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, 0.5, lz);
+        table.add(leg);
+      });
+      return table;
+    }
+    
+    function createChair() {
+      const chair = new THREE.Group();
+      const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+      
+      // Seat
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.8), woodMat);
+      seat.position.y = 0.6;
+      chair.add(seat);
+      
+      // Back
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), woodMat);
+      back.position.set(0, 1, -0.35);
+      chair.add(back);
+      
+      // Four legs
+      const legGeo = new THREE.BoxGeometry(0.1, 0.6, 0.1);
+      [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, 0.3, lz);
+        chair.add(leg);
+      });
+      
+      return chair;
+    }
+    
+    function createHaybale() {
+      const hay = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshLambertMaterial({ color: 0xDAA520 }));
+      hay.position.y = 0.5;
+      hay.rotation.y = Math.random() * Math.PI;
+      return hay;
+    }
+    
+    function createPew() {
+      const pew = new THREE.Group();
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 0.6), new THREE.MeshLambertMaterial({ color: 0x654321 }));
+      bench.position.y = 0.5;
+      pew.add(bench);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 0.1), new THREE.MeshLambertMaterial({ color: 0x654321 }));
+      back.position.set(0, 0.9, -0.25);
+      pew.add(back);
+      return pew;
+    }
+    
+    function createAltar() {
+      const altar = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 1.5), new THREE.MeshLambertMaterial({ color: 0x808080 }));
+      base.position.y = 0.5;
+      altar.add(base);
+      for (let i = -1; i <= 1; i++) {
+        const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4), new THREE.MeshLambertMaterial({ color: 0xFFFACD }));
+        candle.position.set(i * 0.8, 1.2, 0);
+        altar.add(candle);
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.15), new THREE.MeshBasicMaterial({ color: 0xFFA500 }));
+        flame.position.set(i * 0.8, 1.5, 0);
+        altar.add(flame);
+      }
+      return altar;
+    }
+    
+    function createCauldron() {
+      const cauldron = new THREE.Group();
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 1, 16), new THREE.MeshLambertMaterial({ color: 0x1C1C1C }));
+      pot.position.y = 0.5;
+      cauldron.add(pot);
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.1, 16), new THREE.MeshBasicMaterial({ color: 0x00FF00, transparent: true, opacity: 0.7 }));
+      liquid.position.y = 0.9;
+      cauldron.add(liquid);
+      return cauldron;
+    }
+    
+    function createShelf() {
+      const shelf = new THREE.Group();
+      const board = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 0.5), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      board.position.y = 1.5;
+      shelf.add(board);
+      for (let i = -0.6; i <= 0.6; i += 0.4) {
+        const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3), new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0x800080 : 0x008000, transparent: true, opacity: 0.7 }));
+        bottle.position.set(i, 1.7, 0);
+        shelf.add(bottle);
+      }
+      return shelf;
+    }
+    
+    function createMinecart() {
+      const cart = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 2), new THREE.MeshLambertMaterial({ color: 0x505050 }));
+      body.position.y = 0.6;
+      cart.add(body);
+      return cart;
+    }
+    
+    function createScrapMetal(type) {
+      const group = new THREE.Group();
+      const metalMat = new THREE.MeshLambertMaterial({ color: 0x808080 });
+      const darkMat = new THREE.MeshLambertMaterial({ color: 0x404040 });
+      
+      // Use provided type or random 50/50 bolt or fan
+      const scrapType = type || (Math.random() > 0.5 ? 'bolt' : 'fan');
+      
+      if (scrapType === 'bolt') {
+        // BOLT - hex head with threaded shaft (laying on side)
+        const boltGroup = new THREE.Group();
+        
+        const headGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 6);
+        const head = new THREE.Mesh(headGeo, metalMat);
+        head.position.y = 0.35;
+        boltGroup.add(head);
+        
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5), darkMat);
+        shaft.position.y = 0.1;
+        boltGroup.add(shaft);
+        
+        // Thread lines
+        for (let i = 0; i < 5; i++) {
+          const thread = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.015, 4, 16), metalMat);
+          thread.position.y = 0.05 + i * 0.07;
+          thread.rotation.x = Math.PI / 2;
+          boltGroup.add(thread);
+        }
+        
+        // Lay bolt on its side
+        boltGroup.rotation.z = Math.PI / 2;
+        boltGroup.position.y = 0.15;
+        group.add(boltGroup);
+        
+      } else if (scrapType === 'fan') {
+        // Rusty 3-blade propeller fan standing upright
+        const rustyMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+        const darkRustyMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const hubMat = new THREE.MeshLambertMaterial({ color: 0x505050 });
+        const baseMat = new THREE.MeshLambertMaterial({ color: 0x7B8B6F });
+        
+        // Base/stand
+        const base = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 8), baseMat);
+        base.position.y = 0.2;
+        group.add(base);
+        
+        // Neck
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.25), baseMat);
+        neck.position.y = 0.5;
+        group.add(neck);
+        
+        // Hub
+        const hub = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), hubMat);
+        hub.position.y = 0.7;
+        group.add(hub);
+        
+        // 3 oval blades
+        for (let i = 0; i < 3; i++) {
+          const bladeGroup = new THREE.Group();
+          const bladeGeo = new THREE.SphereGeometry(0.25, 12, 8);
+          const blade = new THREE.Mesh(bladeGeo, i % 2 === 0 ? rustyMat : darkRustyMat);
+          blade.scale.set(0.12, 1, 0.4);
+          blade.position.y = 0.3;
+          bladeGroup.add(blade);
+          bladeGroup.rotation.z = (i * Math.PI * 2 / 3);
+          bladeGroup.position.y = 0.7;
+          group.add(bladeGroup);
+        }
+      }
+      
+      return group;
+    }
+    
+    function createBrokenMicrowave() {
+      const group = new THREE.Group();
+      const bodyMat = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+      const doorMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+      const glassMat = new THREE.MeshLambertMaterial({ color: 0x4a6a7a, transparent: true, opacity: 0.5 });
+      const innerMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+      
+      // Main body (boxy microwave shape)
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.8), bodyMat);
+      body.position.y = 0.35;
+      group.add(body);
+      
+      // Door frame
+      const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.05), doorMat);
+      doorFrame.position.set(-0.1, 0.35, 0.43);
+      group.add(doorFrame);
+      
+      // Glass window
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.02), glassMat);
+      glass.position.set(-0.1, 0.35, 0.45);
+      group.add(glass);
+      
+      // Control panel on right side
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.02), innerMat);
+      panel.position.set(0.35, 0.35, 0.43);
+      group.add(panel);
+      
+      // Buttons
+      for (let i = 0; i < 3; i++) {
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), new THREE.MeshLambertMaterial({ color: 0x666666 }));
+        btn.position.set(0.35, 0.5 - i * 0.12, 0.45);
+        group.add(btn);
+      }
+      
+      // Damage - dent/hole on top
+      const dent = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), innerMat);
+      dent.position.set(0.2, 0.65, 0);
+      group.add(dent);
+      
+      // Hanging wire
+      const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+      wire.position.set(-0.5, 0.2, 0.3);
+      wire.rotation.z = 0.5;
+      group.add(wire);
+      
+      return group;
+    }
+    
+    function createWoodPile() {
+      const group = new THREE.Group();
+      const logMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const endMat = new THREE.MeshLambertMaterial({ color: 0xD2B48C });
+      
+      // Create stacked logs like the reference (pyramid style)
+      const logRadius = 0.18;
+      const logLength = 1.2;
+      
+      // Bottom row - 3 logs
+      for (let i = 0; i < 3; i++) {
+        const log = new THREE.Mesh(
+          new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+          logMat
+        );
+        log.rotation.z = Math.PI / 2;
+        log.position.set(0, logRadius, (i - 1) * logRadius * 2.2);
+        group.add(log);
+        
+        // Log end caps (lighter color)
+        const endCap1 = new THREE.Mesh(
+          new THREE.CircleGeometry(logRadius * 0.95, 8),
+          endMat
+        );
+        endCap1.position.set(logLength/2 + 0.01, logRadius, (i - 1) * logRadius * 2.2);
+        endCap1.rotation.y = Math.PI / 2;
+        group.add(endCap1);
+        
+        const endCap2 = new THREE.Mesh(
+          new THREE.CircleGeometry(logRadius * 0.95, 8),
+          endMat
+        );
+        endCap2.position.set(-logLength/2 - 0.01, logRadius, (i - 1) * logRadius * 2.2);
+        endCap2.rotation.y = -Math.PI / 2;
+        group.add(endCap2);
+      }
+      
+      // Top row - 2 logs nestled between bottom logs
+      for (let i = 0; i < 2; i++) {
+        const log = new THREE.Mesh(
+          new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+          logMat
+        );
+        log.rotation.z = Math.PI / 2;
+        log.position.set(0, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        group.add(log);
+        
+        const endCap1 = new THREE.Mesh(
+          new THREE.CircleGeometry(logRadius * 0.95, 8),
+          endMat
+        );
+        endCap1.position.set(logLength/2 + 0.01, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        endCap1.rotation.y = Math.PI / 2;
+        group.add(endCap1);
+        
+        const endCap2 = new THREE.Mesh(
+          new THREE.CircleGeometry(logRadius * 0.95, 8),
+          endMat
+        );
+        endCap2.position.set(-logLength/2 - 0.01, logRadius * 2.7, (i - 0.5) * logRadius * 2.2);
+        endCap2.rotation.y = -Math.PI / 2;
+        group.add(endCap2);
+      }
+      
+      // Top - 1 log
+      const topLog = new THREE.Mesh(
+        new THREE.CylinderGeometry(logRadius, logRadius, logLength, 8),
+        logMat
+      );
+      topLog.rotation.z = Math.PI / 2;
+      topLog.position.set(0, logRadius * 4.4, 0);
+      group.add(topLog);
+      
+      const topEnd1 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+      topEnd1.position.set(logLength/2 + 0.01, logRadius * 4.4, 0);
+      topEnd1.rotation.y = Math.PI / 2;
+      group.add(topEnd1);
+      
+      const topEnd2 = new THREE.Mesh(new THREE.CircleGeometry(logRadius * 0.95, 8), endMat);
+      topEnd2.position.set(-logLength/2 - 0.01, logRadius * 4.4, 0);
+      topEnd2.rotation.y = -Math.PI / 2;
+      group.add(topEnd2);
+      
+      return group;
+    }
+    
+    // Create chest (simplified for gallery)
+    function createChest(x, z, isOpen = false) {
+      const group = new THREE.Group();
+      const mainMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const trimMat = new THREE.MeshLambertMaterial({ color: 0x5D3A1A });
+      const innerMat = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+      
+      const base = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 1.3), mainMat);
+      base.position.y = 0.5;
+      group.add(base);
+      
+      const inner = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 1.1), innerMat);
+      inner.position.y = 0.6;
+      group.add(inner);
+      
+      const lidGroup = new THREE.Group();
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(2, 0.25, 1.3), mainMat);
+      lid.position.set(0, 0.125, 0.65);
+      lidGroup.add(lid);
+      
+      const lidTop = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 1.1), mainMat);
+      lidTop.position.set(0, 0.3, 0.65);
+      lidGroup.add(lidTop);
+      
+      lidGroup.position.set(0, 1, -0.65);
+      if (isOpen) lidGroup.rotation.x = -Math.PI * 0.7;
+      group.add(lidGroup);
+      
+      const band1 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.12, 0.15), trimMat);
+      band1.position.set(0, 0.7, 0.6);
+      group.add(band1);
+      
+      const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.08), new THREE.MeshLambertMaterial({ color: 0xB8860B }));
+      lockPlate.position.set(0, 0.9, 0.7);
+      group.add(lockPlate);
+      
+      group.position.set(x, 0, z);
+      return group;
+    }
+    
+    // ============================================
+    // EXPLORATION MODE
+    // ============================================
+    
+    let exploreActive = false;
+    let exploreScene, exploreCamera, exploreRenderer;
+    let exploreStructure, exploreStructureType;
+    let playerPos = { x: 0, y: 1.7, z: 0 };
+    let playerYaw = 0, playerPitch = 0;
+    let keys = { w: false, a: false, s: false, d: false };
+    
+    const exploreOverlay = document.getElementById('exploreOverlay');
+    const exploreCanvas = document.getElementById('exploreCanvas');
+    const backBtn = document.getElementById('backBtn');
+    const structureTitle = document.getElementById('structureTitle');
+    
+    function startExploration(structureKey) {
+      const config = STRUCTURE_TYPES[structureKey];
+      exploreStructureType = structureKey;
+      
+      // Set up exploration scene
+      exploreScene = new THREE.Scene();
+      exploreScene.background = new THREE.Color(0x87CEEB);
+      exploreScene.fog = new THREE.Fog(0x87CEEB, 20, 60);
+      
+      exploreCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      
+      exploreRenderer = new THREE.WebGLRenderer({ canvas: exploreCanvas, antialias: true });
+      exploreRenderer.setSize(window.innerWidth, window.innerHeight);
+      exploreRenderer.shadowMap.enabled = true;
+      
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+      exploreScene.add(ambient);
+      
+      const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+      sun.position.set(20, 30, 20);
+      sun.castShadow = true;
+      exploreScene.add(sun);
+      
+      // Interior light
+      const interiorLight = new THREE.PointLight(0xFFE4B5, 0.8, 20);
+      interiorLight.position.set(0, config.height - 1, 0);
+      exploreScene.add(interiorLight);
+      
+      // Ground
+      const groundGeo = new THREE.PlaneGeometry(100, 100);
+      const groundMat = new THREE.MeshLambertMaterial({ color: 0x3d6b1a });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = 0;
+      ground.receiveShadow = true;
+      exploreScene.add(ground);
+      
+      // Create the structure
+      exploreStructure = createStructure(structureKey);
+      if (exploreStructure) {
+        // Remove roof for better visibility inside
+        const roof = exploreStructure.getObjectByName('roof');
+        if (roof) roof.visible = false;
+        exploreScene.add(exploreStructure);
+      }
+      
+      // Add furniture
+      if (config.furniture) {
+        addFurniture(exploreScene, config);
+        
+        // If there's a table, put chest on it
+        if (config.furniture.includes('table')) {
+          const chest = createChest(-config.width/2 + 1.5, -config.depth/4);
+          chest.position.y = 1.1; // On top of table
+          chest.scale.set(0.7, 0.7, 0.7); // Slightly smaller to fit
+          exploreScene.add(chest);
+        } else if (config.furniture.includes('altar')) {
+          // Chapel - put chest on LEFT side of altar
+          const chest = createChest(-config.width/2 + 3, -config.depth/2 + 4);
+          exploreScene.add(chest);
+          
+          // Put loot item on RIGHT side of altar
+          const lootTypes = ['bolt', 'fan', 'microwave', 'woodpile'];
+          const lootType = lootTypes[Math.floor(Math.random() * lootTypes.length)];
+          let lootItem;
+          if (lootType === 'bolt' || lootType === 'fan') {
+            lootItem = createScrapMetal(lootType);
+          } else if (lootType === 'microwave') {
+            lootItem = createBrokenMicrowave();
+          } else {
+            lootItem = createWoodPile();
+          }
+          lootItem.position.set(config.width/2 - 3, 0.2, -config.depth/2 + 4);
+          exploreScene.add(lootItem);
+        } else {
+          // No table/altar, put chest on floor at back
+          const chest = createChest(0, -config.depth/2 + 2);
+          exploreScene.add(chest);
+        }
+      } else {
+        // No furniture, put chest at back
+        const chest = createChest(0, -config.depth/2 + 2);
+        exploreScene.add(chest);
+      }
+      
+      // Add loot item unless noLoot is set
+      if (!config.noLoot) {
+        const rand = Math.random();
+        
+        // Use designated loot spot if defined, otherwise calculate
+        let itemX, itemZ, itemY;
+        const defaultFloorY = 0.2;
+        
+        if (config.lootSpot) {
+          itemX = config.lootSpot.x;
+          itemZ = config.lootSpot.z;
+          itemY = config.lootSpot.y !== undefined ? config.lootSpot.y : defaultFloorY;
+        } else {
+          itemX = config.width/2 - 2;
+          itemZ = 0;
+          itemY = defaultFloorY;
+        }
+        
+        let lootItem;
+        if (rand < 0.25) {
+          lootItem = createScrapMetal('bolt');
+        } else if (rand < 0.5) {
+          lootItem = createScrapMetal('fan');
+        } else if (rand < 0.75) {
+          lootItem = createBrokenMicrowave();
+          lootItem.rotation.y = Math.random() * Math.PI * 2;
+        } else {
+          lootItem = createWoodPile();
+          lootItem.rotation.y = Math.random() * Math.PI;
+        }
+        
+        lootItem.position.set(itemX, itemY, itemZ);
+        exploreScene.add(lootItem);
+      }
+      
+      // Start player INSIDE the structure near the door
+      playerPos = { x: 0, y: 1.7, z: config.depth/2 - 2 };
+      playerYaw = Math.PI; // Face inward
+      playerPitch = 0;
+      
+      // Show overlay
+      structureTitle.textContent = config.name;
+      exploreOverlay.classList.add('active');
+      exploreActive = true;
+      
+      // Lock pointer
+      exploreCanvas.requestPointerLock();
+      
+      exploreAnimationLoop();
+    }
+    
+    function stopExploration() {
+      exploreActive = false;
+      exploreOverlay.classList.remove('active');
+      document.exitPointerLock();
+      
+      // Clean up
+      if (exploreRenderer) {
+        exploreRenderer.dispose();
+      }
+      exploreScene = null;
+      exploreCamera = null;
+      exploreRenderer = null;
+    }
+    
+    function exploreAnimationLoop() {
+      if (!exploreActive) return;
+      requestAnimationFrame(exploreAnimationLoop);
+      
+      // Handle movement
+      const speed = 0.15;
+      const moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+      const moveZ = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
+      
+      if (moveX !== 0 || moveZ !== 0) {
+        const forward = new THREE.Vector3(0, 0, -1);
+        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerYaw);
+        
+        const right = new THREE.Vector3(1, 0, 0);
+        right.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerYaw);
+        
+        let newX = playerPos.x + forward.x * -moveZ * speed + right.x * moveX * speed;
+        let newZ = playerPos.z + forward.z * -moveZ * speed + right.z * moveX * speed;
+        
+        // Collision with structure walls
+        const config = STRUCTURE_TYPES[exploreStructureType];
+        const halfW = config.width / 2 - 0.8;
+        const halfD = config.depth / 2 - 0.8;
+        
+        newX = Math.max(-halfW, Math.min(halfW, newX));
+        newZ = Math.max(-halfD, Math.min(halfD, newZ));
+        
+        playerPos.x = newX;
+        playerPos.z = newZ;
+      }
+      
+      // Update camera
+      exploreCamera.position.set(playerPos.x, playerPos.y, playerPos.z);
+      
+      // Camera look direction
+      const lookDir = new THREE.Vector3(0, 0, -1);
+      lookDir.applyAxisAngle(new THREE.Vector3(1, 0, 0), playerPitch);
+      lookDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerYaw);
+      
+      exploreCamera.lookAt(
+        playerPos.x + lookDir.x,
+        playerPos.y + lookDir.y,
+        playerPos.z + lookDir.z
+      );
+      
+      exploreRenderer.render(exploreScene, exploreCamera);
+    }
+    
+    // Mouse look
+    document.addEventListener('mousemove', (e) => {
+      if (!exploreActive || document.pointerLockElement !== exploreCanvas) return;
+      
+      const sensitivity = 0.002;
+      playerYaw -= e.movementX * sensitivity;
+      playerPitch -= e.movementY * sensitivity;
+      playerPitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, playerPitch));
+    });
+    
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'w') keys.w = true;
+      if (e.key.toLowerCase() === 'a') keys.a = true;
+      if (e.key.toLowerCase() === 's') keys.s = true;
+      if (e.key.toLowerCase() === 'd') keys.d = true;
+      if (e.key === 'Escape' && exploreActive) stopExploration();
+    });
+    
+    document.addEventListener('keyup', (e) => {
+      if (e.key.toLowerCase() === 'w') keys.w = false;
+      if (e.key.toLowerCase() === 'a') keys.a = false;
+      if (e.key.toLowerCase() === 's') keys.s = false;
+      if (e.key.toLowerCase() === 'd') keys.d = false;
+    });
+    
+    // Back button
+    backBtn.addEventListener('click', stopExploration);
+    
+    // Re-lock pointer on click
+    exploreCanvas.addEventListener('click', () => {
+      if (exploreActive && document.pointerLockElement !== exploreCanvas) {
+        exploreCanvas.requestPointerLock();
+      }
+    });
+    
+    // Window resize
+    window.addEventListener('resize', () => {
+      if (exploreActive && exploreRenderer && exploreCamera) {
+        exploreRenderer.setSize(window.innerWidth, window.innerHeight);
+        exploreCamera.aspect = window.innerWidth / window.innerHeight;
+        exploreCamera.updateProjectionMatrix();
+      }
+    });
+    
+    // ============================================
+    // GALLERY SETUP
+    // ============================================
+    
+    const gallery = document.getElementById('gallery');
+    const viewers = [];
+    
+    Object.entries(STRUCTURE_TYPES).forEach(([key, config]) => {
+      // Create card
+      const card = document.createElement('div');
+      card.className = 'structure-card';
+      card.onclick = () => startExploration(key);
+      
+      const canvasContainer = document.createElement('div');
+      canvasContainer.className = 'canvas-container';
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 300;
+      canvasContainer.appendChild(canvas);
+      
+      const info = document.createElement('div');
+      info.className = 'structure-info';
+      info.innerHTML = `
+        <div class="structure-name">${config.name}</div>
+        <div class="structure-level">🔥 Fire Level ${config.minFireLevel}+</div>
+        <div class="structure-desc">${config.description}</div>
+        <div class="structure-details">
+          Size: ${config.width}×${config.depth}×${config.height} | 
+          ${config.hasWindows ? '🪟 Windows' : ''} 
+          ${config.furniture ? '🪑 Furnished' : ''}
+          ${config.isTent ? '⛺ Tent' : ''}
+          ${config.isCave ? '🕳️ Cave' : ''}
+          ${config.elevated ? '🌳 Elevated' : ''}
+        </div>
+        <div style="margin-top: 8px; color: #FFD700; font-size: 0.85em;">👆 Click to explore inside</div>
+      `;
+      
+      card.appendChild(canvasContainer);
+      card.appendChild(info);
+      gallery.appendChild(card);
+      
+      // Set up Three.js for this card
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a2e);
+      
+      const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 1000);
+      
+      // Position camera based on structure size
+      const maxDim = Math.max(config.width, config.depth, config.height + (config.roofHeight || 0));
+      const cameraDistance = maxDim * 1.8;
+      camera.position.set(cameraDistance, cameraDistance * 0.8, cameraDistance);
+      camera.lookAt(0, (config.height + (config.roofHeight || 0)) / 2, 0);
+      
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(400, 300);
+      
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 20, 10);
+      scene.add(directionalLight);
+      
+      // Ground plane
+      const groundGeo = new THREE.PlaneGeometry(30, 30);
+      const groundMat = new THREE.MeshLambertMaterial({ color: 0x2d5016 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.1;
+      scene.add(ground);
+      
+      // Create structure
+      const structure = createStructure(key);
+      if (structure) {
+        scene.add(structure);
+      }
+      
+      viewers.push({ scene, camera, renderer, structure });
+    });
+    
+    // Animation loop for gallery
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (!exploreActive) {
+        viewers.forEach(({ scene, camera, renderer, structure }) => {
+          if (structure) {
+            structure.rotation.y += 0.005;
+          }
+          renderer.render(scene, camera);
+        });
+      }
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
