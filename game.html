@@ -2054,6 +2054,12 @@
 
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Post-processing for bloom effect -->
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 
   <script>
     // ============================================
@@ -2073,17 +2079,36 @@
     camera.position.set(0, 30, 30);
     camera.lookAt(0, 0, 0);
     
-    // Renderer
+    // Renderer with enhanced settings
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(700, 700);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Tone mapping for richer, more cinematic colors
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.outputEncoding = THREE.sRGBEncoding;
     
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // ============================================
+    // ENHANCED LIGHTING SETUP (Option 1 Upgrade)
+    // ============================================
+    
+    // Hemisphere light - sky color from above, ground color from below
+    // Creates more natural ambient lighting than flat AmbientLight
+    const hemiLight = new THREE.HemisphereLight(
+      0x87CEEB,  // Sky color (light blue)
+      0x3D6B1A,  // Ground color (forest green)
+      0.6        // Intensity
+    );
+    hemiLight.position.set(0, 50, 0);
+    scene.add(hemiLight);
+    
+    // Keep a subtle ambient light for fill
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // Main sun light - slightly warm color for golden hour feel
+    const directionalLight = new THREE.DirectionalLight(0xFFF4E5, 0.9);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;
@@ -2092,7 +2117,42 @@
     directionalLight.shadow.camera.right = 100;
     directionalLight.shadow.camera.top = 100;
     directionalLight.shadow.camera.bottom = -100;
+    directionalLight.shadow.bias = -0.0005; // Reduces shadow acne
     scene.add(directionalLight);
+    
+    // Fill light from opposite side - cool blue tone for contrast
+    const fillLight = new THREE.DirectionalLight(0xB0C4DE, 0.3);
+    fillLight.position.set(-30, 40, -30);
+    scene.add(fillLight);
+    
+    // Rim/back light for object separation (subtle)
+    const rimLight = new THREE.DirectionalLight(0xFFE4B5, 0.25);
+    rimLight.position.set(0, 20, -60);
+    scene.add(rimLight);
+    
+    // ============================================
+    // POST-PROCESSING (Bloom Effect)
+    // ============================================
+    
+    // Effect composer for post-processing
+    const composer = new THREE.EffectComposer(renderer);
+    
+    // Render pass - renders the scene normally first
+    const renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    
+    // Bloom pass - adds glow to bright objects (fire, glowing eyes, XP)
+    // Parameters: resolution, strength, radius, threshold
+    const bloomPass = new THREE.UnrealBloomPass(
+      new THREE.Vector2(700, 700), // Resolution
+      0.4,    // Strength - subtle glow (0.0 to 3.0)
+      0.6,    // Radius - how far glow spreads
+      0.7     // Threshold - brightness level to start glowing (0.0 to 1.0)
+    );
+    composer.addPass(bloomPass);
+    
+    // Store bloom settings for day/night adjustment
+    let bloomSettings = { day: { strength: 0.4, threshold: 0.7 }, night: { strength: 0.6, threshold: 0.5 } };
     
     // ============================================
     // LOW-POLY MODEL BUILDERS
@@ -10742,15 +10802,45 @@
     function setNightMode(night) {
       isNight = night;
       if (night) {
+        // Night mode - dark blue atmosphere
         cycleIcon.textContent = "🌙";
         scene.background = new THREE.Color(0x0a0a2e);
-        ambientLight.intensity = 0.2;
-        directionalLight.intensity = 0.3;
+        scene.fog.color = new THREE.Color(0x0a0a2e);
+        
+        // Dim all lights significantly
+        ambientLight.intensity = 0.05;
+        hemiLight.intensity = 0.15;
+        hemiLight.color.setHex(0x1a1a4a);      // Dark blue sky
+        hemiLight.groundColor.setHex(0x0a0a1a); // Very dark ground
+        directionalLight.intensity = 0.15;
+        directionalLight.color.setHex(0x4444AA); // Moonlight blue tint
+        fillLight.intensity = 0.05;
+        rimLight.intensity = 0.1;
+        rimLight.color.setHex(0x6666AA); // Cool blue rim
+        
+        // Increase bloom at night - fire glows more dramatically
+        bloomPass.strength = 0.7;
+        bloomPass.threshold = 0.4;
       } else {
+        // Day mode - bright and warm
         cycleIcon.textContent = "☀️";
         scene.background = new THREE.Color(0x87ceeb);
-        ambientLight.intensity = 0.6;
-        directionalLight.intensity = 0.8;
+        scene.fog.color = new THREE.Color(0x87ceeb);
+        
+        // Restore day lighting
+        ambientLight.intensity = 0.15;
+        hemiLight.intensity = 0.6;
+        hemiLight.color.setHex(0x87CEEB);      // Sky blue
+        hemiLight.groundColor.setHex(0x3D6B1A); // Forest green
+        directionalLight.intensity = 0.9;
+        directionalLight.color.setHex(0xFFF4E5); // Warm sunlight
+        fillLight.intensity = 0.3;
+        rimLight.intensity = 0.25;
+        rimLight.color.setHex(0xFFE4B5); // Warm rim
+        
+        // Subtle bloom during day
+        bloomPass.strength = 0.4;
+        bloomPass.threshold = 0.7;
       }
     }
     
@@ -13050,7 +13140,8 @@
       updatePetPosition();
       animateCampfireFlames();
       animateWolves();
-      renderer.render(scene, camera);
+      // Use composer for post-processing (bloom effect)
+      composer.render();
     }
     
     // ============================================
