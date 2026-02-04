@@ -2243,10 +2243,10 @@
     function createWolf(x, z) {
       const group = new THREE.Group();
       
-      // Wolf color palette - grey fur with variations
-      const furColor = 0x5A5A5A;
-      const furColorLight = 0x707070;
-      const furColorDark = 0x3A3A3A;
+      // Wolf color palette - grey fur matching Roblox style
+      const furColor = 0x606060;
+      const furColorLight = 0x757575;
+      const furColorDark = 0x404040;
       const noseColor = 0x1A1A1A;
       const eyeColor = 0xFFCC00; // Glowing yellow eyes
       
@@ -2254,37 +2254,32 @@
       const furMaterialLight = new THREE.MeshLambertMaterial({ color: furColorLight });
       const furMaterialDark = new THREE.MeshLambertMaterial({ color: furColorDark });
       const noseMaterial = new THREE.MeshLambertMaterial({ color: noseColor });
-      const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor }); // Emissive eyes
+      const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
       
       // Body group for breathing animation
       const bodyGroup = new THREE.Group();
       bodyGroup.name = 'bodyGroup';
       
-      // Main body - elongated ellipsoid using scaled sphere
-      const bodyGeometry = new THREE.SphereGeometry(0.7, 12, 8);
+      // Main body - lean rectangular shape (like Roblox)
+      const bodyGeometry = new THREE.BoxGeometry(1.6, 0.7, 0.8);
       const body = new THREE.Mesh(bodyGeometry, furMaterial);
-      body.scale.set(1.8, 0.9, 1.0);
-      body.position.set(0, 0.85, 0);
+      body.position.set(0, 0.7, 0);
       body.castShadow = true;
       body.receiveShadow = true;
       bodyGroup.add(body);
       
-      // Chest - slightly larger front section
-      const chestGeometry = new THREE.SphereGeometry(0.5, 10, 8);
-      const chest = new THREE.Mesh(chestGeometry, furMaterialLight);
-      chest.scale.set(1.0, 1.1, 1.2);
-      chest.position.set(0.7, 0.9, 0);
+      // Chest/shoulders - slightly raised front
+      const chestGeometry = new THREE.BoxGeometry(0.5, 0.8, 0.75);
+      const chest = new THREE.Mesh(chestGeometry, furMaterial);
+      chest.position.set(0.6, 0.75, 0);
       chest.castShadow = true;
-      chest.receiveShadow = true;
       bodyGroup.add(chest);
       
       // Haunches - back hip area
-      const haunchGeometry = new THREE.SphereGeometry(0.45, 10, 8);
+      const haunchGeometry = new THREE.BoxGeometry(0.5, 0.65, 0.7);
       const haunch = new THREE.Mesh(haunchGeometry, furMaterial);
-      haunch.scale.set(1.0, 1.0, 1.1);
-      haunch.position.set(-0.8, 0.8, 0);
+      haunch.position.set(-0.7, 0.65, 0);
       haunch.castShadow = true;
-      haunch.receiveShadow = true;
       bodyGroup.add(haunch);
       
       group.add(bodyGroup);
@@ -2292,62 +2287,65 @@
       // Head group for look animation
       const headGroup = new THREE.Group();
       headGroup.name = 'headGroup';
-      headGroup.position.set(1.3, 1.2, 0);
+      headGroup.position.set(1.1, 1.0, 0);
       
-      // Neck
-      const neckGeometry = new THREE.CylinderGeometry(0.25, 0.35, 0.5, 8);
+      // Neck - angled box
+      const neckGeometry = new THREE.BoxGeometry(0.4, 0.6, 0.5);
       const neck = new THREE.Mesh(neckGeometry, furMaterial);
-      neck.position.set(-0.2, -0.1, 0);
-      neck.rotation.z = -0.4;
+      neck.position.set(-0.1, 0.0, 0);
+      neck.rotation.z = -0.3;
       neck.castShadow = true;
       headGroup.add(neck);
       
-      // Main head - rounded
-      const headGeometry = new THREE.SphereGeometry(0.4, 10, 8);
+      // Main head - angular box
+      const headGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.55);
       const head = new THREE.Mesh(headGeometry, furMaterial);
-      head.scale.set(1.1, 0.95, 0.9);
-      head.position.set(0.15, 0.25, 0);
+      head.position.set(0.25, 0.35, 0);
       head.castShadow = true;
       head.receiveShadow = true;
       headGroup.add(head);
       
-      // Snout - cone shape
-      const snoutGeometry = new THREE.ConeGeometry(0.2, 0.6, 8);
+      // Snout - elongated tapered box
+      const snoutGeometry = new THREE.BoxGeometry(0.55, 0.3, 0.35);
       const snout = new THREE.Mesh(snoutGeometry, furMaterialLight);
-      snout.rotation.z = -Math.PI / 2;
-      snout.position.set(0.65, 0.15, 0);
+      snout.position.set(0.65, 0.25, 0);
       snout.castShadow = true;
       headGroup.add(snout);
       
-      // Nose
-      const noseGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+      // Snout tip - smaller for taper effect
+      const snoutTipGeometry = new THREE.BoxGeometry(0.2, 0.22, 0.28);
+      const snoutTip = new THREE.Mesh(snoutTipGeometry, furMaterialLight);
+      snoutTip.position.set(0.95, 0.22, 0);
+      headGroup.add(snoutTip);
+      
+      // Nose - small dark cube
+      const noseGeometry = new THREE.BoxGeometry(0.12, 0.1, 0.15);
       const nose = new THREE.Mesh(noseGeometry, noseMaterial);
-      nose.position.set(0.95, 0.15, 0);
+      nose.position.set(1.05, 0.28, 0);
       headGroup.add(nose);
       
-      // Lower jaw hint
-      const jawGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+      // Lower jaw
+      const jawGeometry = new THREE.BoxGeometry(0.4, 0.12, 0.3);
       const jaw = new THREE.Mesh(jawGeometry, furMaterialDark);
-      jaw.scale.set(1.5, 0.5, 0.8);
-      jaw.position.set(0.45, 0.0, 0);
+      jaw.position.set(0.55, 0.1, 0);
       headGroup.add(jaw);
       
-      // Eyes - glowing yellow
-      const eyeGeometry = new THREE.SphereGeometry(0.07, 8, 8);
+      // Eyes - glowing yellow (small cubes for blocky look)
+      const eyeGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.08);
       const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      leftEye.position.set(0.35, 0.35, 0.2);
+      leftEye.position.set(0.45, 0.45, 0.2);
       headGroup.add(leftEye);
       
       const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      rightEye.position.set(0.35, 0.35, -0.2);
+      rightEye.position.set(0.45, 0.45, -0.2);
       headGroup.add(rightEye);
       
-      // Eye glow
-      const eyeGlowGeometry = new THREE.SphereGeometry(0.12, 6, 6);
+      // Eye glow effect
+      const eyeGlowGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.12);
       const eyeGlowMaterial = new THREE.MeshBasicMaterial({ 
         color: eyeColor, 
         transparent: true, 
-        opacity: 0.3 
+        opacity: 0.25 
       });
       const leftEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
       leftEyeGlow.position.copy(leftEye.position);
@@ -2357,104 +2355,82 @@
       rightEyeGlow.position.copy(rightEye.position);
       headGroup.add(rightEyeGlow);
       
-      // Ears - triangular cones
-      const earGeometry = new THREE.ConeGeometry(0.15, 0.35, 4);
+      // Ears - tall triangular prisms (like Roblox wolf)
+      const earGeometry = new THREE.ConeGeometry(0.12, 0.4, 4);
       const leftEar = new THREE.Mesh(earGeometry, furMaterialDark);
-      leftEar.position.set(0.0, 0.55, 0.22);
-      leftEar.rotation.x = 0.2;
-      leftEar.rotation.z = 0.15;
+      leftEar.position.set(0.1, 0.7, 0.2);
+      leftEar.rotation.z = 0.1;
       leftEar.castShadow = true;
       headGroup.add(leftEar);
       
       const rightEar = new THREE.Mesh(earGeometry, furMaterialDark);
-      rightEar.position.set(0.0, 0.55, -0.22);
-      rightEar.rotation.x = -0.2;
-      rightEar.rotation.z = 0.15;
+      rightEar.position.set(0.1, 0.7, -0.2);
+      rightEar.rotation.z = 0.1;
       rightEar.castShadow = true;
       headGroup.add(rightEar);
-      
-      // Inner ear (pink-ish)
-      const innerEarMaterial = new THREE.MeshLambertMaterial({ color: 0x8B6B6B });
-      const innerEarGeometry = new THREE.ConeGeometry(0.08, 0.2, 4);
-      const leftInnerEar = new THREE.Mesh(innerEarGeometry, innerEarMaterial);
-      leftInnerEar.position.set(0.05, 0.5, 0.22);
-      leftInnerEar.rotation.x = 0.2;
-      leftInnerEar.rotation.z = 0.15;
-      headGroup.add(leftInnerEar);
-      
-      const rightInnerEar = new THREE.Mesh(innerEarGeometry, innerEarMaterial);
-      rightInnerEar.position.set(0.05, 0.5, -0.22);
-      rightInnerEar.rotation.x = -0.2;
-      rightInnerEar.rotation.z = 0.15;
-      headGroup.add(rightInnerEar);
       
       group.add(headGroup);
       
       // Tail group for wagging animation
       const tailGroup = new THREE.Group();
       tailGroup.name = 'tailGroup';
-      tailGroup.position.set(-1.2, 0.9, 0);
+      tailGroup.position.set(-1.0, 0.7, 0);
       
-      // Tail segments - curved upward using multiple cylinders
-      const tailSegments = [
-        { len: 0.3, rad: 0.12, x: 0, y: 0, rot: 0.3 },
-        { len: 0.25, rad: 0.1, x: -0.25, y: 0.15, rot: 0.5 },
-        { len: 0.25, rad: 0.08, x: -0.45, y: 0.35, rot: 0.7 },
-        { len: 0.2, rad: 0.06, x: -0.6, y: 0.55, rot: 0.9 },
-      ];
+      // Tail - series of boxes curving upward
+      const tail1Geo = new THREE.BoxGeometry(0.3, 0.2, 0.2);
+      const tail1 = new THREE.Mesh(tail1Geo, furMaterial);
+      tail1.position.set(-0.1, 0.1, 0);
+      tail1.rotation.z = 0.4;
+      tail1.castShadow = true;
+      tailGroup.add(tail1);
       
-      tailSegments.forEach((seg, i) => {
-        const tailGeo = new THREE.CylinderGeometry(seg.rad * 0.7, seg.rad, seg.len, 6);
-        const mat = i < 2 ? furMaterial : furMaterialDark;
-        const tailPart = new THREE.Mesh(tailGeo, mat);
-        tailPart.position.set(seg.x, seg.y, 0);
-        tailPart.rotation.z = seg.rot;
-        tailPart.castShadow = true;
-        tailGroup.add(tailPart);
-      });
+      const tail2Geo = new THREE.BoxGeometry(0.25, 0.18, 0.18);
+      const tail2 = new THREE.Mesh(tail2Geo, furMaterial);
+      tail2.position.set(-0.3, 0.3, 0);
+      tail2.rotation.z = 0.7;
+      tail2.castShadow = true;
+      tailGroup.add(tail2);
       
-      // Fluffy tail tip
-      const tailTipGeo = new THREE.SphereGeometry(0.1, 6, 6);
-      const tailTip = new THREE.Mesh(tailTipGeo, furMaterialLight);
-      tailTip.position.set(-0.7, 0.7, 0);
-      tailTip.scale.set(1.5, 1, 1);
-      tailGroup.add(tailTip);
+      const tail3Geo = new THREE.BoxGeometry(0.2, 0.15, 0.15);
+      const tail3 = new THREE.Mesh(tail3Geo, furMaterialDark);
+      tail3.position.set(-0.45, 0.55, 0);
+      tail3.rotation.z = 1.0;
+      tail3.castShadow = true;
+      tailGroup.add(tail3);
       
       group.add(tailGroup);
       
-      // Legs - using cylinders for smoother look
-      const legData = [
-        { name: 'frontLeft', x: 0.7, z: 0.3, front: true },
-        { name: 'frontRight', x: 0.7, z: -0.3, front: true },
-        { name: 'backLeft', x: -0.6, z: 0.3, front: false },
-        { name: 'backRight', x: -0.6, z: -0.3, front: false },
+      // Legs - angular boxes (Roblox style)
+      const legPositions = [
+        { name: 'frontLeft', x: 0.55, z: 0.28 },
+        { name: 'frontRight', x: 0.55, z: -0.28 },
+        { name: 'backLeft', x: -0.55, z: 0.28 },
+        { name: 'backRight', x: -0.55, z: -0.28 },
       ];
       
-      legData.forEach(leg => {
+      legPositions.forEach(leg => {
         const legGroup = new THREE.Group();
         legGroup.name = leg.name;
         legGroup.position.set(leg.x, 0, leg.z);
         
         // Upper leg
-        const upperLegGeo = new THREE.CylinderGeometry(0.1, 0.13, 0.5, 8);
+        const upperLegGeo = new THREE.BoxGeometry(0.22, 0.45, 0.22);
         const upperLeg = new THREE.Mesh(upperLegGeo, furMaterial);
-        upperLeg.position.y = 0.55;
-        upperLeg.rotation.z = leg.front ? 0.1 : -0.1;
+        upperLeg.position.y = 0.45;
         upperLeg.castShadow = true;
         legGroup.add(upperLeg);
         
-        // Lower leg
-        const lowerLegGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.45, 8);
+        // Lower leg  
+        const lowerLegGeo = new THREE.BoxGeometry(0.18, 0.4, 0.18);
         const lowerLeg = new THREE.Mesh(lowerLegGeo, furMaterialLight);
-        lowerLeg.position.y = 0.22;
+        lowerLeg.position.y = 0.2;
         lowerLeg.castShadow = true;
         legGroup.add(lowerLeg);
         
         // Paw
-        const pawGeo = new THREE.SphereGeometry(0.12, 8, 6);
+        const pawGeo = new THREE.BoxGeometry(0.22, 0.1, 0.25);
         const paw = new THREE.Mesh(pawGeo, furMaterialDark);
-        paw.scale.set(1.2, 0.5, 1.4);
-        paw.position.set(leg.front ? 0.05 : -0.03, 0.06, 0);
+        paw.position.set(0.02, 0.05, 0);
         paw.castShadow = true;
         legGroup.add(paw);
         
@@ -2462,7 +2438,7 @@
       });
       
       // Store animation data
-      group.userData.animationTime = Math.random() * Math.PI * 2; // Random start phase
+      group.userData.animationTime = Math.random() * Math.PI * 2;
       
       group.position.set(x, 0, z);
       group.userData.type = 'wolf';
