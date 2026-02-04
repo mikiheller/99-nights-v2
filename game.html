@@ -2242,104 +2242,233 @@
     
     function createWolf(x, z) {
       const group = new THREE.Group();
-      const wolfMaterial = new THREE.MeshLambertMaterial({ color: 0x606060 });
-      const darkWolfMaterial = new THREE.MeshLambertMaterial({ color: 0x404040 });
       
-      // Body (longer and lower)
-      const bodyGeometry = new THREE.BoxGeometry(1.5, 1, 1.2);
-      const body = new THREE.Mesh(bodyGeometry, wolfMaterial);
-      body.position.y = 0.8;
+      // Wolf color palette - grey fur with variations
+      const furColor = 0x5A5A5A;
+      const furColorLight = 0x707070;
+      const furColorDark = 0x3A3A3A;
+      const noseColor = 0x1A1A1A;
+      const eyeColor = 0xFFCC00; // Glowing yellow eyes
+      
+      const furMaterial = new THREE.MeshLambertMaterial({ color: furColor });
+      const furMaterialLight = new THREE.MeshLambertMaterial({ color: furColorLight });
+      const furMaterialDark = new THREE.MeshLambertMaterial({ color: furColorDark });
+      const noseMaterial = new THREE.MeshLambertMaterial({ color: noseColor });
+      const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor }); // Emissive eyes
+      
+      // Body group for breathing animation
+      const bodyGroup = new THREE.Group();
+      bodyGroup.name = 'bodyGroup';
+      
+      // Main body - elongated ellipsoid using scaled sphere
+      const bodyGeometry = new THREE.SphereGeometry(0.7, 12, 8);
+      const body = new THREE.Mesh(bodyGeometry, furMaterial);
+      body.scale.set(1.8, 0.9, 1.0);
+      body.position.set(0, 0.85, 0);
       body.castShadow = true;
       body.receiveShadow = true;
-      group.add(body);
+      bodyGroup.add(body);
+      
+      // Chest - slightly larger front section
+      const chestGeometry = new THREE.SphereGeometry(0.5, 10, 8);
+      const chest = new THREE.Mesh(chestGeometry, furMaterialLight);
+      chest.scale.set(1.0, 1.1, 1.2);
+      chest.position.set(0.7, 0.9, 0);
+      chest.castShadow = true;
+      chest.receiveShadow = true;
+      bodyGroup.add(chest);
+      
+      // Haunches - back hip area
+      const haunchGeometry = new THREE.SphereGeometry(0.45, 10, 8);
+      const haunch = new THREE.Mesh(haunchGeometry, furMaterial);
+      haunch.scale.set(1.0, 1.0, 1.1);
+      haunch.position.set(-0.8, 0.8, 0);
+      haunch.castShadow = true;
+      haunch.receiveShadow = true;
+      bodyGroup.add(haunch);
+      
+      group.add(bodyGroup);
+      
+      // Head group for look animation
+      const headGroup = new THREE.Group();
+      headGroup.name = 'headGroup';
+      headGroup.position.set(1.3, 1.2, 0);
       
       // Neck
-      const neckGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.8);
-      const neck = new THREE.Mesh(neckGeometry, wolfMaterial);
-      neck.position.set(1.0, 1.1, 0);
+      const neckGeometry = new THREE.CylinderGeometry(0.25, 0.35, 0.5, 8);
+      const neck = new THREE.Mesh(neckGeometry, furMaterial);
+      neck.position.set(-0.2, -0.1, 0);
+      neck.rotation.z = -0.4;
       neck.castShadow = true;
-      neck.receiveShadow = true;
-      group.add(neck);
+      headGroup.add(neck);
       
-      // Head (main part)
-      const headGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-      const head = new THREE.Mesh(headGeometry, wolfMaterial);
-      head.position.set(1.6, 1.4, 0);
+      // Main head - rounded
+      const headGeometry = new THREE.SphereGeometry(0.4, 10, 8);
+      const head = new THREE.Mesh(headGeometry, furMaterial);
+      head.scale.set(1.1, 0.95, 0.9);
+      head.position.set(0.15, 0.25, 0);
       head.castShadow = true;
       head.receiveShadow = true;
-      group.add(head);
+      headGroup.add(head);
       
-      // Snout (elongated)
-      const snoutGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.6);
-      const snout = new THREE.Mesh(snoutGeometry, darkWolfMaterial);
-      snout.position.set(2.1, 1.3, 0);
+      // Snout - cone shape
+      const snoutGeometry = new THREE.ConeGeometry(0.2, 0.6, 8);
+      const snout = new THREE.Mesh(snoutGeometry, furMaterialLight);
+      snout.rotation.z = -Math.PI / 2;
+      snout.position.set(0.65, 0.15, 0);
       snout.castShadow = true;
-      snout.receiveShadow = true;
-      group.add(snout);
+      headGroup.add(snout);
       
-      // Ears (2 triangular-ish)
-      const earGeometry = new THREE.BoxGeometry(0.3, 0.5, 0.3);
-      const leftEar = new THREE.Mesh(earGeometry, darkWolfMaterial);
-      leftEar.position.set(1.6, 1.9, 0.35);
+      // Nose
+      const noseGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+      const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+      nose.position.set(0.95, 0.15, 0);
+      headGroup.add(nose);
+      
+      // Lower jaw hint
+      const jawGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+      const jaw = new THREE.Mesh(jawGeometry, furMaterialDark);
+      jaw.scale.set(1.5, 0.5, 0.8);
+      jaw.position.set(0.45, 0.0, 0);
+      headGroup.add(jaw);
+      
+      // Eyes - glowing yellow
+      const eyeGeometry = new THREE.SphereGeometry(0.07, 8, 8);
+      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      leftEye.position.set(0.35, 0.35, 0.2);
+      headGroup.add(leftEye);
+      
+      const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+      rightEye.position.set(0.35, 0.35, -0.2);
+      headGroup.add(rightEye);
+      
+      // Eye glow
+      const eyeGlowGeometry = new THREE.SphereGeometry(0.12, 6, 6);
+      const eyeGlowMaterial = new THREE.MeshBasicMaterial({ 
+        color: eyeColor, 
+        transparent: true, 
+        opacity: 0.3 
+      });
+      const leftEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+      leftEyeGlow.position.copy(leftEye.position);
+      headGroup.add(leftEyeGlow);
+      
+      const rightEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+      rightEyeGlow.position.copy(rightEye.position);
+      headGroup.add(rightEyeGlow);
+      
+      // Ears - triangular cones
+      const earGeometry = new THREE.ConeGeometry(0.15, 0.35, 4);
+      const leftEar = new THREE.Mesh(earGeometry, furMaterialDark);
+      leftEar.position.set(0.0, 0.55, 0.22);
+      leftEar.rotation.x = 0.2;
+      leftEar.rotation.z = 0.15;
       leftEar.castShadow = true;
-      leftEar.receiveShadow = true;
-      group.add(leftEar);
+      headGroup.add(leftEar);
       
-      const rightEar = new THREE.Mesh(earGeometry, darkWolfMaterial);
-      rightEar.position.set(1.6, 1.9, -0.35);
+      const rightEar = new THREE.Mesh(earGeometry, furMaterialDark);
+      rightEar.position.set(0.0, 0.55, -0.22);
+      rightEar.rotation.x = -0.2;
+      rightEar.rotation.z = 0.15;
       rightEar.castShadow = true;
-      rightEar.receiveShadow = true;
-      group.add(rightEar);
+      headGroup.add(rightEar);
       
-      // Tail (curved upward)
-      const tailBase = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-      const tail1 = new THREE.Mesh(tailBase, wolfMaterial);
-      tail1.position.set(-0.9, 0.9, 0);
-      tail1.castShadow = true;
-      tail1.receiveShadow = true;
-      group.add(tail1);
+      // Inner ear (pink-ish)
+      const innerEarMaterial = new THREE.MeshLambertMaterial({ color: 0x8B6B6B });
+      const innerEarGeometry = new THREE.ConeGeometry(0.08, 0.2, 4);
+      const leftInnerEar = new THREE.Mesh(innerEarGeometry, innerEarMaterial);
+      leftInnerEar.position.set(0.05, 0.5, 0.22);
+      leftInnerEar.rotation.x = 0.2;
+      leftInnerEar.rotation.z = 0.15;
+      headGroup.add(leftInnerEar);
       
-      const tail2 = new THREE.Mesh(tailBase, wolfMaterial);
-      tail2.position.set(-1.2, 1.2, 0);
-      tail2.castShadow = true;
-      tail2.receiveShadow = true;
-      group.add(tail2);
+      const rightInnerEar = new THREE.Mesh(innerEarGeometry, innerEarMaterial);
+      rightInnerEar.position.set(0.05, 0.5, -0.22);
+      rightInnerEar.rotation.x = -0.2;
+      rightInnerEar.rotation.z = 0.15;
+      headGroup.add(rightInnerEar);
       
-      const tail3 = new THREE.Mesh(tailBase, darkWolfMaterial);
-      tail3.position.set(-1.4, 1.5, 0);
-      tail3.castShadow = true;
-      tail3.receiveShadow = true;
-      group.add(tail3);
+      group.add(headGroup);
       
-      // Legs (4) - thinner and positioned better
-      const legGeometry = new THREE.BoxGeometry(0.35, 1, 0.35);
-      const legPositions = [
-        [1, 0, 0.4],    // Front left
-        [1, 0, -0.4],   // Front right
-        [-0.8, 0, 0.4], // Back left
-        [-0.8, 0, -0.4] // Back right
+      // Tail group for wagging animation
+      const tailGroup = new THREE.Group();
+      tailGroup.name = 'tailGroup';
+      tailGroup.position.set(-1.2, 0.9, 0);
+      
+      // Tail segments - curved upward using multiple cylinders
+      const tailSegments = [
+        { len: 0.3, rad: 0.12, x: 0, y: 0, rot: 0.3 },
+        { len: 0.25, rad: 0.1, x: -0.25, y: 0.15, rot: 0.5 },
+        { len: 0.25, rad: 0.08, x: -0.45, y: 0.35, rot: 0.7 },
+        { len: 0.2, rad: 0.06, x: -0.6, y: 0.55, rot: 0.9 },
       ];
       
-      legPositions.forEach(pos => {
-        const leg = new THREE.Mesh(legGeometry, wolfMaterial);
-        leg.position.set(pos[0], 0.5, pos[2]);
-        leg.castShadow = true;
-        leg.receiveShadow = true;
-        group.add(leg);
+      tailSegments.forEach((seg, i) => {
+        const tailGeo = new THREE.CylinderGeometry(seg.rad * 0.7, seg.rad, seg.len, 6);
+        const mat = i < 2 ? furMaterial : furMaterialDark;
+        const tailPart = new THREE.Mesh(tailGeo, mat);
+        tailPart.position.set(seg.x, seg.y, 0);
+        tailPart.rotation.z = seg.rot;
+        tailPart.castShadow = true;
+        tailGroup.add(tailPart);
       });
       
-      // Paws (darker)
-      const pawGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.4);
-      legPositions.forEach(pos => {
-        const paw = new THREE.Mesh(pawGeometry, darkWolfMaterial);
-        paw.position.set(pos[0], 0.1, pos[2]);
+      // Fluffy tail tip
+      const tailTipGeo = new THREE.SphereGeometry(0.1, 6, 6);
+      const tailTip = new THREE.Mesh(tailTipGeo, furMaterialLight);
+      tailTip.position.set(-0.7, 0.7, 0);
+      tailTip.scale.set(1.5, 1, 1);
+      tailGroup.add(tailTip);
+      
+      group.add(tailGroup);
+      
+      // Legs - using cylinders for smoother look
+      const legData = [
+        { name: 'frontLeft', x: 0.7, z: 0.3, front: true },
+        { name: 'frontRight', x: 0.7, z: -0.3, front: true },
+        { name: 'backLeft', x: -0.6, z: 0.3, front: false },
+        { name: 'backRight', x: -0.6, z: -0.3, front: false },
+      ];
+      
+      legData.forEach(leg => {
+        const legGroup = new THREE.Group();
+        legGroup.name = leg.name;
+        legGroup.position.set(leg.x, 0, leg.z);
+        
+        // Upper leg
+        const upperLegGeo = new THREE.CylinderGeometry(0.1, 0.13, 0.5, 8);
+        const upperLeg = new THREE.Mesh(upperLegGeo, furMaterial);
+        upperLeg.position.y = 0.55;
+        upperLeg.rotation.z = leg.front ? 0.1 : -0.1;
+        upperLeg.castShadow = true;
+        legGroup.add(upperLeg);
+        
+        // Lower leg
+        const lowerLegGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.45, 8);
+        const lowerLeg = new THREE.Mesh(lowerLegGeo, furMaterialLight);
+        lowerLeg.position.y = 0.22;
+        lowerLeg.castShadow = true;
+        legGroup.add(lowerLeg);
+        
+        // Paw
+        const pawGeo = new THREE.SphereGeometry(0.12, 8, 6);
+        const paw = new THREE.Mesh(pawGeo, furMaterialDark);
+        paw.scale.set(1.2, 0.5, 1.4);
+        paw.position.set(leg.front ? 0.05 : -0.03, 0.06, 0);
         paw.castShadow = true;
-        paw.receiveShadow = true;
-        group.add(paw);
+        legGroup.add(paw);
+        
+        group.add(legGroup);
       });
+      
+      // Store animation data
+      group.userData.animationTime = Math.random() * Math.PI * 2; // Random start phase
       
       group.position.set(x, 0, z);
-      group.userData = { type: 'wolf', action: 'fightWolf', worldX: x, worldZ: z };
+      group.userData.type = 'wolf';
+      group.userData.action = 'fightWolf';
+      group.userData.worldX = x;
+      group.userData.worldZ = z;
       return group;
     }
     
@@ -12689,6 +12818,60 @@
       checkBeeHoneyProduction();
     }
     
+    // Animate wolves - breathing, tail wagging, head movement
+    function animateWolves() {
+      const time = Date.now() * 0.002;
+      
+      entities.forEach(entity => {
+        if (entity.type !== 'wolf' || !entity.mesh) return;
+        
+        const wolf = entity.mesh;
+        const phase = wolf.userData.animationTime || 0;
+        
+        // Find body group for breathing
+        const bodyGroup = wolf.getObjectByName('bodyGroup');
+        if (bodyGroup) {
+          // Subtle breathing - scale body slightly
+          const breathe = 1 + Math.sin(time * 2 + phase) * 0.03;
+          bodyGroup.scale.set(1, breathe, 1);
+        }
+        
+        // Find head group for look animation
+        const headGroup = wolf.getObjectByName('headGroup');
+        if (headGroup) {
+          // Subtle head movement - looking around
+          headGroup.rotation.y = Math.sin(time * 0.5 + phase) * 0.15;
+          headGroup.rotation.x = Math.sin(time * 0.7 + phase * 1.3) * 0.05;
+        }
+        
+        // Find tail group for wagging
+        const tailGroup = wolf.getObjectByName('tailGroup');
+        if (tailGroup) {
+          // Tail wagging - faster when player is near (aggressive)
+          const playerDist = Math.sqrt(
+            Math.pow(wolf.position.x - playerMesh.position.x, 2) +
+            Math.pow(wolf.position.z - playerMesh.position.z, 2)
+          );
+          const wagSpeed = playerDist < 10 ? 8 : 3; // Faster when close
+          const wagAmount = playerDist < 10 ? 0.4 : 0.2;
+          tailGroup.rotation.y = Math.sin(time * wagSpeed + phase) * wagAmount;
+        }
+        
+        // Animate legs slightly when moving (check if wolf is moving)
+        if (wolf.userData.isMoving) {
+          const legNames = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
+          legNames.forEach((name, i) => {
+            const leg = wolf.getObjectByName(name);
+            if (leg) {
+              const offset = i < 2 ? 0 : Math.PI; // Front and back legs alternate
+              const side = i % 2 === 0 ? 1 : -1; // Left and right alternate
+              leg.rotation.x = Math.sin(time * 10 + offset) * 0.3 * side;
+            }
+          });
+        }
+      });
+    }
+    
     // Animate campfire flames for realistic flickering effect
     function animateCampfireFlames() {
       if (!campfireMesh || !campfireMesh.userData.flamesGroup) return;
@@ -12740,6 +12923,7 @@
       updatePlayer();
       updatePetPosition();
       animateCampfireFlames();
+      animateWolves();
       renderer.render(scene, camera);
     }
     
